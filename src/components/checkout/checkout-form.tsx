@@ -269,11 +269,10 @@ export function CheckoutForm({
       return;
     }
     if (result.outcome === "unavailable") {
-      setPendingPayment(options);
       setMessage("We couldn't load the secure payment window. Check your connection and press “Pay now” again.");
-      return;
     }
     setPendingPayment(options);
+    window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
   function submit(e: FormEvent) {
