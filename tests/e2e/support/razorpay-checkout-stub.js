@@ -5,7 +5,7 @@
   Razorpay.prototype.open = async function () {
     var mode = window.localStorage.getItem("rzpMode") || "success";
     var pid = "pay_" + this.opts.order_id.slice(6);
-    if (mode === "fail") { this.handlers["payment.failed"] && this.handlers["payment.failed"]({ error: { description: "Card declined (mock)" } }); this.opts.modal.ondismiss(); return; }
+    if (mode === "fail") { if (this.handlers["payment.failed"]) this.handlers["payment.failed"]({ error: { description: "Card declined (mock)" } }); this.opts.modal.ondismiss(); return; }
     if (mode === "dismiss") { this.opts.modal.ondismiss(); return; }
     var sigKey = mode === "tamper" ? "wrong_secret" : window.__RZP_TEST_SECRET__ || "local_mock_secret_123";
     var key = await crypto.subtle.importKey("raw", new TextEncoder().encode(sigKey), { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);

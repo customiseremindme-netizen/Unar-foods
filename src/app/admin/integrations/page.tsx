@@ -50,7 +50,7 @@ export default async function IntegrationsPage() {
           <Row label="Key secret" value={maskSecret(razorpay?.keySecret)} />
           <Row label="Webhook secret" value={razorpay?.webhookSecret ? maskSecret(razorpay.webhookSecret) : <span className="text-danger">not set</span>} />
           <Row label="Webhook URL to paste in Razorpay" value={`${site}/api/webhooks/razorpay`} />
-          <p className="mt-3 text-[0.78rem] text-muted">Webhook events to tick: payment.captured, payment.failed, order.paid, refund.processed, refund.failed.</p>
+          <p className="mt-3 text-[0.78rem] text-muted">Webhook events to tick: payment.authorized, payment.captured, payment.failed, order.paid, refund.processed, refund.failed.</p>
         </Card>
 
         <Card title="Email (Resend)" actions={<Status ok={!!email} />}>
