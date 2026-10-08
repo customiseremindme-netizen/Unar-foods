@@ -6,6 +6,7 @@ import { processAndStoreImage, type UploadedImage } from "@/lib/admin/media";
 import { check, runAdminAction, type ActionResult } from "@/lib/admin/action";
 import { logAdminAction } from "@/lib/audit";
 import { requireAdminSupabase } from "@/lib/supabase/admin";
+import { BUNDLED_MEDIA } from "@/lib/admin/bundled-media";
 
 /** Uploads an image to the media library (used by every image field in the dashboard). */
 export async function uploadMediaAction(formData: FormData): Promise<ActionResult<UploadedImage & { id: string }>> {
@@ -42,7 +43,9 @@ export async function listMediaAction(): Promise<ActionResult<{ id: string; url:
     const { data } = check(
       await supabase.from("media_assets").select("id, url, alt, width, height").order("created_at", { ascending: false }).limit(200),
     );
-    return { ok: true, message: null, data: data ?? [] };
+    // Built-in images (shipped with the site) are listed after uploads.
+    const bundled = BUNDLED_MEDIA.map((b) => ({ id: `bundled:${b.url}`, url: b.url, alt: b.alt, width: b.width, height: b.height }));
+    return { ok: true, message: null, data: [...(data ?? []), ...bundled] };
   });
 }
 

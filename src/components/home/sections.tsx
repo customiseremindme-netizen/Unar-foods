@@ -4,7 +4,7 @@ import Link from "next/link";
 import { ArrowRight, BadgeCheck, ChevronDown } from "lucide-react";
 import type { SectionContent } from "@/lib/cms/sections";
 import type { Product } from "@/lib/data/catalog";
-import type { Faq, InstagramPost } from "@/lib/data/content";
+import type { Banner, Faq, InstagramPost } from "@/lib/data/content";
 import type { PublicReview, ReviewStats } from "@/lib/data/reviews";
 import { formatINR } from "@/lib/money";
 import { formatDate } from "@/lib/utils";
@@ -454,6 +454,34 @@ export function ContactCta({ content }: { content: SectionContent<"contact_cta">
           ) : null}
         </Reveal>
       </div>
+    </section>
+  );
+}
+
+/** Optional promotion strip below the hero (Content → Banners → “Homepage promotion”). */
+export function HomePromo({ banner }: { banner: Banner }) {
+  return (
+    <section className="container-site py-10" aria-label="Promotion">
+      <Reveal>
+        <div className="grid items-center gap-6 overflow-hidden rounded-[2rem] bg-forest text-cream sm:grid-cols-[1fr_auto] md:grid-cols-[auto_1fr_auto]">
+          {banner.image_url ? (
+            <div className="relative hidden h-full min-h-40 w-56 md:block">
+              <Image src={banner.image_url} alt={banner.image_alt ?? ""} fill sizes="224px" className="object-cover" />
+            </div>
+          ) : null}
+          <div className="px-7 py-7 md:px-2">
+            <p className="font-display text-[1.6rem] leading-tight">{banner.title}</p>
+            {banner.body ? <p className="mt-2 max-w-2xl text-[0.95rem] text-cream/80">{banner.body}</p> : null}
+          </div>
+          {banner.cta_label && banner.cta_url ? (
+            <div className="px-7 pb-7 sm:pb-0 sm:pr-8">
+              <Link href={banner.cta_url} className="inline-flex h-11 items-center rounded-full bg-banana px-6 text-[0.88rem] font-semibold text-forest-deep hover:brightness-105">
+                {banner.cta_label}
+              </Link>
+            </div>
+          ) : null}
+        </div>
+      </Reveal>
     </section>
   );
 }

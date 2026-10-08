@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { getHomeSections, getFaqs, getInstagramPosts } from "@/lib/data/content";
+import { getBanners, getHomeSections, getFaqs, getInstagramPosts } from "@/lib/data/content";
 import { getPublishedProducts } from "@/lib/data/catalog";
 import { getApprovedReviews, reviewStats } from "@/lib/data/reviews";
 import { getPublicSettings } from "@/lib/settings";
@@ -10,6 +10,7 @@ import {
   Comparison,
   ContactCta,
   FaqSection,
+  HomePromo,
   FeaturedProducts,
   HowItsMade,
   InstagramSection,
@@ -33,13 +34,14 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function HomePage() {
-  const [sections, products, reviews, faqs, instagram, settings] = await Promise.all([
+  const [sections, products, reviews, faqs, instagram, settings, promos] = await Promise.all([
     getHomeSections(),
     getPublishedProducts(),
     getApprovedReviews(),
     getFaqs(),
     getInstagramPosts(),
     getPublicSettings(),
+    getBanners("home_promo"),
   ]);
 
   const stats = Object.fromEntries(
@@ -93,7 +95,12 @@ export default async function HomePage() {
           <p className="mt-3 text-muted">{settings.store.tagline}</p>
         </section>
       ) : (
-        sections.map((section) => <div key={section.id}>{render(section)}</div>)
+        sections.map((section, i) => (
+          <div key={section.id}>
+            {render(section)}
+            {i === 0 && promos[0] ? <HomePromo banner={promos[0]} /> : null}
+          </div>
+        ))
       )}
     </>
   );
