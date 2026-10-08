@@ -109,3 +109,18 @@ describe("settings", () => {
     expect(parseSetting("tax", { gstin: "33ABCDE1234F1Z5" }).gstin).toBe("33ABCDE1234F1Z5");
   });
 });
+
+describe("test-only API overrides", () => {
+  it("are ignored on the live (production) deployment", async () => {
+    const { getRazorpayEnv } = await import("@/lib/env");
+    const saved = { ...process.env };
+    process.env.RAZORPAY_KEY_ID = "rzp_live_x";
+    process.env.RAZORPAY_KEY_SECRET = "secret";
+    process.env.RAZORPAY_API_BASE_URL = "http://127.0.0.1:4010/v1";
+    process.env.VERCEL_ENV = "production";
+    expect(getRazorpayEnv()?.apiBaseUrl).toBe("https://api.razorpay.com/v1");
+    process.env.VERCEL_ENV = "preview";
+    expect(getRazorpayEnv()?.apiBaseUrl).toBe("http://127.0.0.1:4010/v1");
+    process.env = saved;
+  });
+});

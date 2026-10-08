@@ -14,6 +14,16 @@ function read(name: string): string | undefined {
   return value && value.trim() !== "" ? value.trim() : undefined;
 }
 
+/**
+ * Test-only overrides (e.g. RAZORPAY_API_BASE_URL pointing at a local mock)
+ * are ignored on the live Vercel deployment, so a mistaken setting can never
+ * send payments or emails anywhere except the real providers.
+ */
+function testOverride(name: string): string | undefined {
+  if (process.env.VERCEL_ENV === "production") return undefined;
+  return read(name);
+}
+
 export function getSiteUrl(): string {
   const explicit = read("NEXT_PUBLIC_SITE_URL");
   if (explicit) return explicit.replace(/\/+$/, "");
@@ -54,8 +64,8 @@ export function getRazorpayEnv(): RazorpayEnv | null {
     keyId,
     keySecret,
     webhookSecret: read("RAZORPAY_WEBHOOK_SECRET") ?? null,
-    // Overridable only so automated tests can point at a local mock server.
-    apiBaseUrl: (read("RAZORPAY_API_BASE_URL") ?? "https://api.razorpay.com/v1").replace(/\/+$/, ""),
+    // Overridable only so automated tests can point at a local mock server (never in production).
+    apiBaseUrl: (testOverride("RAZORPAY_API_BASE_URL") ?? "https://api.razorpay.com/v1").replace(/\/+$/, ""),
     mode: keyId.startsWith("rzp_live_") ? "live" : "test",
   };
 }
@@ -69,7 +79,7 @@ export function getEmailEnv(): EmailEnv | null {
   return {
     resendApiKey,
     from,
-    apiBaseUrl: (read("RESEND_API_BASE_URL") ?? "https://api.resend.com").replace(/\/+$/, ""),
+    apiBaseUrl: (testOverride("RESEND_API_BASE_URL") ?? "https://api.resend.com").replace(/\/+$/, ""),
   };
 }
 
@@ -82,7 +92,7 @@ export function getShiprocketEnv(): ShiprocketEnv | null {
   return {
     email,
     password,
-    apiBaseUrl: (read("SHIPROCKET_API_BASE_URL") ?? "https://apiv2.shiprocket.in/v1/external").replace(/\/+$/, ""),
+    apiBaseUrl: (testOverride("SHIPROCKET_API_BASE_URL") ?? "https://apiv2.shiprocket.in/v1/external").replace(/\/+$/, ""),
   };
 }
 
