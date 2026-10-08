@@ -65,7 +65,8 @@ tests in `tests/` — not just written.
   idempotent webhooks, rate limits on login/contact/reviews/checkout,
   security headers + Content Security Policy, CSV formula-injection guard,
   test-only settings ignored in production.
-- 52 unit tests, 33 browser tests, lint and type checks pass; production
+- 52 unit tests, 31 browser tests (desktop + phone), 8 database security
+  tests, lint and type checks pass; production
   build succeeds. Production dependencies: 0 known vulnerabilities
   (`npm audit --omit=dev`). The only audit warnings are in the developer
   lint tool and are not part of the website.
