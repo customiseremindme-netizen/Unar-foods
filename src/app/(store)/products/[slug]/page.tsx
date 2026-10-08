@@ -90,7 +90,7 @@ export default async function ProductPage({ params }: { params: Params }) {
       </div>
 
       <section className="container-site grid gap-12 lg:grid-cols-12 lg:gap-16" aria-labelledby="product-title">
-        <div className="lg:col-span-7">
+        <div className="min-w-0 lg:col-span-7">
           <div className="lg:sticky lg:top-28">
             <ProductGallery
               productName={name}
@@ -99,7 +99,7 @@ export default async function ProductPage({ params }: { params: Params }) {
           </div>
         </div>
 
-        <div className="lg:col-span-5">
+        <div className="min-w-0 lg:col-span-5">
           {product.subtitle ? <p className="eyebrow">{product.subtitle}</p> : null}
           <h1 id="product-title" className="mt-3 text-[2.2rem] leading-tight sm:text-[2.7rem]">
             {product.title}
@@ -237,7 +237,7 @@ export default async function ProductPage({ params }: { params: Params }) {
       </section>
 
       <section id="reviews" aria-labelledby="reviews-title" className="container-site mt-24 grid gap-12 lg:grid-cols-12">
-        <div className="lg:col-span-5">
+        <div className="min-w-0 lg:col-span-5">
           <h2 id="reviews-title" className="text-[2rem]">
             Customer reviews
           </h2>
@@ -255,7 +255,7 @@ export default async function ProductPage({ params }: { params: Params }) {
             </div>
           ) : null}
         </div>
-        <div className="lg:col-span-7">
+        <div className="min-w-0 lg:col-span-7">
           {reviews.length > 0 ? (
             <ul className="divide-y divide-line border-y border-line">
               {reviews.map((r) => (
