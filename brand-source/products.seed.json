@@ -1,0 +1,68 @@
+{
+  "brand": "UNAR",
+  "tagline": "One Healthy Habit a Day",
+  "currency": "INR",
+  "pricing_notice": "MRPs below are from provided packaging artworks; ask owner to verify current sale prices before publication.",
+  "contact_from_packaging": {
+    "email": "unarfoods@gmail.com",
+    "phone": "9994657693",
+    "address": "107 A2-4, Sulochana Villa, SAPS Cinema Theatre Thottam, Trichy Road, Palladam, Tiruppur - 641664",
+    "fssai_license_printed": "22426493000447",
+    "verification_required": true
+  },
+  "products": [
+    {
+      "slug": "banana-chewy-dry-fruits-seeds",
+      "title": "Dehydrated Banana Chewy — With Dry Fruits & Seeds",
+      "short_title": "Banana Chewy — Dry Fruits & Seeds",
+      "weight_g": 100,
+      "label_mrp_inr": 149,
+      "internal_sku_suggestion": "UNAR-BC-NUTS-100",
+      "ingredients_as_printed": "Banana, Black & White Sesame Seed, Badam (Almonds), Cashew, Sunflower Seed, Black Dry Grapes, Melon Seed, Pumpkin Seed.",
+      "allergen_advice_as_printed": "Contains Sesame Seeds and Tree Nuts (Almonds, Cashews).",
+      "nutrition_per_100g": {
+        "energy_kcal": 380.85,
+        "protein_g": 9.53,
+        "carbohydrates_g": 71.08,
+        "fat_g": 6.49,
+        "total_sugars_g": 10.4,
+        "added_sugars_g": 0
+      },
+      "artwork_front": "packaging/nuts-front-original.jpg",
+      "artwork_back": "packaging/nuts-back-original.jpg",
+      "initial_stock": 0,
+      "publication_status": "draft_pending_owner_review"
+    },
+    {
+      "slug": "banana-chewy-fresh-raw-banana",
+      "title": "Dehydrated Banana Chewy — Fresh Raw Banana",
+      "short_title": "Banana Chewy — Fresh Raw Banana",
+      "weight_g": 100,
+      "label_mrp_inr": 120,
+      "internal_sku_suggestion": "UNAR-BC-RAW-100",
+      "ingredients_as_printed": "FRESH RAW BANANA",
+      "allergen_advice_as_printed": null,
+      "nutrition_per_100g": {
+        "energy_kcal": 348.72,
+        "protein_g": 0.3,
+        "carbohydrates_g": 86.49,
+        "fat_g": 0.5,
+        "total_sugars_g": 8.75,
+        "added_sugars_g": 0
+      },
+      "artwork_front": "packaging/raw-front-original.jpg",
+      "artwork_back": "packaging/raw-back-original.jpg",
+      "initial_stock": 0,
+      "publication_status": "draft_pending_owner_review"
+    }
+  ],
+  "on_pack_claims_pending_owner_confirmation": [
+    "100% Natural",
+    "No Added Sugar",
+    "No Preservatives",
+    "No Artificial Colour",
+    "Gluten Free",
+    "Best before 45 days from the date of Mfg."
+  ],
+  "source_notice": "Product claims and regulatory labels transcribed from user-supplied designs; any production publication requires owner approval."
+}

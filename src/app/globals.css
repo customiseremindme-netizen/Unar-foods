@@ -1,0 +1,195 @@
+@import "tailwindcss";
+
+/*
+ * UNAR design tokens.
+ * Brand palette: forest #2E4E36 · olive #7A8F3D · cream #F2F1E6 · sage #A8B99A
+ * Banana yellow is an accent only. Text colours are chosen for WCAG AA contrast.
+ * The owner can adjust the brand colours in Admin → Settings → Brand; those
+ * values override the variables below at runtime.
+ */
+@theme {
+  --color-forest: #2e4e36;
+  --color-forest-deep: #223b29;
+  --color-olive: #7a8f3d;
+  --color-olive-ink: #55652a;
+  --color-cream: #f2f1e6;
+  --color-cream-deep: #e7e5d4;
+  --color-paper: #faf8f1;
+  --color-sage: #a8b99a;
+  --color-sage-soft: #dfe6d6;
+  --color-graphite: #262823;
+  --color-muted: #595c51;
+  --color-line: #d8d6c4;
+  --color-banana: #e2b33c;
+  --color-banana-soft: #f6e8bd;
+  --color-danger: #a3392b;
+  --color-danger-soft: #f6dfd8;
+  --color-success: #2f6b3e;
+  --color-success-soft: #dcebd9;
+
+  --font-display: var(--font-fraunces), "Iowan Old Style", Georgia, serif;
+  --font-sans: var(--font-montserrat), ui-sans-serif, system-ui, sans-serif;
+  --font-script: var(--font-great-vibes), cursive;
+
+  --ease-leaf: cubic-bezier(0.22, 0.61, 0.36, 1);
+  --ease-out-soft: cubic-bezier(0.16, 1, 0.3, 1);
+
+  --shadow-soft: 0 1px 2px rgb(38 40 35 / 0.04), 0 8px 24px -12px rgb(46 78 54 / 0.18);
+  --shadow-lift: 0 2px 4px rgb(38 40 35 / 0.05), 0 22px 44px -20px rgb(46 78 54 / 0.32);
+
+  --animate-leaf-drift: leaf-drift 14s var(--ease-leaf) infinite alternate;
+  --animate-leaf-sway: leaf-sway 9s ease-in-out infinite alternate;
+  --animate-fade-in: fade-in 0.5s var(--ease-out-soft) both;
+  --animate-shimmer: shimmer 1.6s linear infinite;
+
+  @keyframes leaf-drift {
+    0% { transform: translate3d(0, 0, 0) rotate(0deg); }
+    100% { transform: translate3d(6px, -10px, 0) rotate(4deg); }
+  }
+  @keyframes leaf-sway {
+    0% { transform: rotate(-2.5deg); }
+    100% { transform: rotate(2.5deg); }
+  }
+  @keyframes fade-in {
+    from { opacity: 0; transform: translateY(6px); }
+    to { opacity: 1; transform: none; }
+  }
+  @keyframes shimmer {
+    from { background-position: -200% 0; }
+    to { background-position: 200% 0; }
+  }
+}
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+    scroll-behavior: smooth;
+    scroll-padding-top: 6rem;
+  }
+  body {
+    background-color: var(--color-cream);
+    color: var(--color-graphite);
+    font-family: var(--font-sans);
+    font-size: 1rem;
+    line-height: 1.7;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+  }
+  h1, h2, h3, h4 {
+    font-family: var(--font-display);
+    color: var(--color-forest);
+    font-weight: 450;
+    line-height: 1.12;
+    letter-spacing: -0.012em;
+    font-variation-settings: "SOFT" 50, "opsz" 72;
+    text-wrap: balance;
+  }
+  p {
+    text-wrap: pretty;
+  }
+  ::selection {
+    background: var(--color-banana-soft);
+    color: var(--color-forest-deep);
+  }
+  :focus-visible {
+    outline: 2px solid var(--color-forest);
+    outline-offset: 3px;
+    border-radius: 6px;
+  }
+  button, [role="button"] {
+    cursor: pointer;
+  }
+  button:disabled {
+    cursor: not-allowed;
+  }
+  input, select, textarea {
+    font: inherit;
+  }
+  img {
+    max-width: 100%;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+}
+
+@layer components {
+  .container-site {
+    width: 100%;
+    max-width: 80rem;
+    margin-inline: auto;
+    padding-inline: 1rem;
+  }
+  @media (min-width: 640px) {
+    .container-site { padding-inline: 1.5rem; }
+  }
+  @media (min-width: 1024px) {
+    .container-site { padding-inline: 2.5rem; }
+  }
+
+  .eyebrow {
+    font-family: var(--font-sans);
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--color-olive-ink);
+  }
+
+  /* Subtle paper grain, generated once and tiled (cheap to render). */
+  .paper {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.18 0 0 0 0 0.3 0 0 0 0 0.21 0 0 0 0.05 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+
+  /* Animated underline for text links. */
+  .link-underline {
+    background-image: linear-gradient(currentColor, currentColor);
+    background-size: 0% 1px;
+    background-position: 0 100%;
+    background-repeat: no-repeat;
+    transition: background-size 0.35s var(--ease-leaf);
+    padding-bottom: 2px;
+  }
+  .link-underline:hover,
+  .link-underline:focus-visible,
+  .link-underline[aria-current="page"] {
+    background-size: 100% 1px;
+  }
+
+  .skeleton {
+    background: linear-gradient(90deg, var(--color-cream-deep) 0%, var(--color-paper) 50%, var(--color-cream-deep) 100%);
+    background-size: 200% 100%;
+    animation: var(--animate-shimmer);
+    border-radius: 0.75rem;
+  }
+
+  /* Long-form text from the content manager (Markdown). */
+  .prose-unar {
+    color: var(--color-graphite);
+    font-size: 1.02rem;
+    line-height: 1.8;
+  }
+  .prose-unar > * + * { margin-top: 1.1em; }
+  .prose-unar h2 { font-size: 1.75rem; margin-top: 2em; }
+  .prose-unar h3 { font-size: 1.35rem; margin-top: 1.6em; }
+  .prose-unar a { color: var(--color-forest); text-decoration: underline; text-underline-offset: 3px; text-decoration-thickness: 1px; }
+  .prose-unar a:hover { text-decoration-thickness: 2px; }
+  .prose-unar ul { list-style: disc; padding-left: 1.4em; }
+  .prose-unar ol { list-style: decimal; padding-left: 1.4em; }
+  .prose-unar li + li { margin-top: 0.4em; }
+  .prose-unar li::marker { color: var(--color-olive); }
+  .prose-unar strong { color: var(--color-forest-deep); font-weight: 600; }
+  .prose-unar blockquote { border-left: 2px solid var(--color-sage); padding-left: 1em; color: var(--color-muted); font-style: italic; }
+  .prose-unar table { width: 100%; border-collapse: collapse; font-size: 0.95em; }
+  .prose-unar th, .prose-unar td { border-bottom: 1px solid var(--color-line); padding: 0.5em 0.25em; text-align: left; }
+  .prose-unar hr { border: 0; border-top: 1px solid var(--color-line); margin: 2em 0; }
+
+  @media print {
+    .no-print { display: none !important; }
+  }
+}

@@ -1,0 +1,889 @@
+
+export type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[]
+
+export type Database = {
+  
+  "public": {
+          Tables: {
+            "addresses": {
+                  Row: {
+                    "city": string,"country": string,"created_at": string,"full_name": string,"id": string,"is_default": boolean,"label": string | null,"landmark": string | null,"line1": string,"line2": string | null,"phone": string,"pincode": string,"state": string,"updated_at": string,"user_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "city": string,"country"?: string,"created_at"?: string,"full_name": string,"id"?: string,"is_default"?: boolean,"label"?: string | null,"landmark"?: string | null,"line1": string,"line2"?: string | null,"phone": string,"pincode": string,"state": string,"updated_at"?: string,"user_id": string
+                  }
+                  Update: {
+                    "city"?: string,"country"?: string,"created_at"?: string,"full_name"?: string,"id"?: string,"is_default"?: boolean,"label"?: string | null,"landmark"?: string | null,"line1"?: string,"line2"?: string | null,"phone"?: string,"pincode"?: string,"state"?: string,"updated_at"?: string,"user_id"?: string
+                  }
+                  Relationships: [
+                    
+                  ]
+                },"audit_logs": {
+                  Row: {
+                    "action": string,"actor_email": string | null,"actor_id": string | null,"created_at": string,"diff": Json | null,"entity_id": string | null,"entity_type": string,"id": number,"summary": string | null
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "action": string,"actor_email"?: string | null,"actor_id"?: string | null,"created_at"?: string,"diff"?: Json | null,"entity_id"?: string | null,"entity_type": string,"id"?: never,"summary"?: string | null
+                  }
+                  Update: {
+                    "action"?: string,"actor_email"?: string | null,"actor_id"?: string | null,"created_at"?: string,"diff"?: Json | null,"entity_id"?: string | null,"entity_type"?: string,"id"?: never,"summary"?: string | null
+                  }
+                  Relationships: [
+                    
+                  ]
+                },"banners": {
+                  Row: {
+                    "body": string | null,"created_at": string,"cta_label": string | null,"cta_url": string | null,"ends_at": string | null,"id": string,"image_alt": string | null,"image_url": string | null,"is_active": boolean,"placement": string,"sort_order": number,"starts_at": string | null,"title": string,"updated_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "body"?: string | null,"created_at"?: string,"cta_label"?: string | null,"cta_url"?: string | null,"ends_at"?: string | null,"id"?: string,"image_alt"?: string | null,"image_url"?: string | null,"is_active"?: boolean,"placement": string,"sort_order"?: number,"starts_at"?: string | null,"title": string,"updated_at"?: string
+                  }
+                  Update: {
+                    "body"?: string | null,"created_at"?: string,"cta_label"?: string | null,"cta_url"?: string | null,"ends_at"?: string | null,"id"?: string,"image_alt"?: string | null,"image_url"?: string | null,"is_active"?: boolean,"placement"?: string,"sort_order"?: number,"starts_at"?: string | null,"title"?: string,"updated_at"?: string
+                  }
+                  Relationships: [
+                    
+                  ]
+                },"cart_items": {
+                  Row: {
+                    "added_at": string,"cart_id": string,"quantity": number,"variant_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "added_at"?: string,"cart_id": string,"quantity": number,"variant_id": string
+                  }
+                  Update: {
+                    "added_at"?: string,"cart_id"?: string,"quantity"?: number,"variant_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "cart_items_cart_id_fkey"
+      columns: ["cart_id"]
+isOneToOne: false
+      referencedRelation: "carts"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "cart_items_variant_id_fkey"
+      columns: ["variant_id"]
+isOneToOne: false
+      referencedRelation: "product_variants"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"carts": {
+                  Row: {
+                    "coupon_code": string | null,"created_at": string,"email": string | null,"id": string,"recovery_consent": boolean,"status": string,"updated_at": string,"user_id": string | null
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "coupon_code"?: string | null,"created_at"?: string,"email"?: string | null,"id"?: string,"recovery_consent"?: boolean,"status"?: string,"updated_at"?: string,"user_id"?: string | null
+                  }
+                  Update: {
+                    "coupon_code"?: string | null,"created_at"?: string,"email"?: string | null,"id"?: string,"recovery_consent"?: boolean,"status"?: string,"updated_at"?: string,"user_id"?: string | null
+                  }
+                  Relationships: [
+                    
+                  ]
+                },"categories": {
+                  Row: {
+                    "created_at": string,"description": string | null,"id": string,"image_url": string | null,"is_active": boolean,"name": string,"seo_description": string | null,"seo_title": string | null,"slug": string,"sort_order": number,"updated_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "created_at"?: string,"description"?: string | null,"id"?: string,"image_url"?: string | null,"is_active"?: boolean,"name": string,"seo_description"?: string | null,"seo_title"?: string | null,"slug": string,"sort_order"?: number,"updated_at"?: string
+                  }
+                  Update: {
+                    "created_at"?: string,"description"?: string | null,"id"?: string,"image_url"?: string | null,"is_active"?: boolean,"name"?: string,"seo_description"?: string | null,"seo_title"?: string | null,"slug"?: string,"sort_order"?: number,"updated_at"?: string
+                  }
+                  Relationships: [
+                    
+                  ]
+                },"cms_pages": {
+                  Row: {
+                    "author_name": string | null,"body_md": string,"cover_image_alt": string | null,"cover_image_url": string | null,"created_at": string,"excerpt": string | null,"group_id": string,"id": string,"kind": string,"published_at": string | null,"requires_owner_review": boolean,"seo_description": string | null,"seo_title": string | null,"slug": string,"state": string,"title": string,"updated_at": string,"updated_by": string | null
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "author_name"?: string | null,"body_md"?: string,"cover_image_alt"?: string | null,"cover_image_url"?: string | null,"created_at"?: string,"excerpt"?: string | null,"group_id"?: string,"id"?: string,"kind": string,"published_at"?: string | null,"requires_owner_review"?: boolean,"seo_description"?: string | null,"seo_title"?: string | null,"slug": string,"state": string,"title": string,"updated_at"?: string,"updated_by"?: string | null
+                  }
+                  Update: {
+                    "author_name"?: string | null,"body_md"?: string,"cover_image_alt"?: string | null,"cover_image_url"?: string | null,"created_at"?: string,"excerpt"?: string | null,"group_id"?: string,"id"?: string,"kind"?: string,"published_at"?: string | null,"requires_owner_review"?: boolean,"seo_description"?: string | null,"seo_title"?: string | null,"slug"?: string,"state"?: string,"title"?: string,"updated_at"?: string,"updated_by"?: string | null
+                  }
+                  Relationships: [
+                    
+                  ]
+                },"cms_sections": {
+                  Row: {
+                    "content": NonNullable<Json>,"created_at": string,"id": string,"is_visible": boolean,"key": string,"page": string,"published_at": string | null,"sort_order": number,"state": string,"type": string,"updated_at": string,"updated_by": string | null
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "content"?: NonNullable<Json>,"created_at"?: string,"id"?: string,"is_visible"?: boolean,"key": string,"page"?: string,"published_at"?: string | null,"sort_order"?: number,"state": string,"type": string,"updated_at"?: string,"updated_by"?: string | null
+                  }
+                  Update: {
+                    "content"?: NonNullable<Json>,"created_at"?: string,"id"?: string,"is_visible"?: boolean,"key"?: string,"page"?: string,"published_at"?: string | null,"sort_order"?: number,"state"?: string,"type"?: string,"updated_at"?: string,"updated_by"?: string | null
+                  }
+                  Relationships: [
+                    
+                  ]
+                },"contact_messages": {
+                  Row: {
+                    "created_at": string,"email": string,"id": string,"message": string,"name": string,"phone": string | null,"status": string,"subject": string | null,"updated_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "created_at"?: string,"email": string,"id"?: string,"message": string,"name": string,"phone"?: string | null,"status"?: string,"subject"?: string | null,"updated_at"?: string
+                  }
+                  Update: {
+                    "created_at"?: string,"email"?: string,"id"?: string,"message"?: string,"name"?: string,"phone"?: string | null,"status"?: string,"subject"?: string | null,"updated_at"?: string
+                  }
+                  Relationships: [
+                    
+                  ]
+                },"coupon_usages": {
+                  Row: {
+                    "coupon_id": string,"created_at": string,"discount_paise": number,"email": string,"id": string,"order_id": string,"status": string,"updated_at": string,"user_id": string | null
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "coupon_id": string,"created_at"?: string,"discount_paise"?: number,"email": string,"id"?: string,"order_id": string,"status"?: string,"updated_at"?: string,"user_id"?: string | null
+                  }
+                  Update: {
+                    "coupon_id"?: string,"created_at"?: string,"discount_paise"?: number,"email"?: string,"id"?: string,"order_id"?: string,"status"?: string,"updated_at"?: string,"user_id"?: string | null
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "coupon_usages_coupon_id_fkey"
+      columns: ["coupon_id"]
+isOneToOne: false
+      referencedRelation: "coupons"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "coupon_usages_order_id_fkey"
+      columns: ["order_id"]
+isOneToOne: true
+      referencedRelation: "orders"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"coupons": {
+                  Row: {
+                    "code": string,"created_at": string,"description": string | null,"discount_type": string,"discount_value": number,"ends_at": string | null,"id": string,"is_active": boolean,"max_discount_paise": number | null,"min_subtotal_paise": number,"per_customer_limit": number | null,"starts_at": string | null,"updated_at": string,"usage_limit": number | null
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "code": string,"created_at"?: string,"description"?: string | null,"discount_type": string,"discount_value"?: number,"ends_at"?: string | null,"id"?: string,"is_active"?: boolean,"max_discount_paise"?: number | null,"min_subtotal_paise"?: number,"per_customer_limit"?: number | null,"starts_at"?: string | null,"updated_at"?: string,"usage_limit"?: number | null
+                  }
+                  Update: {
+                    "code"?: string,"created_at"?: string,"description"?: string | null,"discount_type"?: string,"discount_value"?: number,"ends_at"?: string | null,"id"?: string,"is_active"?: boolean,"max_discount_paise"?: number | null,"min_subtotal_paise"?: number,"per_customer_limit"?: number | null,"starts_at"?: string | null,"updated_at"?: string,"usage_limit"?: number | null
+                  }
+                  Relationships: [
+                    
+                  ]
+                },"faqs": {
+                  Row: {
+                    "answer_md": string,"category": string,"created_at": string,"id": string,"is_published": boolean,"question": string,"show_on_home": boolean,"sort_order": number,"updated_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "answer_md": string,"category"?: string,"created_at"?: string,"id"?: string,"is_published"?: boolean,"question": string,"show_on_home"?: boolean,"sort_order"?: number,"updated_at"?: string
+                  }
+                  Update: {
+                    "answer_md"?: string,"category"?: string,"created_at"?: string,"id"?: string,"is_published"?: boolean,"question"?: string,"show_on_home"?: boolean,"sort_order"?: number,"updated_at"?: string
+                  }
+                  Relationships: [
+                    
+                  ]
+                },"instagram_posts": {
+                  Row: {
+                    "caption": string | null,"created_at": string,"id": string,"image_alt": string,"image_url": string,"is_published": boolean,"permalink": string,"sort_order": number,"updated_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "caption"?: string | null,"created_at"?: string,"id"?: string,"image_alt"?: string,"image_url": string,"is_published"?: boolean,"permalink": string,"sort_order"?: number,"updated_at"?: string
+                  }
+                  Update: {
+                    "caption"?: string | null,"created_at"?: string,"id"?: string,"image_alt"?: string,"image_url"?: string,"is_published"?: boolean,"permalink"?: string,"sort_order"?: number,"updated_at"?: string
+                  }
+                  Relationships: [
+                    
+                  ]
+                },"inventory_movements": {
+                  Row: {
+                    "actor_id": string | null,"created_at": string,"delta": number,"id": number,"note": string | null,"order_id": string | null,"reason": string,"stock_after": number,"variant_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "actor_id"?: string | null,"created_at"?: string,"delta": number,"id"?: never,"note"?: string | null,"order_id"?: string | null,"reason": string,"stock_after": number,"variant_id": string
+                  }
+                  Update: {
+                    "actor_id"?: string | null,"created_at"?: string,"delta"?: number,"id"?: never,"note"?: string | null,"order_id"?: string | null,"reason"?: string,"stock_after"?: number,"variant_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "inventory_movements_order_id_fkey"
+      columns: ["order_id"]
+isOneToOne: false
+      referencedRelation: "orders"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "inventory_movements_variant_id_fkey"
+      columns: ["variant_id"]
+isOneToOne: false
+      referencedRelation: "product_variants"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"media_assets": {
+                  Row: {
+                    "alt": string,"created_at": string,"height": number | null,"id": string,"mime_type": string,"size_bytes": number,"storage_path": string,"uploaded_by": string | null,"url": string,"width": number | null
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "alt"?: string,"created_at"?: string,"height"?: number | null,"id"?: string,"mime_type": string,"size_bytes": number,"storage_path": string,"uploaded_by"?: string | null,"url": string,"width"?: number | null
+                  }
+                  Update: {
+                    "alt"?: string,"created_at"?: string,"height"?: number | null,"id"?: string,"mime_type"?: string,"size_bytes"?: number,"storage_path"?: string,"uploaded_by"?: string | null,"url"?: string,"width"?: number | null
+                  }
+                  Relationships: [
+                    
+                  ]
+                },"notification_log": {
+                  Row: {
+                    "channel": string,"created_at": string,"error": string | null,"id": number,"order_id": string | null,"provider_message_id": string | null,"recipient": string,"status": string,"template": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "channel"?: string,"created_at"?: string,"error"?: string | null,"id"?: never,"order_id"?: string | null,"provider_message_id"?: string | null,"recipient": string,"status": string,"template": string
+                  }
+                  Update: {
+                    "channel"?: string,"created_at"?: string,"error"?: string | null,"id"?: never,"order_id"?: string | null,"provider_message_id"?: string | null,"recipient"?: string,"status"?: string,"template"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "notification_log_order_id_fkey"
+      columns: ["order_id"]
+isOneToOne: false
+      referencedRelation: "orders"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"order_events": {
+                  Row: {
+                    "actor_id": string | null,"created_at": string,"id": number,"message": string,"order_id": string,"type": string,"visibility": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "actor_id"?: string | null,"created_at"?: string,"id"?: never,"message": string,"order_id": string,"type": string,"visibility"?: string
+                  }
+                  Update: {
+                    "actor_id"?: string | null,"created_at"?: string,"id"?: never,"message"?: string,"order_id"?: string,"type"?: string,"visibility"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "order_events_order_id_fkey"
+      columns: ["order_id"]
+isOneToOne: false
+      referencedRelation: "orders"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"order_items": {
+                  Row: {
+                    "created_at": string,"gst_rate": number | null,"hsn_code": string | null,"id": string,"image_url": string | null,"line_total_paise": number,"mrp_paise": number,"order_id": string,"product_id": string | null,"quantity": number,"sku": string | null,"title": string,"unit_price_paise": number,"variant_id": string | null,"variant_title": string | null,"weight_grams": number
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "created_at"?: string,"gst_rate"?: number | null,"hsn_code"?: string | null,"id"?: string,"image_url"?: string | null,"line_total_paise": number,"mrp_paise": number,"order_id": string,"product_id"?: string | null,"quantity": number,"sku"?: string | null,"title": string,"unit_price_paise": number,"variant_id"?: string | null,"variant_title"?: string | null,"weight_grams"?: number
+                  }
+                  Update: {
+                    "created_at"?: string,"gst_rate"?: number | null,"hsn_code"?: string | null,"id"?: string,"image_url"?: string | null,"line_total_paise"?: number,"mrp_paise"?: number,"order_id"?: string,"product_id"?: string | null,"quantity"?: number,"sku"?: string | null,"title"?: string,"unit_price_paise"?: number,"variant_id"?: string | null,"variant_title"?: string | null,"weight_grams"?: number
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "order_items_order_id_fkey"
+      columns: ["order_id"]
+isOneToOne: false
+      referencedRelation: "orders"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "order_items_product_id_fkey"
+      columns: ["product_id"]
+isOneToOne: false
+      referencedRelation: "products"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "order_items_variant_id_fkey"
+      columns: ["variant_id"]
+isOneToOne: false
+      referencedRelation: "product_variants"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"orders": {
+                  Row: {
+                    "access_token_hash": string,"attention_reason": string | null,"billing_address": Json | null,"cancel_reason": string | null,"cancelled_at": string | null,"cart_id": string | null,"cod_fee_paise": number,"coupon_code": string | null,"coupon_id": string | null,"created_at": string,"currency": string,"customer_name": string,"customer_note": string | null,"delivered_at": string | null,"discount_paise": number,"email": string,"fulfillment_status": string,"id": string,"marketing_consent": boolean,"needs_attention": boolean,"order_number": string,"paid_at": string | null,"payment_method": string,"payment_status": string,"phone": string,"placed_at": string | null,"prices_include_tax": boolean,"refunded_paise": number,"reservation_expires_at": string | null,"shipped_at": string | null,"shipping_address": NonNullable<Json>,"shipping_method": string | null,"shipping_paise": number,"shipping_zone_id": string | null,"status": string,"subtotal_paise": number,"tax_breakdown": NonNullable<Json>,"tax_paise": number,"terms_accepted_at": string | null,"total_paise": number,"total_weight_grams": number,"updated_at": string,"user_id": string | null
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "access_token_hash": string,"attention_reason"?: string | null,"billing_address"?: Json | null,"cancel_reason"?: string | null,"cancelled_at"?: string | null,"cart_id"?: string | null,"cod_fee_paise"?: number,"coupon_code"?: string | null,"coupon_id"?: string | null,"created_at"?: string,"currency"?: string,"customer_name": string,"customer_note"?: string | null,"delivered_at"?: string | null,"discount_paise"?: number,"email": string,"fulfillment_status"?: string,"id"?: string,"marketing_consent"?: boolean,"needs_attention"?: boolean,"order_number"?: string,"paid_at"?: string | null,"payment_method": string,"payment_status"?: string,"phone": string,"placed_at"?: string | null,"prices_include_tax"?: boolean,"refunded_paise"?: number,"reservation_expires_at"?: string | null,"shipped_at"?: string | null,"shipping_address": NonNullable<Json>,"shipping_method"?: string | null,"shipping_paise"?: number,"shipping_zone_id"?: string | null,"status"?: string,"subtotal_paise": number,"tax_breakdown"?: NonNullable<Json>,"tax_paise"?: number,"terms_accepted_at"?: string | null,"total_paise": number,"total_weight_grams"?: number,"updated_at"?: string,"user_id"?: string | null
+                  }
+                  Update: {
+                    "access_token_hash"?: string,"attention_reason"?: string | null,"billing_address"?: Json | null,"cancel_reason"?: string | null,"cancelled_at"?: string | null,"cart_id"?: string | null,"cod_fee_paise"?: number,"coupon_code"?: string | null,"coupon_id"?: string | null,"created_at"?: string,"currency"?: string,"customer_name"?: string,"customer_note"?: string | null,"delivered_at"?: string | null,"discount_paise"?: number,"email"?: string,"fulfillment_status"?: string,"id"?: string,"marketing_consent"?: boolean,"needs_attention"?: boolean,"order_number"?: string,"paid_at"?: string | null,"payment_method"?: string,"payment_status"?: string,"phone"?: string,"placed_at"?: string | null,"prices_include_tax"?: boolean,"refunded_paise"?: number,"reservation_expires_at"?: string | null,"shipped_at"?: string | null,"shipping_address"?: NonNullable<Json>,"shipping_method"?: string | null,"shipping_paise"?: number,"shipping_zone_id"?: string | null,"status"?: string,"subtotal_paise"?: number,"tax_breakdown"?: NonNullable<Json>,"tax_paise"?: number,"terms_accepted_at"?: string | null,"total_paise"?: number,"total_weight_grams"?: number,"updated_at"?: string,"user_id"?: string | null
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "orders_cart_id_fkey"
+      columns: ["cart_id"]
+isOneToOne: false
+      referencedRelation: "carts"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "orders_coupon_id_fkey"
+      columns: ["coupon_id"]
+isOneToOne: false
+      referencedRelation: "coupons"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "orders_shipping_zone_id_fkey"
+      columns: ["shipping_zone_id"]
+isOneToOne: false
+      referencedRelation: "shipping_zones"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"payments": {
+                  Row: {
+                    "amount_paise": number,"created_at": string,"error_code": string | null,"error_description": string | null,"id": string,"method": string | null,"order_id": string,"provider": string,"provider_order_id": string | null,"provider_payment_id": string | null,"raw": Json | null,"status": string,"updated_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "amount_paise": number,"created_at"?: string,"error_code"?: string | null,"error_description"?: string | null,"id"?: string,"method"?: string | null,"order_id": string,"provider": string,"provider_order_id"?: string | null,"provider_payment_id"?: string | null,"raw"?: Json | null,"status"?: string,"updated_at"?: string
+                  }
+                  Update: {
+                    "amount_paise"?: number,"created_at"?: string,"error_code"?: string | null,"error_description"?: string | null,"id"?: string,"method"?: string | null,"order_id"?: string,"provider"?: string,"provider_order_id"?: string | null,"provider_payment_id"?: string | null,"raw"?: Json | null,"status"?: string,"updated_at"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "payments_order_id_fkey"
+      columns: ["order_id"]
+isOneToOne: false
+      referencedRelation: "orders"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"product_categories": {
+                  Row: {
+                    "category_id": string,"product_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "category_id": string,"product_id": string
+                  }
+                  Update: {
+                    "category_id"?: string,"product_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "product_categories_category_id_fkey"
+      columns: ["category_id"]
+isOneToOne: false
+      referencedRelation: "categories"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "product_categories_product_id_fkey"
+      columns: ["product_id"]
+isOneToOne: false
+      referencedRelation: "products"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"product_images": {
+                  Row: {
+                    "alt": string,"created_at": string,"height": number | null,"id": string,"kind": string,"product_id": string,"sort_order": number,"storage_path": string | null,"url": string,"width": number | null
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "alt"?: string,"created_at"?: string,"height"?: number | null,"id"?: string,"kind"?: string,"product_id": string,"sort_order"?: number,"storage_path"?: string | null,"url": string,"width"?: number | null
+                  }
+                  Update: {
+                    "alt"?: string,"created_at"?: string,"height"?: number | null,"id"?: string,"kind"?: string,"product_id"?: string,"sort_order"?: number,"storage_path"?: string | null,"url"?: string,"width"?: number | null
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "product_images_product_id_fkey"
+      columns: ["product_id"]
+isOneToOne: false
+      referencedRelation: "products"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"product_variants": {
+                  Row: {
+                    "barcode": string | null,"created_at": string,"id": string,"is_active": boolean,"is_demo_stock": boolean,"low_stock_threshold": number,"mrp_paise": number,"price_paise": number,"product_id": string,"sku": string,"sort_order": number,"stock": number,"title": string,"updated_at": string,"weight_grams": number
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "barcode"?: string | null,"created_at"?: string,"id"?: string,"is_active"?: boolean,"is_demo_stock"?: boolean,"low_stock_threshold"?: number,"mrp_paise": number,"price_paise": number,"product_id": string,"sku": string,"sort_order"?: number,"stock"?: number,"title"?: string,"updated_at"?: string,"weight_grams"?: number
+                  }
+                  Update: {
+                    "barcode"?: string | null,"created_at"?: string,"id"?: string,"is_active"?: boolean,"is_demo_stock"?: boolean,"low_stock_threshold"?: number,"mrp_paise"?: number,"price_paise"?: number,"product_id"?: string,"sku"?: string,"sort_order"?: number,"stock"?: number,"title"?: string,"updated_at"?: string,"weight_grams"?: number
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "product_variants_product_id_fkey"
+      columns: ["product_id"]
+isOneToOne: false
+      referencedRelation: "products"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"products": {
+                  Row: {
+                    "allergens": string | null,"benefits": NonNullable<Json>,"claims": NonNullable<Json>,"created_at": string,"description_md": string,"dietary_mark": string | null,"fssai_license": string | null,"gst_rate": number | null,"hsn_code": string | null,"id": string,"ingredients": string | null,"is_featured": boolean,"manufacturer_info": string | null,"nutrition": NonNullable<Json>,"nutrition_note": string | null,"og_image_url": string | null,"published_at": string | null,"seo_description": string | null,"seo_title": string | null,"shelf_life": string | null,"shelf_life_approved": boolean,"shipping_returns_md": string | null,"short_description": string | null,"short_title": string | null,"slug": string,"sort_order": number,"status": string,"storage_instructions": string | null,"subtitle": string | null,"title": string,"updated_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "allergens"?: string | null,"benefits"?: NonNullable<Json>,"claims"?: NonNullable<Json>,"created_at"?: string,"description_md"?: string,"dietary_mark"?: string | null,"fssai_license"?: string | null,"gst_rate"?: number | null,"hsn_code"?: string | null,"id"?: string,"ingredients"?: string | null,"is_featured"?: boolean,"manufacturer_info"?: string | null,"nutrition"?: NonNullable<Json>,"nutrition_note"?: string | null,"og_image_url"?: string | null,"published_at"?: string | null,"seo_description"?: string | null,"seo_title"?: string | null,"shelf_life"?: string | null,"shelf_life_approved"?: boolean,"shipping_returns_md"?: string | null,"short_description"?: string | null,"short_title"?: string | null,"slug": string,"sort_order"?: number,"status"?: string,"storage_instructions"?: string | null,"subtitle"?: string | null,"title": string,"updated_at"?: string
+                  }
+                  Update: {
+                    "allergens"?: string | null,"benefits"?: NonNullable<Json>,"claims"?: NonNullable<Json>,"created_at"?: string,"description_md"?: string,"dietary_mark"?: string | null,"fssai_license"?: string | null,"gst_rate"?: number | null,"hsn_code"?: string | null,"id"?: string,"ingredients"?: string | null,"is_featured"?: boolean,"manufacturer_info"?: string | null,"nutrition"?: NonNullable<Json>,"nutrition_note"?: string | null,"og_image_url"?: string | null,"published_at"?: string | null,"seo_description"?: string | null,"seo_title"?: string | null,"shelf_life"?: string | null,"shelf_life_approved"?: boolean,"shipping_returns_md"?: string | null,"short_description"?: string | null,"short_title"?: string | null,"slug"?: string,"sort_order"?: number,"status"?: string,"storage_instructions"?: string | null,"subtitle"?: string | null,"title"?: string,"updated_at"?: string
+                  }
+                  Relationships: [
+                    
+                  ]
+                },"profiles": {
+                  Row: {
+                    "created_at": string,"email": string | null,"full_name": string | null,"id": string,"marketing_consent": boolean,"phone": string | null,"updated_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "created_at"?: string,"email"?: string | null,"full_name"?: string | null,"id": string,"marketing_consent"?: boolean,"phone"?: string | null,"updated_at"?: string
+                  }
+                  Update: {
+                    "created_at"?: string,"email"?: string | null,"full_name"?: string | null,"id"?: string,"marketing_consent"?: boolean,"phone"?: string | null,"updated_at"?: string
+                  }
+                  Relationships: [
+                    
+                  ]
+                },"rate_limits": {
+                  Row: {
+                    "count": number,"key": string,"window_start": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "count"?: number,"key": string,"window_start": string
+                  }
+                  Update: {
+                    "count"?: number,"key"?: string,"window_start"?: string
+                  }
+                  Relationships: [
+                    
+                  ]
+                },"refunds": {
+                  Row: {
+                    "amount_paise": number,"created_at": string,"created_by": string | null,"id": string,"order_id": string,"payment_id": string | null,"provider": string,"provider_refund_id": string | null,"reason": string | null,"restocked": boolean,"status": string,"updated_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "amount_paise": number,"created_at"?: string,"created_by"?: string | null,"id"?: string,"order_id": string,"payment_id"?: string | null,"provider"?: string,"provider_refund_id"?: string | null,"reason"?: string | null,"restocked"?: boolean,"status"?: string,"updated_at"?: string
+                  }
+                  Update: {
+                    "amount_paise"?: number,"created_at"?: string,"created_by"?: string | null,"id"?: string,"order_id"?: string,"payment_id"?: string | null,"provider"?: string,"provider_refund_id"?: string | null,"reason"?: string | null,"restocked"?: boolean,"status"?: string,"updated_at"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "refunds_order_id_fkey"
+      columns: ["order_id"]
+isOneToOne: false
+      referencedRelation: "orders"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "refunds_payment_id_fkey"
+      columns: ["payment_id"]
+isOneToOne: false
+      referencedRelation: "payments"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"reviews": {
+                  Row: {
+                    "admin_reply": string | null,"approved_at": string | null,"author_name": string,"body": string,"created_at": string,"id": string,"is_verified_purchase": boolean,"product_id": string,"rating": number,"status": string,"title": string | null,"updated_at": string,"user_id": string | null
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "admin_reply"?: string | null,"approved_at"?: string | null,"author_name": string,"body": string,"created_at"?: string,"id"?: string,"is_verified_purchase"?: boolean,"product_id": string,"rating": number,"status"?: string,"title"?: string | null,"updated_at"?: string,"user_id"?: string | null
+                  }
+                  Update: {
+                    "admin_reply"?: string | null,"approved_at"?: string | null,"author_name"?: string,"body"?: string,"created_at"?: string,"id"?: string,"is_verified_purchase"?: boolean,"product_id"?: string,"rating"?: number,"status"?: string,"title"?: string | null,"updated_at"?: string,"user_id"?: string | null
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "reviews_product_id_fkey"
+      columns: ["product_id"]
+isOneToOne: false
+      referencedRelation: "products"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"role_permissions": {
+                  Row: {
+                    "permission": string,"role": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "permission": string,"role": string
+                  }
+                  Update: {
+                    "permission"?: string,"role"?: string
+                  }
+                  Relationships: [
+                    
+                  ]
+                },"settings": {
+                  Row: {
+                    "is_public": boolean,"key": string,"updated_at": string,"updated_by": string | null,"value": NonNullable<Json>
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "is_public"?: boolean,"key": string,"updated_at"?: string,"updated_by"?: string | null,"value"?: NonNullable<Json>
+                  }
+                  Update: {
+                    "is_public"?: boolean,"key"?: string,"updated_at"?: string,"updated_by"?: string | null,"value"?: NonNullable<Json>
+                  }
+                  Relationships: [
+                    
+                  ]
+                },"shipment_events": {
+                  Row: {
+                    "created_at": string,"description": string | null,"id": number,"location": string | null,"occurred_at": string,"shipment_id": string,"source": string,"status": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "created_at"?: string,"description"?: string | null,"id"?: never,"location"?: string | null,"occurred_at"?: string,"shipment_id": string,"source"?: string,"status": string
+                  }
+                  Update: {
+                    "created_at"?: string,"description"?: string | null,"id"?: never,"location"?: string | null,"occurred_at"?: string,"shipment_id"?: string,"source"?: string,"status"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "shipment_events_shipment_id_fkey"
+      columns: ["shipment_id"]
+isOneToOne: false
+      referencedRelation: "shipments"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"shipments": {
+                  Row: {
+                    "awb_code": string | null,"carrier": string | null,"created_at": string,"delivered_at": string | null,"id": string,"label_url": string | null,"order_id": string,"provider": string,"provider_order_id": string | null,"provider_shipment_id": string | null,"shipped_at": string | null,"status": string,"tracking_number": string | null,"tracking_url": string | null,"updated_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "awb_code"?: string | null,"carrier"?: string | null,"created_at"?: string,"delivered_at"?: string | null,"id"?: string,"label_url"?: string | null,"order_id": string,"provider"?: string,"provider_order_id"?: string | null,"provider_shipment_id"?: string | null,"shipped_at"?: string | null,"status"?: string,"tracking_number"?: string | null,"tracking_url"?: string | null,"updated_at"?: string
+                  }
+                  Update: {
+                    "awb_code"?: string | null,"carrier"?: string | null,"created_at"?: string,"delivered_at"?: string | null,"id"?: string,"label_url"?: string | null,"order_id"?: string,"provider"?: string,"provider_order_id"?: string | null,"provider_shipment_id"?: string | null,"shipped_at"?: string | null,"status"?: string,"tracking_number"?: string | null,"tracking_url"?: string | null,"updated_at"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "shipments_order_id_fkey"
+      columns: ["order_id"]
+isOneToOne: false
+      referencedRelation: "orders"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"shipping_zones": {
+                  Row: {
+                    "additional_rate_paise": number,"additional_weight_step_grams": number,"base_rate_paise": number,"base_weight_grams": number,"cod_available": boolean,"created_at": string,"delivery_estimate": string | null,"flat_rate_paise": number,"free_shipping_threshold_paise": number | null,"id": string,"is_active": boolean,"match_type": string,"name": string,"notes": string | null,"pincode_prefixes": (string)[],"rate_type": string,"sort_order": number,"states": (string)[],"updated_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "additional_rate_paise"?: number,"additional_weight_step_grams"?: number,"base_rate_paise"?: number,"base_weight_grams"?: number,"cod_available"?: boolean,"created_at"?: string,"delivery_estimate"?: string | null,"flat_rate_paise"?: number,"free_shipping_threshold_paise"?: number | null,"id"?: string,"is_active"?: boolean,"match_type"?: string,"name": string,"notes"?: string | null,"pincode_prefixes"?: (string)[],"rate_type"?: string,"sort_order"?: number,"states"?: (string)[],"updated_at"?: string
+                  }
+                  Update: {
+                    "additional_rate_paise"?: number,"additional_weight_step_grams"?: number,"base_rate_paise"?: number,"base_weight_grams"?: number,"cod_available"?: boolean,"created_at"?: string,"delivery_estimate"?: string | null,"flat_rate_paise"?: number,"free_shipping_threshold_paise"?: number | null,"id"?: string,"is_active"?: boolean,"match_type"?: string,"name"?: string,"notes"?: string | null,"pincode_prefixes"?: (string)[],"rate_type"?: string,"sort_order"?: number,"states"?: (string)[],"updated_at"?: string
+                  }
+                  Relationships: [
+                    
+                  ]
+                },"staff_members": {
+                  Row: {
+                    "created_at": string,"created_by": string | null,"role": string,"updated_at": string,"user_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "created_at"?: string,"created_by"?: string | null,"role": string,"updated_at"?: string,"user_id": string
+                  }
+                  Update: {
+                    "created_at"?: string,"created_by"?: string | null,"role"?: string,"updated_at"?: string,"user_id"?: string
+                  }
+                  Relationships: [
+                    
+                  ]
+                },"subscribers": {
+                  Row: {
+                    "consent_at": string,"consent_text": string,"created_at": string,"email": string,"id": string,"source": string | null,"status": string,"unsubscribe_token": string,"unsubscribed_at": string | null,"updated_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "consent_at"?: string,"consent_text": string,"created_at"?: string,"email": string,"id"?: string,"source"?: string | null,"status"?: string,"unsubscribe_token": string,"unsubscribed_at"?: string | null,"updated_at"?: string
+                  }
+                  Update: {
+                    "consent_at"?: string,"consent_text"?: string,"created_at"?: string,"email"?: string,"id"?: string,"source"?: string | null,"status"?: string,"unsubscribe_token"?: string,"unsubscribed_at"?: string | null,"updated_at"?: string
+                  }
+                  Relationships: [
+                    
+                  ]
+                },"webhook_events": {
+                  Row: {
+                    "error": string | null,"event_id": string,"event_type": string | null,"id": string,"payload": Json | null,"processed_at": string | null,"provider": string,"received_at": string,"status": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "error"?: string | null,"event_id": string,"event_type"?: string | null,"id"?: string,"payload"?: Json | null,"processed_at"?: string | null,"provider": string,"received_at"?: string,"status"?: string
+                  }
+                  Update: {
+                    "error"?: string | null,"event_id"?: string,"event_type"?: string | null,"id"?: string,"payload"?: Json | null,"processed_at"?: string | null,"provider"?: string,"received_at"?: string,"status"?: string
+                  }
+                  Relationships: [
+                    
+                  ]
+                }
+          }
+          Views: {
+            [_ in never]: never
+          }
+          Functions: {
+            "_clear_order_cart":
+{ Args: { "p_order_id": string }; Returns: undefined
+                           },
+"_order_event":
+{ Args: { "p_actor": string,"p_message": string,"p_order_id": string,"p_type": string,"p_visibility": string }; Returns: undefined
+                           },
+"_restock_order_items":
+{ Args: { "p_actor": string,"p_note": string,"p_order_id": string,"p_reason": string }; Returns: undefined
+                           },
+"adjust_stock":
+{ Args: { "p_delta": number,"p_note": string,"p_reason": string,"p_variant_id": string }; Returns: number
+                           },
+"admin_cancel_order":
+{ Args: { "p_order_id": string,"p_reason": string,"p_restock": boolean }; Returns: string
+                           },
+"admin_customers":
+{ Args: { "p_limit": number,"p_offset": number,"p_search": string }; Returns: {
+              "created_at": string,"email": string,"full_name": string,"is_registered": boolean,"last_order_at": string,"marketing_consent": boolean,"orders_count": number,"paid_orders": number,"phone": string,"total_count": number,"total_spent_paise": number,"user_id": string
+            }[]
+                           },
+"assert_permission":
+{ Args: { "perm": string }; Returns: undefined
+                           },
+"attach_provider_order":
+{ Args: { "p_amount_paise": number,"p_order_id": string,"p_provider_order_id": string }; Returns: undefined
+                           },
+"bootstrap_owner":
+{ Args: { "p_email": string }; Returns: string
+                           },
+"check_rate_limit":
+{ Args: { "p_key": string,"p_limit": number,"p_window_seconds": number }; Returns: boolean
+                           },
+"cleanup_rate_limits":
+{ Args: Record<PropertyKey, never>; Returns: undefined
+                           },
+"create_order":
+{ Args: { "p_items": Json,"p_order": Json }; Returns: Json
+                           },
+"discard_section_drafts":
+{ Args: { "p_page": string }; Returns: undefined
+                           },
+"has_permission":
+{ Args: { "perm": string }; Returns: boolean
+                           },
+"is_service_role":
+{ Args: Record<PropertyKey, never>; Returns: boolean
+                           },
+"is_staff":
+{ Args: Record<PropertyKey, never>; Returns: boolean
+                           },
+"log_admin_action":
+{ Args: { "p_action": string,"p_diff": Json,"p_entity_id": string,"p_entity_type": string,"p_summary": string }; Returns: undefined
+                           },
+"mark_cod_collected":
+{ Args: { "p_order_id": string }; Returns: undefined
+                           },
+"mark_order_paid":
+{ Args: { "p_amount_paise": number,"p_method": string,"p_order_id": string,"p_payment_status": string,"p_provider_order_id": string,"p_provider_payment_id": string,"p_raw": Json }; Returns: string
+                           },
+"my_staff_access":
+{ Args: Record<PropertyKey, never>; Returns: {
+              "permissions": (string)[],"role": string
+            }[]
+                           },
+"publish_cms_page":
+{ Args: { "p_group_id": string }; Returns: undefined
+                           },
+"publish_sections":
+{ Args: { "p_page": string }; Returns: undefined
+                           },
+"record_payment_failure":
+{ Args: { "p_error_code": string,"p_error_description": string,"p_order_id": string,"p_provider_order_id": string,"p_provider_payment_id": string,"p_raw": Json }; Returns: undefined
+                           },
+"record_refund":
+{ Args: { "p_amount_paise": number,"p_order_id": string,"p_provider": string,"p_provider_refund_id": string,"p_reason": string,"p_restock": boolean,"p_status": string }; Returns: string
+                           },
+"release_order":
+{ Args: { "p_new_status": string,"p_order_id": string,"p_reason": string }; Returns: boolean
+                           },
+"report_coupon_usage":
+{ Args: { "p_from": string,"p_to": string }; Returns: {
+              "code": string,"discount_paise": number,"revenue_paise": number,"uses": number
+            }[]
+                           },
+"report_daily_sales":
+{ Args: { "p_from": string,"p_to": string }; Returns: {
+              "day": string,"orders": number,"refunds_paise": number,"revenue_paise": number
+            }[]
+                           },
+"report_product_sales":
+{ Args: { "p_from": string,"p_to": string }; Returns: {
+              "product_id": string,"revenue_paise": number,"sku": string,"title": string,"units": number
+            }[]
+                           },
+"report_summary":
+{ Args: { "p_from": string,"p_to": string }; Returns: Json
+                           },
+"set_fulfillment_status":
+{ Args: { "p_customer_visible": boolean,"p_message": string,"p_order_id": string,"p_status": string }; Returns: undefined
+                           },
+"unpublish_cms_page":
+{ Args: { "p_group_id": string }; Returns: undefined
+                           },
+"update_refund_status":
+{ Args: { "p_provider_refund_id": string,"p_status": string }; Returns: undefined
+                           }
+          }
+          Enums: {
+            [_ in never]: never
+          }
+          CompositeTypes: {
+            [_ in never]: never
+          }
+        }
+}
+
+type DatabaseWithoutInternals = Omit<Database, '__InternalSupabase'>
+
+type DefaultSchema = DatabaseWithoutInternals[Extract<keyof Database, "public">]
+
+export type Tables<
+  DefaultSchemaTableNameOrOptions extends
+    | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+        DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
+    : never = never
+> = DefaultSchemaTableNameOrOptions extends { schema: keyof DatabaseWithoutInternals }
+  ? (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+      DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])[TableName] extends {
+      Row: infer R
+    }
+    ? R
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
+  ? (DefaultSchema["Tables"] & DefaultSchema["Views"])[DefaultSchemaTableNameOrOptions] extends {
+      Row: infer R
+    }
+    ? R
+    : never
+  : never
+
+export type TablesInsert<
+  DefaultSchemaTableNameOrOptions extends
+    | keyof DefaultSchema["Tables"]
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+    : never = never
+> = DefaultSchemaTableNameOrOptions extends { schema: keyof DatabaseWithoutInternals }
+  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+      Insert: infer I
+    }
+    ? I
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
+  ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+      Insert: infer I
+    }
+    ? I
+    : never
+  : never
+
+export type TablesUpdate<
+  DefaultSchemaTableNameOrOptions extends
+    | keyof DefaultSchema["Tables"]
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+    : never = never
+> = DefaultSchemaTableNameOrOptions extends { schema: keyof DatabaseWithoutInternals }
+  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+      Update: infer U
+    }
+    ? U
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
+  ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+      Update: infer U
+    }
+    ? U
+    : never
+  : never
+
+export type Enums<
+  DefaultSchemaEnumNameOrOptions extends
+    | keyof DefaultSchema["Enums"]
+    | { schema: keyof DatabaseWithoutInternals },
+  EnumName extends DefaultSchemaEnumNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
+    : never = never
+> = DefaultSchemaEnumNameOrOptions extends { schema: keyof DatabaseWithoutInternals }
+  ? DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"][EnumName]
+  : DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema["Enums"]
+  ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
+  : never
+
+export type CompositeTypes<
+  PublicCompositeTypeNameOrOptions extends
+    | keyof DefaultSchema["CompositeTypes"]
+    | { schema: keyof DatabaseWithoutInternals },
+  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
+    : never = never
+> = PublicCompositeTypeNameOrOptions extends { schema: keyof DatabaseWithoutInternals }
+  ? DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
+  : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema["CompositeTypes"]
+  ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
+  : never
+
+export const Constants = {
+  "public": {
+          Enums: {
+            
+          }
+        }
+} as const
