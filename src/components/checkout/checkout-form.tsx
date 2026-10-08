@@ -234,11 +234,10 @@ export function CheckoutForm({
     return () => window.removeEventListener("unar:payment-failed", onFail);
   }, []);
 
-  useEffect(() => {
-    if (quote && paymentMethod === "cod" && !quote.codAvailable && quote.shipping.status === "ok" && onlineAvailable) {
-      setPaymentMethod("razorpay");
-    }
-  }, [quote, paymentMethod, onlineAvailable]);
+  // COD isn't offered for this address: switch to online payment.
+  if (quote && paymentMethod === "cod" && !quote.codAvailable && quote.shipping.status === "ok" && onlineAvailable) {
+    setPaymentMethod("razorpay");
+  }
 
   const lines = cartState?.cart.lines ?? [];
   const showCod = codEnabled && (quote ? quote.codAvailable || quote.shipping.status !== "ok" : true);

@@ -45,10 +45,13 @@ export function SiteHeader({
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-  useEffect(() => {
+  // Close menus after navigating (state adjusted during render, not in an effect).
+  const [lastPath, setLastPath] = useState(pathname);
+  if (pathname !== lastPath) {
+    setLastPath(pathname);
     setMenuOpen(false);
     setSearchOpen(false);
-  }, [pathname]);
+  }
 
   const iconBtn =
     "relative grid size-11 place-items-center rounded-full text-forest transition-colors duration-300 hover:bg-forest/[0.07]";

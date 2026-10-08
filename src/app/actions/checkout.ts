@@ -116,6 +116,9 @@ export async function placeOrderAction(payload: unknown): Promise<PlaceOrderResu
   if (!admin) return { ok: false, message: "The shop isn't connected to its database yet. Please try again later." };
 
   const [user, settings] = await Promise.all([getSessionUser(), getAllSettings()]);
+  if (settings.maintenance.enabled) {
+    return { ok: false, message: "The shop is closed for maintenance right now. Please try again a little later." };
+  }
   if (!user && !settings.checkout.guest_checkout_enabled) {
     return { ok: false, message: "Please sign in to place an order." };
   }

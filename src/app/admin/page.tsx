@@ -55,7 +55,38 @@ export default async function AdminOverviewPage({ searchParams }: { searchParams
     access.permissions.has("settings.write") ? getLaunchChecklist() : Promise.resolve(null),
   ]);
 
-  const s = (summaryRes.data ?? null) as Summary | null;
+  let s = (summaryRes.data ?? null) as Summary | null;
+  // Staff without report access still need their work queue counts.
+  if (!s && canOrders) {
+    const count = async (q: PromiseLike<{ count: number | null }>) => (await q).count ?? 0;
+    const head = { count: "exact" as const, head: true };
+    const [toFulfil, awaiting, cod, attention] = await Promise.all([
+      count(
+        supabase
+          .from("orders")
+          .select("id", head)
+          .eq("status", "placed")
+          .in("fulfillment_status", ["unfulfilled", "processing", "packed"])
+          .in("payment_status", ["paid", "partially_refunded", "cod_pending"]),
+      ),
+      count(supabase.from("orders").select("id", head).eq("status", "pending_payment")),
+      count(supabase.from("orders").select("id", head).eq("status", "placed").eq("payment_status", "cod_pending")),
+      count(supabase.from("orders").select("id", head).eq("needs_attention", true)),
+    ]);
+    s = {
+      paid_orders: 0,
+      gross_revenue_paise: 0,
+      refunds_paise: 0,
+      discounts_paise: 0,
+      orders_to_fulfil: toFulfil,
+      awaiting_payment: awaiting,
+      cod_pending_orders: cod,
+      cod_pending_paise: 0,
+      needs_attention: attention,
+      low_stock_variants: 0,
+      new_customers: 0,
+    };
+  }
   const daily = (dailyRes.data ?? []) as DailyPoint[];
   const topProducts = ((productsRes.data ?? []) as { title: string; sku: string; units: number; revenue_paise: number }[]).slice(0, 5);
   const lowStock = ((lowStockRes.data ?? []) as unknown as { id: string; title: string; sku: string; stock: number; low_stock_threshold: number; products: { title: string; status: string } | null }[]).filter(
@@ -115,7 +146,7 @@ export default async function AdminOverviewPage({ searchParams }: { searchParams
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         <StatCard label="To fulfil" value={s?.orders_to_fulfil ?? "—"} href="/admin/orders?view=to_fulfil" hint="Paid / COD orders not shipped" />
         <StatCard label="Awaiting payment" value={s?.awaiting_payment ?? "—"} href="/admin/orders?status=pending_payment" hint="Stock reserved temporarily" />
-        <StatCard label="COD to collect" value={s ? formatINR(s.cod_pending_paise) : "—"} hint={s ? `${s.cod_pending_orders} order(s)` : undefined} href="/admin/orders?payment=cod_pending" />
+        <StatCard label="COD to collect" value={s ? (canReports ? formatINR(s.cod_pending_paise) : s.cod_pending_orders) : "—"} hint={s ? `${s.cod_pending_orders} order(s)` : undefined} href="/admin/orders?payment=cod_pending" />
         <StatCard
           label="Low stock"
           value={lowStock.length}
