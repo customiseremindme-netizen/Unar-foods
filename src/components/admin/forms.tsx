@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { createContext, useContext, useState, useTransition, type ReactNode } from "react";
+import { createContext, useContext, useEffect, useState, useTransition, type ReactNode } from "react";
 import { Button, type ButtonProps } from "@/components/ui/button";
 import { useToast } from "@/components/ui/toast";
 import type { ActionResult } from "@/lib/admin/action";
@@ -105,4 +105,28 @@ export function ActionButton({
       {children}
     </Button>
   );
+}
+
+/** Save bar pinned to the bottom of long editors (products, settings, content). */
+export function StickySaveBar({ dirty, children }: { dirty: boolean; children: ReactNode }) {
+  return (
+    <div className="fixed inset-x-0 bottom-0 z-30 border-t border-line bg-paper/95 backdrop-blur lg:left-64">
+      <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-end gap-3 px-4 py-3 sm:px-6">
+        <p className="mr-auto text-[0.82rem] text-muted" aria-live="polite">
+          {dirty ? "You have unsaved changes." : "All changes saved."}
+        </p>
+        {children}
+      </div>
+    </div>
+  );
+}
+
+/** Warns before leaving the page with unsaved changes. */
+export function useUnsavedWarning(dirty: boolean) {
+  useEffect(() => {
+    if (!dirty) return;
+    const warn = (e: BeforeUnloadEvent) => e.preventDefault();
+    window.addEventListener("beforeunload", warn);
+    return () => window.removeEventListener("beforeunload", warn);
+  }, [dirty]);
 }

@@ -3,7 +3,7 @@ import type { ReactNode } from "react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { BadgeCheck, Leaf, PackageCheck, ShieldCheck, Truck } from "lucide-react";
-import { getProductBySlug, getPublishedProducts, primaryImage, variantAvailability } from "@/lib/data/catalog";
+import { getPreviewProductBySlug, getProductBySlug, getPublishedProducts, primaryImage, variantAvailability } from "@/lib/data/catalog";
 import { getProductReviews, reviewStats } from "@/lib/data/reviews";
 import { getPublicSettings } from "@/lib/settings";
 import { getSiteUrl } from "@/lib/env";
@@ -30,8 +30,10 @@ type Params = Promise<{ slug: string }>;
 
 export async function generateMetadata({ params }: { params: Params }): Promise<Metadata> {
   const { slug } = await params;
-  const product = await getProductBySlug(slug);
+  const published = await getProductBySlug(slug);
+  const product = published ?? (await getPreviewProductBySlug(slug));
   if (!product) return { title: "Product not found", robots: { index: false } };
+  if (!published) return { title: `Preview: ${product.title}`, robots: { index: false, follow: false } };
   const image = product.og_image_url ?? primaryImage(product)?.url;
   const title = product.seo_title || product.title;
   const description = product.seo_description || product.short_description || undefined;
@@ -59,7 +61,7 @@ function DetailBlock({ title, children, id }: { title: string; children: ReactNo
 
 export default async function ProductPage({ params }: { params: Params }) {
   const { slug } = await params;
-  const product = await getProductBySlug(slug);
+  const product = (await getProductBySlug(slug)) ?? (await getPreviewProductBySlug(slug));
   if (!product) notFound();
 
   const [settings, reviews, all] = await Promise.all([getPublicSettings(), getProductReviews(product.id), getPublishedProducts()]);

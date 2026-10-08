@@ -32,9 +32,9 @@ export function PageHeader({
   );
 }
 
-export function Card({ title, description, actions, children, className }: { title?: string; description?: ReactNode; actions?: ReactNode; children: ReactNode; className?: string }) {
+export function Card({ title, description, actions, children, className, id }: { title?: string; description?: ReactNode; actions?: ReactNode; children: ReactNode; className?: string; id?: string }) {
   return (
-    <section className={cn("rounded-[1.5rem] border border-line bg-paper p-5 sm:p-6", className)}>
+    <section id={id} className={cn("scroll-mt-6 rounded-[1.5rem] border border-line bg-paper p-5 sm:p-6", className)}>
       {title || actions ? (
         <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
           <div>

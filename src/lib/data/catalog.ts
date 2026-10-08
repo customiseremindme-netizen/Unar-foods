@@ -1,6 +1,9 @@
 import "server-only";
 import { cache } from "react";
+import { draftMode } from "next/headers";
 import { getPublicSupabase } from "@/lib/supabase/public";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { getStaffAccess } from "@/lib/auth/session";
 import { logError } from "@/lib/monitoring";
 
 export type LabelItem = { label: string; approved: boolean };
@@ -157,6 +160,22 @@ export const getPublishedProducts = cache(async (): Promise<Product[]> => {
 export const getProductBySlug = cache(async (slug: string): Promise<Product | null> => {
   const products = await getPublishedProducts();
   return products.find((p) => p.slug === slug) ?? null;
+});
+
+/**
+ * Lets signed-in staff preview a draft product on the real product page
+ * (preview mode must be switched on from the dashboard). Row level security
+ * still hides drafts from everyone else.
+ */
+export const getPreviewProductBySlug = cache(async (slug: string): Promise<Product | null> => {
+  if (!(await draftMode()).isEnabled) return null;
+  const access = await getStaffAccess();
+  if (!access?.permissions.has("products.read")) return null;
+  const supabase = await createSupabaseServerClient();
+  if (!supabase) return null;
+  const { data, error } = await supabase.from("products").select(PRODUCT_SELECT).eq("slug", slug).maybeSingle();
+  if (error || !data) return null;
+  return mapProduct(data as unknown as Row);
 });
 
 export type Category = { id: string; slug: string; name: string; description: string | null };
