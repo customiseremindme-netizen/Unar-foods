@@ -8,6 +8,16 @@ import { formatDate, formatDateTime, titleCase } from "@/lib/utils";
 import { Badge } from "@/components/ui/misc";
 import { RetryPayment } from "./retry-payment";
 
+const PAYMENT_LABELS: Record<string, string> = {
+  unpaid: "Awaiting payment",
+  paid: "Paid",
+  failed: "Failed",
+  refunded: "Refunded",
+  partially_refunded: "Partly refunded",
+  cod_pending: "Pay on delivery",
+  cod_collected: "Paid on delivery",
+};
+
 function Address({ a }: { a: Record<string, string> }) {
   return (
     <address className="not-italic leading-relaxed text-muted">
@@ -134,7 +144,7 @@ export function OrderDetail({ order, token, showRetry = true }: { order: OrderVi
               Payment
             </h2>
             <p className="text-muted">
-              {order.payment_method === "cod" ? "Cash on Delivery" : "Online (Razorpay)"} · {titleCase(order.payment_status.replace("cod_", "COD "))}
+              {order.payment_method === "cod" ? "Cash on Delivery" : "Online (Razorpay)"} · {PAYMENT_LABELS[order.payment_status] ?? titleCase(order.payment_status)}
             </p>
             {order.paid_at ? <p className="mt-1 text-muted">Paid {formatDate(order.paid_at)}</p> : null}
           </section>

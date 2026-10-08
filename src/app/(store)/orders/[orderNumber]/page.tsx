@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { CheckCircle2 } from "lucide-react";
 import { getOrderForViewer } from "@/lib/orders/view";
+import { getEmailEnv } from "@/lib/env";
 import { OrderDetail } from "@/components/orders/order-detail";
 import { ButtonLink } from "@/components/ui/button";
 import { LeafSprig } from "@/components/brand/botanical";
@@ -32,7 +33,7 @@ export default async function OrderPage({
         </h1>
         <p className="mx-auto mt-3 max-w-lg text-muted">
           {confirmed
-            ? `Your order ${order.order_number} is confirmed. We've sent the details to ${order.email}.`
+            ? `Your order ${order.order_number} is confirmed.${getEmailEnv() ? ` Order updates will be emailed to ${order.email}.` : " Note your order number to track it."}`
             : "Here is the latest status of your order."}
         </p>
         {confirmed && token ? (

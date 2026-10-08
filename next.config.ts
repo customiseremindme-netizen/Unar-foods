@@ -70,6 +70,11 @@ const nextConfig: NextConfig = {
     dangerouslyAllowLocalIP: isLocalSupabase,
   },
   serverExternalPackages: ["sharp"],
+  experimental: {
+    // Image uploads in the dashboard (photos are pre-shrunk in the browser to
+    // stay under Vercel's 4.5 MB request limit).
+    serverActions: { bodySizeLimit: "4.5mb" },
+  },
   async headers() {
     return [
       {
