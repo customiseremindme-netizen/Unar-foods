@@ -2,7 +2,7 @@
   "name": "unar-foods",
   "version": "1.0.0",
   "private": true,
-  "description": "UNAR — One Healthy Habit a Day. Premium e-commerce storefront and admin dashboard.",
+  "description": "UNAR \u2014 One Healthy Habit a Day. Premium e-commerce storefront and admin dashboard.",
   "engines": {
     "node": ">=20.9.0"
   },
@@ -16,7 +16,8 @@
     "test:watch": "vitest",
     "test:e2e": "playwright test",
     "check": "npm run lint && npm run typecheck && npm run test",
-    "db:types": "supabase gen types typescript --local --schema public > src/lib/db/database.types.ts"
+    "db:types": "supabase gen types typescript --local --schema public > src/lib/db/database.types.ts",
+    "test:db": "VITEST_INTEGRATION=1 vitest run"
   },
   "dependencies": {
     "@supabase/ssr": "0.12.7",
@@ -35,6 +36,7 @@
     "zod": "4.6.5"
   },
   "devDependencies": {
+    "@axe-core/playwright": "4.13.0",
     "@playwright/test": "1.64.0",
     "@tailwindcss/turbopack": "4.3.3",
     "@types/node": "22.20.5",

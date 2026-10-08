@@ -9,7 +9,8 @@ export default defineConfig({
     },
   },
   test: {
-    include: ["tests/unit/**/*.test.ts"],
+    include: process.env.VITEST_INTEGRATION ? ["tests/integration/**/*.test.ts"] : ["tests/unit/**/*.test.ts"],
+    testTimeout: 30_000,
     environment: "node",
   },
 });
