@@ -9,9 +9,16 @@ import "server-only";
  * "not configured yet" state instead of pretending it works.
  */
 
+/** Words a hosting panel may force us to type for a setting that isn't used yet. */
+const PLACEHOLDERS = new Set(["none", "-", "n/a", "na", "null", "undefined", "empty", "skip", "not set", "notset"]);
+
 function read(name: string): string | undefined {
-  const value = process.env[name];
-  return value && value.trim() !== "" ? value.trim() : undefined;
+  let value = process.env[name]?.trim();
+  if (!value) return undefined;
+  // Some panels keep quotes from an imported .env file: "value" → value
+  if (value.length >= 2 && (value[0] === '"' || value[0] === "'") && value.at(-1) === value[0]) value = value.slice(1, -1).trim();
+  if (!value || PLACEHOLDERS.has(value.toLowerCase())) return undefined;
+  return value;
 }
 
 /**
@@ -40,6 +47,8 @@ export type SupabaseEnv = { url: string; publishableKey: string };
 
 export function getSupabaseEnv(): SupabaseEnv | null {
   const url = read("NEXT_PUBLIC_SUPABASE_URL");
+  // A half-filled value (e.g. "PASTE…") must not crash the site.
+  if (url && !/^https?:\/\/[^\s]+$/i.test(url)) return null;
   const publishableKey =
     read("NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY") ?? read("NEXT_PUBLIC_SUPABASE_ANON_KEY");
   if (!url || !publishableKey) return null;

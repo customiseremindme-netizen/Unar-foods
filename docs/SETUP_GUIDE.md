@@ -235,8 +235,13 @@ lists the same names.
    - **Node.js version:** `22.x` (20.x or newer is required)
    - **Build command:** `npm run build` · **Start command:** `npm start`
    - Root / output directory: leave the defaults.
-4. **Environment Variables:** add every row from the table above (or click
-   **import .env** and paste them). Then **Deploy**.
+4. **Environment Variables:** add every row from the table above — easiest:
+   open `docs/hostinger-env-template.txt`, save a copy on your computer as
+   `unar-hostinger.env`, replace each `PASTE_…` with your value, then click
+   **Edit → import .env** and choose that file. For anything you haven't set
+   up yet (Razorpay, email, Shiprocket) leave the value as `none` — the site
+   treats `none` as "not set up". Delete the file from your computer
+   afterwards (it contains secrets). Then **Deploy**.
 5. When it finishes, open the temporary address Hostinger shows, then open
    `/api/health` on it. You want `"database":"ok"`.
 6. **Changing a value later:** your app → **Deployments → Settings and

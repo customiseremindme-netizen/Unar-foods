@@ -147,3 +147,25 @@ describe("email provider selection", () => {
     process.env = saved;
   });
 });
+
+describe("hosting panel placeholders", () => {
+  it("treats 'none', empty and quoted values sensibly", async () => {
+    const { getEmailEnv, getRazorpayEnv, getSupabaseEnv } = await import("@/lib/env");
+    const saved = { ...process.env };
+    process.env.RAZORPAY_KEY_ID = "none";
+    process.env.RAZORPAY_KEY_SECRET = "none";
+    expect(getRazorpayEnv()).toBeNull();
+    delete process.env.RESEND_API_KEY;
+    process.env.RESEND_API_KEY = "none";
+    process.env.SMTP_HOST = "smtp.hostinger.com";
+    process.env.SMTP_USER = "none";
+    process.env.SMTP_PASSWORD = "none";
+    expect(getEmailEnv()).toBeNull();
+    process.env.NEXT_PUBLIC_SUPABASE_URL = "PASTE_FROM_SUPABASE";
+    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY = "sb_publishable_x";
+    expect(getSupabaseEnv()).toBeNull();
+    process.env.NEXT_PUBLIC_SUPABASE_URL = '"https://abc.supabase.co"';
+    expect(getSupabaseEnv()?.url).toBe("https://abc.supabase.co");
+    process.env = saved;
+  });
+});
