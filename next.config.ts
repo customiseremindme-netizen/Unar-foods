@@ -69,7 +69,7 @@ const nextConfig: NextConfig = {
     // Only needed when developing against a local Supabase instance.
     dangerouslyAllowLocalIP: isLocalSupabase,
   },
-  serverExternalPackages: ["sharp"],
+  serverExternalPackages: ["sharp", "nodemailer"],
   experimental: {
     // Image uploads in the dashboard (photos are pre-shrunk in the browser to
     // stay under Vercel's 4.5 MB request limit).

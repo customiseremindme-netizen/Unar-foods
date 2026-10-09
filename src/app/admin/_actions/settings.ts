@@ -109,8 +109,8 @@ export async function sendTestEmailAction(): Promise<ActionResult> {
     });
     await logAdminAction({ action: "integrations.test_email", entityType: "integration", entityId: "email", summary: `Test email: ${result.status}` });
     if (result.status === "sent") return { ok: true, message: `Test email sent to ${user.email}. Check your inbox (and spam folder).` };
-    if (result.status === "skipped") throw new UserFacingError("Email is not set up yet (RESEND_API_KEY and EMAIL_FROM are missing in Vercel).");
-    throw new UserFacingError(`The email provider refused the message: ${result.error ?? "unknown error"}. Check that your sending domain is verified in Resend.`);
+    if (result.status === "skipped") throw new UserFacingError("Email is not set up yet. Add either RESEND_API_KEY + EMAIL_FROM, or SMTP_HOST, SMTP_PORT, SMTP_USER and SMTP_PASSWORD (e.g. your Hostinger email) to your hosting settings, then redeploy.");
+    throw new UserFacingError(`The email could not be sent: ${result.error ?? "unknown error"}. Check the email settings (for SMTP: the mailbox address and password; for Resend: that your domain is verified).`);
   });
 }
 

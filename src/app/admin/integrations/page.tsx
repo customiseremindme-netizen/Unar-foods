@@ -39,9 +39,9 @@ export default async function IntegrationsPage() {
     <div className="space-y-6">
       <PageHeader
         title="Integrations"
-        description="Connections to payment, email and shipping services. Secret keys are stored in Vercel (Settings → Environment Variables) — never here and never in the code. Only the last 4 characters are shown."
+        description="Connections to payment, email and shipping services. Secret keys are stored in your hosting settings (Hostinger or Vercel environment variables) — never here and never in the code. Only the last 4 characters are shown."
       />
-      {site.startsWith("http://localhost") ? <Notice tone="warning">NEXT_PUBLIC_SITE_URL is not set to your real domain yet. Set it in Vercel so links in emails work.</Notice> : null}
+      {site.startsWith("http://localhost") ? <Notice tone="warning">NEXT_PUBLIC_SITE_URL is not set to your real domain yet. Set it in your hosting settings and redeploy so links in emails work.</Notice> : null}
 
       <div className="grid gap-6 lg:grid-cols-2">
         <Card title="Razorpay (online payments)" actions={<Status ok={!!razorpay} />}>
@@ -53,10 +53,13 @@ export default async function IntegrationsPage() {
           <p className="mt-3 text-[0.78rem] text-muted">Webhook events to tick: payment.authorized, payment.captured, payment.failed, order.paid, refund.processed, refund.failed.</p>
         </Card>
 
-        <Card title="Email (Resend)" actions={<Status ok={!!email} />}>
+        <Card title="Email (order emails)" actions={<Status ok={!!email} />}>
+          <Row label="Sent through" value={email ? (email.provider === "resend" ? "Resend" : `SMTP · ${email.smtp.host}:${email.smtp.port}`) : "not set"} />
           <Row label="Sender address" value={email?.from ?? "not set"} />
-          <Row label="API key" value={maskSecret(email?.resendApiKey)} />
-          <p className="mt-3 text-[0.78rem] text-muted">Without email, orders still work — customers see their order on screen, but no emails are sent.</p>
+          <Row label={email?.provider === "smtp" ? "Mailbox password" : "API key"} value={maskSecret(email ? (email.provider === "resend" ? email.resendApiKey : email.smtp.password) : null)} />
+          <p className="mt-3 text-[0.78rem] text-muted">
+            Use Resend, or your Hostinger email (SMTP). Without email, orders still work — customers see their order on screen, but no emails are sent.
+          </p>
         </Card>
 
         <Card title="Shiprocket (optional)" actions={<Status ok={!!shiprocket} noText="Not used" />}>

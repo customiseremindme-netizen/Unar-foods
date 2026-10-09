@@ -242,7 +242,7 @@ export default async function SettingsPage() {
         id="set-shiprocket"
         settingKey="shiprocket"
         title="Shiprocket (optional)"
-        description="Lets you send orders to Shiprocket with one click. Your Shiprocket login is stored as a secret in Vercel, not here. Check the connection under Integrations."
+        description="Lets you send orders to Shiprocket with one click. Your Shiprocket login is stored as a secret in your hosting settings, not here. Check the connection under Integrations."
         initial={s.shiprocket}
         fields={[
           { name: "enabled", label: "Use Shiprocket for shipments", type: "boolean" },

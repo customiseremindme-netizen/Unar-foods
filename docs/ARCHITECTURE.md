@@ -12,10 +12,14 @@ business-facing value must stay editable in the dashboard, never hard-coded.
 - **Tailwind CSS 4** (tokens in `src/app/globals.css` `@theme`; brand colours
   are overridable from Settings → Colours via CSS variables).
 - **Supabase**: Postgres + Auth + Storage. All schema in `supabase/migrations`.
-- **Razorpay** (REST via `fetch`, no SDK), **Resend** (email via `fetch`),
+- **Razorpay** (REST via `fetch`, no SDK), email via **SMTP** (nodemailer —
+  e.g. Hostinger mail) or **Resend** (`fetch`),
   optional **Shiprocket**.
 - **motion** for animation (respects `prefers-reduced-motion`).
-- Hosting: **Vercel** (`vercel.json` holds the daily cron).
+- Hosting: any Node.js 20+ host running `npm run build` + `npm start` —
+  **Hostinger Node.js web apps** or **Vercel** (`vercel.json` holds Vercel's
+  daily cron; on other hosts schedule `GET /api/cron/reconcile` with
+  `Authorization: Bearer $CRON_SECRET`). `/api/health` diagnoses setup.
 
 ## Folder map
 ```

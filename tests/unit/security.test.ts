@@ -121,6 +121,29 @@ describe("test-only API overrides", () => {
     expect(getRazorpayEnv()?.apiBaseUrl).toBe("https://api.razorpay.com/v1");
     process.env.VERCEL_ENV = "preview";
     expect(getRazorpayEnv()?.apiBaseUrl).toBe("http://127.0.0.1:4010/v1");
+    // Other hosts (e.g. Hostinger): any production build ignores them too.
+    delete process.env.VERCEL_ENV;
+    (process.env as Record<string, string>).NODE_ENV = "production";
+    expect(getRazorpayEnv()?.apiBaseUrl).toBe("https://api.razorpay.com/v1");
+    process.env = saved;
+  });
+});
+
+describe("email provider selection", () => {
+  it("uses Hostinger-style SMTP when Resend isn't configured", async () => {
+    const { getEmailEnv } = await import("@/lib/env");
+    const saved = { ...process.env };
+    delete process.env.RESEND_API_KEY;
+    process.env.SMTP_HOST = "smtp.hostinger.com";
+    process.env.SMTP_PORT = "465";
+    process.env.SMTP_USER = "orders@example.in";
+    process.env.SMTP_PASSWORD = "x";
+    process.env.EMAIL_FROM = "UNAR <orders@example.in>";
+    const env = getEmailEnv();
+    expect(env?.provider).toBe("smtp");
+    expect(env && env.provider === "smtp" && env.smtp.secure).toBe(true);
+    process.env.RESEND_API_KEY = "re_x";
+    expect(getEmailEnv()?.provider).toBe("resend");
     process.env = saved;
   });
 });

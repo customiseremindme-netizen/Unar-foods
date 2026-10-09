@@ -12,7 +12,7 @@ Tick each item as you go.
 Copied from your packaging; please confirm each one:
 - [ ] Address: *107 A2-4, Sulochana Villa, SAPS Cinema Theatre Thottam, Trichy Road, Palladam, Tiruppur – 641664*
 - [ ] Phone / WhatsApp: *9994657693*
-- [ ] Email: *unarfoods@gmail.com* (consider a domain email like orders@… once Resend is set up)
+- [ ] Email: *unarfoods@gmail.com* (consider a domain email like orders@… from your Hostinger email)
 - [ ] FSSAI licence number: *22426493000447* (also shown in the footer)
 - [ ] Registered business name for invoices (empty — fill in)
 - [ ] Then tick **"I have checked these details"**.
@@ -89,10 +89,10 @@ the website. They are **not** legal advice and were not written by a lawyer.
   website never guesses a rate; GST stays off until every product has one.
 
 ## 7. Before taking real money
-- [ ] Razorpay KYC approved and **live** keys in Vercel (see SETUP_GUIDE Part 4.3).
+- [ ] Razorpay KYC approved and **live** keys in your hosting settings (see SETUP_GUIDE Part 4.3).
 - [ ] A test purchase, refund and shipment completed successfully.
-- [ ] Vercel on the **Pro** plan; Supabase on **Pro** (backups, no pausing).
-- [ ] 2FA turned on for GitHub, Vercel, Supabase, Razorpay, Resend, your domain account.
+- [ ] Hosting plan that supports Node.js apps (Hostinger Business/Cloud, or Vercel Pro); Supabase on **Pro** (backups, no pausing).
+- [ ] 2FA turned on for GitHub, Hostinger, Supabase, Razorpay (and Vercel/Resend if used).
 
 ## Things deliberately left out (add only if true)
 - Customer reviews / testimonials — the reviews section shows an honest

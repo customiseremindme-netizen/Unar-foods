@@ -21,6 +21,8 @@ function read(name: string): string | undefined {
  */
 function testOverride(name: string): string | undefined {
   if (process.env.VERCEL_ENV === "production") return undefined;
+  // Any production build (Vercel, Hostinger, …) ignores them unless a test run explicitly allows it.
+  if (process.env.NODE_ENV === "production" && process.env.UNAR_ALLOW_TEST_OVERRIDES !== "1") return undefined;
   return read(name);
 }
 
@@ -70,17 +72,38 @@ export function getRazorpayEnv(): RazorpayEnv | null {
   };
 }
 
-export type EmailEnv = { resendApiKey: string; from: string; apiBaseUrl: string };
+export type SmtpEnv = { host: string; port: number; secure: boolean; user: string; password: string };
+
+/**
+ * Order emails can go out through EITHER:
+ *  - Resend (RESEND_API_KEY + EMAIL_FROM), or
+ *  - any mailbox's SMTP server, e.g. Hostinger Email
+ *    (SMTP_HOST=smtp.hostinger.com, SMTP_PORT=465, SMTP_USER, SMTP_PASSWORD).
+ * Resend is used when both are set.
+ */
+export type EmailEnv =
+  | { provider: "resend"; from: string; resendApiKey: string; apiBaseUrl: string }
+  | { provider: "smtp"; from: string; smtp: SmtpEnv };
 
 export function getEmailEnv(): EmailEnv | null {
-  const resendApiKey = read("RESEND_API_KEY");
   const from = read("EMAIL_FROM");
-  if (!resendApiKey || !from) return null;
-  return {
-    resendApiKey,
-    from,
-    apiBaseUrl: (testOverride("RESEND_API_BASE_URL") ?? "https://api.resend.com").replace(/\/+$/, ""),
-  };
+  const resendApiKey = read("RESEND_API_KEY");
+  if (resendApiKey && from) {
+    return {
+      provider: "resend",
+      resendApiKey,
+      from,
+      apiBaseUrl: (testOverride("RESEND_API_BASE_URL") ?? "https://api.resend.com").replace(/\/+$/, ""),
+    };
+  }
+  const host = read("SMTP_HOST");
+  const user = read("SMTP_USER");
+  const password = read("SMTP_PASSWORD");
+  if (host && user && password) {
+    const port = Number(read("SMTP_PORT") ?? 465) || 465;
+    return { provider: "smtp", from: from ?? user, smtp: { host, port, secure: port === 465, user, password } };
+  }
+  return null;
 }
 
 export type ShiprocketEnv = { email: string; password: string; apiBaseUrl: string };

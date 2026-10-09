@@ -78,11 +78,11 @@ These are fully built but can only be switched on with your own accounts
   KYC approval. (Tested only against a mock; do a test-mode purchase after
   setup.)
 - **Emails** (order confirmations, shipping updates, admin alerts, Supabase
-  login emails) — needs Resend + domain verification. Until then the
+  login emails) — needs your Hostinger mailbox (SMTP) or a Resend account. SMTP sending was tested end-to-end against a local mail server. Until then the
   dashboard logs them as "skipped".
 - **Shiprocket** — needs a Shiprocket API user. The integration has not been
   tested against the real Shiprocket service.
-- **Live database, hosting and domain** — Supabase project, Vercel project,
+- **Live database, hosting and domain** — Supabase project, Hostinger Node.js app (or Vercel),
   DNS records.
 - **WhatsApp notifications** — a placeholder only (needs a WhatsApp Business
   API provider; not built).
@@ -96,7 +96,7 @@ when available (two Fresh Raw Banana images show nuts as props); check the
 Fresh Raw Banana back-label text.
 
 ## Known limitations
-- Vercel Hobby allows the reconcile job once a day (it also runs on every
+- The payment reconcile job is scheduled daily (Vercel cron, or a Hostinger cron job you add); it also runs on every
   checkout and when staff open the dashboard). Pro allows more frequent runs.
 - Supabase Free projects pause after a week of inactivity — use Pro for the
   live shop.

@@ -14,15 +14,15 @@ The online shop and business dashboard for **UNAR Banana Chewy**.
 
 | If you are… | Read |
 | --- | --- |
-| The owner setting the shop up | [docs/SETUP_GUIDE.md](docs/SETUP_GUIDE.md) — click-by-click for Supabase, Resend, Razorpay, Vercel and your domain |
+| The owner setting the shop up | [docs/SETUP_GUIDE.md](docs/SETUP_GUIDE.md) — click-by-click for Supabase, Razorpay, email, Hostinger (or Vercel) and your domain |
 | The owner checking what needs your approval | [docs/OWNER_CHECKLIST.md](docs/OWNER_CHECKLIST.md) |
 | Anyone asking "what's done?" | [docs/STATUS.md](docs/STATUS.md) |
 | A developer (or Claude) changing the code | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) and [tests/README.md](tests/README.md) |
 
 ## Tech
 Next.js 16 · React 19 · TypeScript · Tailwind CSS 4 · Supabase (Postgres,
-Auth, Storage, Row Level Security) · Razorpay · Resend · optional Shiprocket
-· Vercel.
+Auth, Storage, Row Level Security) · Razorpay · email via SMTP (e.g. Hostinger)
+or Resend · optional Shiprocket · runs on Hostinger Node.js hosting or Vercel.
 
 ## Developer quick start
 ```bash

@@ -58,7 +58,7 @@ export async function getLaunchChecklist(): Promise<ChecklistItem[]> {
     {
       label: "Connect Razorpay payments",
       done: !!razorpay,
-      detail: razorpay ? `Connected in ${razorpay.mode.toUpperCase()} mode.` : "Add your Razorpay keys in Vercel (see the setup guide).",
+      detail: razorpay ? `Connected in ${razorpay.mode.toUpperCase()} mode.` : "Add your Razorpay keys in your hosting settings (see the setup guide).",
       href: "/admin/integrations",
     },
     {
@@ -76,7 +76,7 @@ export async function getLaunchChecklist(): Promise<ChecklistItem[]> {
     {
       label: "Connect order emails",
       done: !!getEmailEnv(),
-      detail: "Add Resend keys so customers receive order emails.",
+      detail: "Add your Hostinger email (SMTP) or Resend details so customers receive order emails.",
       href: "/admin/integrations",
     },
     {
@@ -90,7 +90,7 @@ export async function getLaunchChecklist(): Promise<ChecklistItem[]> {
     {
       label: "Schedule the payment clean-up job",
       done: !!getCronSecret(),
-      detail: "Set CRON_SECRET in Vercel so unpaid orders release their stock automatically.",
+      detail: "Set CRON_SECRET and schedule the daily job (Vercel does this automatically; on Hostinger add a cron job — see the setup guide).",
       href: "/admin/integrations",
     },
   ];

@@ -7,13 +7,18 @@ take time to be approved).
 
 > **Golden rule for secrets.** Some values below are marked **SECRET**
 > (keys, passwords). Paste them **only** into the website settings named in
-> this guide (Vercel environment variables or Supabase). Never put them in
+> this guide (your hosting's environment variables or Supabase). Never put them in
 > chat, email, WhatsApp, GitHub, screenshots or documents. If you think a
-> secret was exposed, create a new one in that service, update it in Vercel,
+> secret was exposed, create a new one in that service, update it in your hosting settings,
 > and delete the old one.
 
 Keep a password manager (e.g. Bitwarden, 1Password, or your phone's built-in
 one) open while you work, and save every account password and secret there.
+
+> **Website shows only "UNAR — One Healthy Habit a Day" and nothing else?**
+> The website is running but cannot read its database yet. Open
+> `https://YOUR-SITE/api/health` — it says exactly what is missing and how
+> to fix it (see [Troubleshooting](#troubleshooting) at the end).
 
 ---
 
@@ -23,10 +28,11 @@ one) open while you work, and save every account password and secret there.
 | --- | --- | --- |
 | **GitHub** | Stores the website code | Free |
 | **Supabase** | Database, customer logins, uploaded images | Free plan for testing. **Pro plan recommended for the live shop** — free projects are paused after a week without visitors and have no automatic backups. |
-| **Vercel** | Runs the website | Hobby (free) is for **personal, non-commercial** use only. A shop that takes payments needs the **Pro** plan. |
+| **Hosting — Hostinger** (you already have it) | Runs the website | Your plan must include **Node.js web apps** — Hostinger lists this on **Business Web Hosting** and the **Cloud** plans. The cheaper *Premium/Single* plans can't run this website (upgrade, or use Vercel instead). |
+| *or* **Vercel** | Runs the website (alternative) | Hobby (free) is for personal, non-commercial use only; a shop needs **Pro**. |
 | **Razorpay** | Takes online payments (UPI, cards, net banking) | Per-transaction fee, no monthly fee |
-| **Resend** | Sends order emails | Free plan is enough to start |
-| **Your domain** (GoDaddy, Hostinger, BigRock, Namecheap…) | Your web address | Yearly fee |
+| **Email** — your **Hostinger email** (included with Business plans) *or* **Resend** | Sends order emails | Included / free plan |
+| **Your domain** (Hostinger, GoDaddy, BigRock…) | Your web address | Yearly fee |
 | **Shiprocket** (optional) | Courier bookings | Per shipment |
 
 Turn on **two-factor authentication (2FA)** in every one of these accounts.
@@ -45,8 +51,8 @@ on the branch `claude/gifted-dirac-rkndzu`. To make it the main version:
    `base: main` and `compare: claude/gifted-dirac-rkndzu`.)
 3. Click **Create pull request**, then **Merge pull request → Confirm merge**.
 
-From now on, every change merged into `main` is published automatically by
-Vercel (Part 5). Keep the repository **Private**
+From now on, every change merged into `main` can be published by your
+hosting (Part 5). Keep the repository **Private**
 (Settings → General → Danger Zone → Change visibility).
 
 ---
@@ -77,7 +83,7 @@ Nothing is visible to customers until you publish it from the dashboard.
 ### 2.3 Copy the keys
 Click the **Settings** (gear) icon → **API Keys**. Note down:
 
-| What Supabase calls it | Where it goes (Vercel variable) |
+| What Supabase calls it | Where it goes (hosting environment variable) |
 | --- | --- |
 | Project URL (Settings → Data API, or the **Connect** button) | `NEXT_PUBLIC_SUPABASE_URL` |
 | **Publishable key** (`sb_publishable_…`) | `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` |
@@ -90,10 +96,11 @@ retiring those, so create the new keys if offered.)
 ### 2.4 Login settings
 **Authentication → URL Configuration**
 - **Site URL:** your final address, e.g. `https://www.unarfoods.in`
-  (use the Vercel address from Part 5 until your domain is connected,
+  (use the temporary address from Part 5 until your domain is connected,
   then come back and change it).
-- **Redirect URLs → Add URL:** `https://www.unarfoods.in/**` (and later the
-  `https://…vercel.app/**` address too if you test on it).
+- **Redirect URLs → Add URL:** `https://www.unarfoods.in/**` (and the
+  temporary hosting address too, e.g. `https://….hostingersite.com/**`, if
+  you test on it).
 
 **Authentication → Sign In / Providers → Email**
 - *Confirm email*: **ON**.
@@ -111,32 +118,51 @@ template and replace the link inside the button with:
 
 ### 2.5 Send login emails through your own email (after Part 3)
 Supabase's built-in email only sends a couple of emails per hour — not
-enough for a shop. After setting up Resend (Part 3):
-**Authentication → Emails → SMTP Settings → Enable custom SMTP**
-- Sender email: `orders@your-domain` · Sender name: `UNAR`
-- Host: `smtp.resend.com` · Port: `465` · Username: `resend`
-- Password: your Resend API key (**SECRET**)
+enough for a shop. **Authentication → Emails → SMTP Settings → Enable custom SMTP**:
+
+| Field | Hostinger email | Resend |
+| --- | --- | --- |
+| Sender email | `orders@your-domain` | `orders@your-domain` |
+| Sender name | `UNAR` | `UNAR` |
+| Host | `smtp.hostinger.com` | `smtp.resend.com` |
+| Port | `465` | `465` |
+| Username | the full mailbox address, e.g. `orders@unarfoods.in` | `resend` |
+| Password | that mailbox's password (**SECRET**) | your Resend API key (**SECRET**) |
 
 ### 2.6 Backups
 On the Pro plan, daily backups are automatic (**Database → Backups**).
 
 ---
 
-## Part 3 — Resend (order emails)
+## Part 3 — Order emails (choose ONE)
 
-1. Sign up at <https://resend.com>.
-2. **Domains → Add domain** → enter your domain (e.g. `unarfoods.in`).
-   Resend shows 3–4 DNS records (TXT/MX). Add them at your domain company
-   exactly as shown (see Part 6 for how DNS editing works), then click
-   **Verify**. This can take from minutes to a few hours.
-3. **API Keys → Create API key** → name `unar-website`, permission
-   *Sending access* → copy it (**SECRET**) → this is `RESEND_API_KEY`.
-4. Decide your sender, e.g. `UNAR <orders@unarfoods.in>` → this is
-   `EMAIL_FROM`.
-
-Without Resend the shop still works — customers see their order on screen —
+Without email the shop still works — customers see their order on screen —
 but no emails are sent. The dashboard shows "skipped" honestly in
 **Integrations → Recent emails**.
+
+### Option A — your Hostinger email (recommended for you)
+1. hPanel → **Emails** → choose your domain → **Create email account** →
+   `orders@your-domain` (e.g. `orders@unarfoods.in`) with a strong password
+   (**SECRET**, save it).
+2. You will add these settings to your hosting in Part 5:
+
+   | Name | Value |
+   | --- | --- |
+   | `SMTP_HOST` | `smtp.hostinger.com` |
+   | `SMTP_PORT` | `465` |
+   | `SMTP_USER` | `orders@unarfoods.in` (the full address) |
+   | `SMTP_PASSWORD` | the mailbox password (**SECRET**) |
+   | `EMAIL_FROM` | `UNAR <orders@unarfoods.in>` |
+
+   (If sending fails, Hostinger suggests port `587` instead of `465`.)
+
+### Option B — Resend
+1. Sign up at <https://resend.com> → **Domains → Add domain** and add the
+   DNS records it shows (Part 6 explains DNS) → **Verify**.
+2. **API Keys → Create API key** (*Sending access*) → `RESEND_API_KEY` (**SECRET**).
+3. `EMAIL_FROM` = e.g. `UNAR <orders@unarfoods.in>`.
+
+If both are filled in, Resend is used.
 
 ---
 
@@ -166,22 +192,19 @@ but no emails are sent. The dashboard shows "skipped" honestly in
 ### 4.3 Going live (after testing — Part 7)
 Switch to **Live Mode**, generate **live** keys (`rzp_live_…`), create the
 **same webhook again in Live Mode** (test and live webhooks are separate),
-and replace the three Razorpay values in Vercel. Redeploy (Part 5.4).
+and replace the three Razorpay values in your hosting settings, then
+redeploy (Part 5).
 
 ---
 
-## Part 5 — Vercel (publishing the website)
+## Part 5 — Publishing the website (choose ONE)
 
-### 5.1 Import the project
-1. Go to <https://vercel.com> → **Sign up with GitHub**.
-2. **Add New… → Project** → find **Unar-foods** → **Import**.
-   (If it's not listed, click *Adjust GitHub App Permissions* and allow
-   access to that repository.)
-3. Framework is detected as **Next.js** — leave the build settings as they are.
-
-### 5.2 Environment variables
-Before clicking Deploy, open **Environment Variables** and add each of these
-(Name → Value). Tick **Production** and **Preview** for each.
+### The settings list (needed for either option)
+Every value below goes into your hosting's **Environment Variables**. Add
+them **before the first deploy** — the website reads several of them while
+it is being built, so **after adding or changing any value you must
+redeploy**. (Forgetting this is the most common reason the site shows only
+"UNAR — One Healthy Habit a Day".)
 
 | Name | Value |
 | --- | --- |
@@ -192,55 +215,81 @@ Before clicking Deploy, open **Environment Variables** and add each of these
 | `RAZORPAY_KEY_ID` | from Part 4 |
 | `RAZORPAY_KEY_SECRET` | from Part 4 (**SECRET**) |
 | `RAZORPAY_WEBHOOK_SECRET` | from Part 4 (**SECRET**) |
-| `RESEND_API_KEY` | from Part 3 (**SECRET**) |
-| `EMAIL_FROM` | e.g. `UNAR <orders@unarfoods.in>` |
+| `EMAIL_FROM`, `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD` | from Part 3, option A (**SMTP_PASSWORD is SECRET**) |
+| *or* `EMAIL_FROM`, `RESEND_API_KEY` | from Part 3, option B (**SECRET**) |
 | `CRON_SECRET` | a new long random password, 40+ characters (**SECRET**) |
 | `SHIPROCKET_EMAIL` / `SHIPROCKET_PASSWORD` | only if you use Shiprocket (create an **API user** in Shiprocket → Settings → API) |
 
 Never add `RAZORPAY_API_BASE_URL` — it exists only for automated tests (and
-is ignored on the live site anyway).
+is ignored on the live site anyway). The file `.env.example` in the code
+lists the same names.
 
-### 5.3 Deploy
-Click **Deploy**. After 2–4 minutes you get an address like
-`unar-foods.vercel.app`. Open it — you'll see the homepage (products appear
-after you publish them in Part 7).
+### 5A — Hostinger (Node.js web app)
+1. hPanel → **Websites → Add website** → choose **Node.js Apps** /
+   *Node.js web app* (if you don't see this option, your plan doesn't
+   include Node.js — see Part 0).
+2. Choose **Import Git repository** → **Connect GitHub** → allow access to
+   the **Unar-foods** repository → pick the branch **`main`** (after Part 1;
+   until then you can pick `claude/gifted-dirac-rkndzu`).
+3. Build settings — Hostinger detects **Next.js** automatically. Check:
+   - **Node.js version:** `22.x` (20.x or newer is required)
+   - **Build command:** `npm run build` · **Start command:** `npm start`
+   - Root / output directory: leave the defaults.
+4. **Environment Variables:** add every row from the table above (or click
+   **import .env** and paste them). Then **Deploy**.
+5. When it finishes, open the temporary address Hostinger shows, then open
+   `/api/health` on it. You want `"database":"ok"`.
+6. **Changing a value later:** your app → **Deployments → Settings and
+   redeploy → Environment Variables** → edit → **Save and redeploy**.
+7. **Daily payment check (recommended):** hPanel → your website →
+   **Cron Jobs** (under *Advanced*) → **Create** (type **Custom**), run once a day
+   (e.g. `0 21 * * *` = 2:30 am India time — Hostinger cron uses UTC) with
+   this command (replace the two parts in capitals):
+   ```
+   curl -s -H "Authorization: Bearer YOUR_CRON_SECRET" https://www.YOUR-DOMAIN/api/cron/reconcile
+   ```
+   If your plan doesn't offer cron jobs for Node.js apps, skip this — the
+   shop also does this check whenever someone checks out and whenever staff
+   open the dashboard.
+8. If a deploy fails, open the app's **deployment logs** in hPanel and send
+   Claude the error text (never the secret values).
 
-### 5.4 Changing a variable later
-**Project → Settings → Environment Variables → edit**, then
-**Deployments → ⋯ (latest) → Redeploy**. Variables only take effect after a
-redeploy.
-
-### 5.5 Plan and region
-- Upgrade to **Pro** before taking real orders (Hobby is non-commercial only).
-- The scheduled payment check (`vercel.json`) runs once a day at 3 am IST.
-  Unpaid reservations are also released automatically whenever someone
-  checks out, so a daily run is enough.
+### 5B — Vercel (alternative)
+1. <https://vercel.com> → **Sign up with GitHub** → **Add New… → Project**
+   → **Unar-foods** → **Import**. Framework: **Next.js** (leave defaults).
+2. **Environment Variables:** add the table above (tick *Production* and
+   *Preview*) → **Deploy**.
+3. Changing a value later: **Settings → Environment Variables → edit**, then
+   **Deployments → ⋯ → Redeploy**.
+4. Upgrade to **Pro** before taking real orders (Hobby is non-commercial
+   only). The daily payment check runs automatically from `vercel.json`.
 
 ---
 
 ## Part 6 — Your domain (DNS)
 
-1. In Vercel: **Project → Settings → Domains → Add** → type
-   `unarfoods.in` (your domain) → **Add**. Choose the recommended option
-   (usually redirect `unarfoods.in` → `www.unarfoods.in`).
-2. Vercel now shows the exact **DNS records** to create — typically an
-   **A record** for `@` and a **CNAME** for `www`. Use the values Vercel
-   shows you (they can change over time).
-3. Sign in to your domain company and find **DNS / Manage DNS / DNS Zone**:
-   - **Delete** any old A record for `@` and CNAME for `www` that point
-     elsewhere (e.g. a "parked" page).
-   - **Add** the records exactly as Vercel shows (Type, Name/Host, Value).
-   - Leave TTL as default.
-4. Also add the Resend records from Part 3 in the same DNS page.
-5. Wait. Usually 10–60 minutes, sometimes up to 24 hours. Vercel shows a
-   green tick and sets up the padlock (HTTPS) automatically.
-6. Make sure `NEXT_PUBLIC_SITE_URL` (Vercel) and **Site URL** (Supabase,
-   Part 2.4) both use the final `https://www…` address, then redeploy.
-7. Update the Razorpay webhook URL if you created it with the
-   `vercel.app` address.
+**If your domain is registered at Hostinger and the site is hosted on
+Hostinger (5A):** choose the domain when creating the Node.js app (or in the
+app's **Domains** settings) — Hostinger sets the DNS records and the free
+SSL padlock for you. Then make sure `NEXT_PUBLIC_SITE_URL` (hosting) and
+**Site URL** (Supabase, Part 2.4) both use the final `https://www…`
+address and redeploy. Skip to step 5 below.
 
-> Using Google Workspace or Zoho Mail on the same domain? Don't delete your
-> existing **MX** records.
+**If the site is on Vercel (5B):**
+1. Vercel → **Project → Settings → Domains → Add** → your domain. Choose the
+   recommended option (usually redirect `unarfoods.in` → `www.unarfoods.in`).
+2. Vercel shows the exact **DNS records** to create — typically an **A**
+   record for `@` and a **CNAME** for `www`. Use the values Vercel shows.
+3. At your domain company (for Hostinger: hPanel → **Domains → your domain
+   → DNS / Nameservers → DNS records**): delete old A/CNAME records for `@`
+   and `www` that point elsewhere, then add Vercel's records exactly.
+4. Wait 10–60 minutes (sometimes up to 24 h). Vercel shows a green tick and
+   sets up HTTPS automatically.
+
+**Then, in every case:**
+5. If you chose Resend for email, add its DNS records too. If you use
+   Hostinger email, **don't delete the MX records** Hostinger created.
+6. Update the Razorpay webhook URL if you created it with the temporary address.
 
 ---
 
@@ -273,8 +322,9 @@ The **Overview** page shows a checklist until everything is done. In short:
 6. **Settings → Checkout** — decide on Cash on Delivery and any COD fee.
 7. **Settings → Tax** — only if GST-registered (enter GSTIN, then HSN + GST
    rate on each product, as advised by your accountant).
-8. **Integrations** — check Razorpay shows *Test mode* and the webhook
-   secret is set; press **Send me a test email**.
+8. **Integrations** — check Razorpay shows *Test mode*, the webhook
+   secret is set and Email shows *SMTP* (Hostinger) or *Resend*; press
+   **Send me a test email**.
 
 ### 7.3 Place test orders (Razorpay test mode)
 1. Buy a product on your site and pay with Razorpay's **test** UPI / card
@@ -316,8 +366,8 @@ The **Overview** page shows a checklist until everything is done. In short:
 - Give each helper their **own** account with the smallest role
   (*Fulfilment staff* for packing, *Content editor* for photos/text). Remove
   access when they leave (**Staff → Remove**).
-- The website code never contains secrets; they live only in Vercel and
-  Supabase. Never paste them anywhere else.
+- The website code never contains secrets; they live only in your hosting
+  settings (Hostinger or Vercel) and Supabase. Never paste them anywhere else.
 - No website is "unhackable". This one follows good practice (HTTPS,
   database row-level security, server-side price checks, signed payment
   confirmations, rate limits, audit log) — keep your accounts protected with
@@ -332,6 +382,34 @@ The **Overview** page shows a checklist until everything is done. In short:
 Describe what you want in plain words (e.g. *"Add a 250 g pack of the Fresh
 Raw Banana at ₹249"*, *"Make the homepage hero image bigger on phones"*).
 Mention the page address and attach a screenshot if possible. Changes are
-made on a separate branch, tested, and published to Vercel only after you
-merge them (Part 1). Most content changes don't need Claude at all — use the
+made on a separate branch, tested, and published only after you merge them
+(Part 1) and your hosting redeploys. Most content changes don't need Claude at all — use the
 dashboard.
+
+---
+
+## Troubleshooting
+
+### The website shows only "UNAR — One Healthy Habit a Day"
+Open `https://YOUR-SITE/api/health`. It shows one of these:
+
+| It says | What to do |
+| --- | --- |
+| `"database":"not configured"` | `NEXT_PUBLIC_SUPABASE_URL` and/or `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` are missing. Add them (Part 5) and **redeploy**. |
+| `"connected, but the tables are missing"` | The database setup wasn't run. Do Part 2.2 (paste `supabase/setup/all-migrations.sql` into Supabase → SQL Editor → Run). Then wait 5 minutes or redeploy. |
+| `"connected, but the key was refused"` | The publishable key belongs to a different Supabase project or was copied incompletely. Copy it again (Part 2.3) and redeploy. |
+| `"unreachable"` | The Supabase URL is wrong (it looks like `https://abcd1234.supabase.co`) or the Supabase project is paused (free plan) — open Supabase and press *Restore*. |
+| `"database":"ok"` but the homepage is still bare | The page was saved before the database was connected. **Redeploy** (or wait 5 minutes and refresh). |
+
+`"server_key":"missing"` means `SUPABASE_SECRET_KEY` is missing — checkout and
+the dashboard need it.
+
+### Products don't appear in the shop
+That's expected at first: both products start as **drafts with 0 stock**.
+Sign in, open **/admin → Products**, check each product and **Publish** it,
+then set stock in **Inventory** (Part 7).
+
+### Checkout says delivery isn't available
+Activate a shipping zone: **/admin → Shipping** → edit *All India —
+Standard* → enter your charge → tick **Active** → Save.
+
