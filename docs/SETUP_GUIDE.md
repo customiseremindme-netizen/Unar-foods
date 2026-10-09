@@ -232,7 +232,8 @@ lists the same names.
    the **Unar-foods** repository → pick the branch **`main`** (after Part 1;
    until then you can pick `claude/gifted-dirac-rkndzu`).
 3. Build settings — Hostinger detects **Next.js** automatically. Check:
-   - **Node.js version:** `22.x` (20.x or newer is required)
+   - **Node.js version:** **`22.x`** (required — 20.x is too old for the
+     database library)
    - **Build command:** `npm run build` · **Start command:** `npm start`
    - Root / output directory: leave the defaults.
 4. **Environment Variables:** add every row from the table above — easiest:
@@ -257,7 +258,9 @@ lists the same names.
    shop also does this check whenever someone checks out and whenever staff
    open the dashboard.
 8. If a deploy fails, open the app's **deployment logs** in hPanel and send
-   Claude the error text (never the secret values).
+   Claude the error text (never the secret values). The build uses
+   `next build --webpack` on purpose: Hostinger's build servers can't run
+   Next.js's newer Turbopack builder.
 
 ### 5B — Vercel (alternative)
 1. <https://vercel.com> → **Sign up with GitHub** → **Add New… → Project**

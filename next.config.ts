@@ -45,14 +45,6 @@ const nextConfig: NextConfig = {
   // statically generated and refreshed when the admin publishes changes.
   cacheComponents: false,
   poweredByHeader: false,
-  turbopack: {
-    rules: {
-      "*.css": {
-        loaders: ["@tailwindcss/turbopack"],
-        as: "*.css",
-      },
-    },
-  },
   images: {
     formats: ["image/avif", "image/webp"],
     qualities: [70, 75, 85],

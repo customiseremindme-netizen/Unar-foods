@@ -9,8 +9,12 @@ business-facing value must stay editable in the dashboard, never hard-coded.
   differs from older versions — `proxy.ts` replaces middleware, `params` and
   `searchParams` are Promises, read `node_modules/next/dist/docs/` before
   using an unfamiliar API (see `AGENTS.md`).
-- **Tailwind CSS 4** (tokens in `src/app/globals.css` `@theme`; brand colours
-  are overridable from Settings → Colours via CSS variables).
+- **Tailwind CSS 4** via PostCSS (`postcss.config.mjs`; tokens in
+  `src/app/globals.css` `@theme`; brand colours are overridable from
+  Settings → Colours via CSS variables).
+- **Builds:** `npm run build` = `next build --webpack`. Production builds use
+  webpack deliberately — Turbopack's builder needs helper processes that some
+  hosts (Hostinger) block. `npm run dev` still uses Turbopack. Node 22+.
 - **Supabase**: Postgres + Auth + Storage. All schema in `supabase/migrations`.
 - **Razorpay** (REST via `fetch`, no SDK), email via **SMTP** (nodemailer —
   e.g. Hostinger mail) or **Resend** (`fetch`),
@@ -106,3 +110,19 @@ Add a **new** migration file (`supabase/migrations/<timestamp>_name.sql`);
 never edit one that has already been run on the live project. The owner
 applies new migrations by pasting just that file into the SQL Editor (or via
 `npx supabase db push` if linked).
+
+## Adding another payment provider (e.g. PhonePe PG, Cashfree, PayU)
+Razorpay Checkout already offers PhonePe, Google Pay, Paytm and other UPI
+apps, cards, net banking and wallets, so customers can pay "with PhonePe"
+today. A *separate* gateway is only needed for business reasons (fees,
+settlement). To add one without touching the rest of the shop:
+1. New migration: allow the new value in `orders.payment_method`,
+   `payments.provider` and `refunds.provider` (check constraints).
+2. `src/lib/payments/<provider>.ts`: create payment, verify (signature or
+   server-to-server status check), refund — same shape as `razorpay.ts`.
+3. Confirm payments only through `mark_order_paid` (idempotent, checks the
+   amount) from a verify route and a signed webhook route
+   (`/api/webhooks/<provider>`), storing events in `webhook_events`.
+4. Add the option in `src/components/checkout/checkout-form.tsx`, a
+   Settings → Checkout switch, env keys in `.env.example`, and tests
+   (mock server like `tests/e2e/support/mock-razorpay.mjs`).
