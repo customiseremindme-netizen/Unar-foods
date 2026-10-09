@@ -1,7 +1,8 @@
 import type { ReactNode } from "react";
 import { requireStaffPage } from "@/lib/auth/session";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { getCronSecret, getEmailEnv, getRazorpayEnv, getShiprocketEnv, getSiteUrl, getSupabaseEnv, getSupabaseSecretKey, maskSecret } from "@/lib/env";
+import { getRequestSiteUrl } from "@/lib/site-url";
+import { getCronSecret, getEmailEnv, getRazorpayEnv, getConfiguredSiteUrl, getShiprocketEnv, getSupabaseEnv, getSupabaseSecretKey, maskSecret } from "@/lib/env";
 import { formatDateTime } from "@/lib/utils";
 import { Card, Notice, PageHeader } from "@/components/admin/ui";
 import { IntegrationTests } from "@/components/admin/integration-tests";
@@ -29,7 +30,8 @@ export default async function IntegrationsPage() {
   const email = getEmailEnv();
   const shiprocket = getShiprocketEnv();
   const supabaseEnv = getSupabaseEnv();
-  const site = getSiteUrl();
+  const site = await getRequestSiteUrl();
+  const siteConfigured = !!getConfiguredSiteUrl();
   const [{ data: webhooks }, { data: notifications }] = await Promise.all([
     supabase.from("webhook_events").select("id, provider, event_type, status, error, received_at").order("received_at", { ascending: false }).limit(15),
     supabase.from("notification_log").select("id, template, recipient, channel, status, error, created_at").order("created_at", { ascending: false }).limit(15),
@@ -41,7 +43,11 @@ export default async function IntegrationsPage() {
         title="Integrations"
         description="Connections to payment, email and shipping services. Secret keys are stored in your hosting settings (Hostinger or Vercel environment variables) — never here and never in the code. Only the last 4 characters are shown."
       />
-      {site.startsWith("http://localhost") ? <Notice tone="warning">NEXT_PUBLIC_SITE_URL is not set to your real domain yet. Set it in your hosting settings and redeploy so links in emails work.</Notice> : null}
+      {!siteConfigured ? (
+        <Notice tone="warning">
+          NEXT_PUBLIC_SITE_URL is not set, so the site is using the address you are on now ({site}). Once your own domain is connected, set NEXT_PUBLIC_SITE_URL to it and redeploy, so email links and search engines always use your real address.
+        </Notice>
+      ) : null}
 
       <div className="grid gap-6 lg:grid-cols-2">
         <Card title="Razorpay (online payments)" actions={<Status ok={!!razorpay} />}>

@@ -3,7 +3,7 @@
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { getSiteUrl } from "@/lib/env";
+import { getRequestSiteUrl } from "@/lib/site-url";
 import { checkRateLimit } from "@/lib/security/rate-limit";
 import { getClientIp } from "@/lib/security/request";
 import { emailSchema, isSafeInternalPath, nameSchema, passwordSchema, toFieldErrors } from "@/lib/validation/common";
@@ -72,7 +72,7 @@ export async function registerAction(_prev: FormState, formData: FormData): Prom
     password: parsed.data.password,
     options: {
       data: { full_name: parsed.data.full_name },
-      emailRedirectTo: `${getSiteUrl()}/auth/callback?next=${encodeURIComponent(next)}`,
+      emailRedirectTo: `${await getRequestSiteUrl()}/auth/callback?next=${encodeURIComponent(next)}`,
     },
   });
   if (error) {
@@ -98,7 +98,7 @@ export async function forgotPasswordAction(_prev: FormState, formData: FormData)
   const supabase = await createSupabaseServerClient();
   if (!supabase) return { ok: false, message: "Password reset is not available yet." };
   const { error } = await supabase.auth.resetPasswordForEmail(parsed.data, {
-    redirectTo: `${getSiteUrl()}/auth/callback?next=/reset-password`,
+    redirectTo: `${await getRequestSiteUrl()}/auth/callback?next=/reset-password`,
   });
   if (error) logError("auth.reset", error);
   return { ok: true, message: "If an account exists for that email, we've sent a link to reset your password." };

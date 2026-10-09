@@ -33,9 +33,16 @@ function testOverride(name: string): string | undefined {
   return read(name);
 }
 
-export function getSiteUrl(): string {
+/** NEXT_PUBLIC_SITE_URL, if it is set to a real http(s) address. */
+export function getConfiguredSiteUrl(): string | null {
   const explicit = read("NEXT_PUBLIC_SITE_URL");
-  if (explicit) return explicit.replace(/\/+$/, "");
+  if (!explicit || !/^https?:\/\/[^\s/]+/i.test(explicit)) return null;
+  return explicit.replace(/\/+$/, "");
+}
+
+export function getSiteUrl(): string {
+  const explicit = getConfiguredSiteUrl();
+  if (explicit) return explicit;
   const vercelProd = read("VERCEL_PROJECT_PRODUCTION_URL");
   if (vercelProd) return `https://${vercelProd}`;
   const vercel = read("VERCEL_URL");

@@ -208,7 +208,7 @@ redeploy**. (Forgetting this is the most common reason the site shows only
 
 | Name | Value |
 | --- | --- |
-| `NEXT_PUBLIC_SITE_URL` | `https://www.unarfoods.in` (your final address, no `/` at the end) |
+| `NEXT_PUBLIC_SITE_URL` | `none` while you only have the temporary hosting address (the site then uses whatever address it is opened on). Once your own domain works, change it to e.g. `https://www.unarfoods.in` (no `/` at the end) and redeploy. |
 | `NEXT_PUBLIC_SUPABASE_URL` | from Part 2.3 |
 | `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | from Part 2.3 |
 | `SUPABASE_SECRET_KEY` | from Part 2.3 (**SECRET**) |

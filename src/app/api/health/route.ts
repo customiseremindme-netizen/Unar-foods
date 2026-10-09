@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getPublicSupabase } from "@/lib/supabase/public";
-import { getEmailEnv, getRazorpayEnv, getSiteUrl, getSupabaseSecretKey } from "@/lib/env";
+import { getConfiguredSiteUrl, getEmailEnv, getRazorpayEnv, getSupabaseSecretKey } from "@/lib/env";
+import { getRequestSiteUrl } from "@/lib/site-url";
 
 export const dynamic = "force-dynamic";
 
@@ -11,7 +12,8 @@ export const dynamic = "force-dynamic";
  */
 export async function GET() {
   const services = {
-    site_url: getSiteUrl(),
+    site_url: await getRequestSiteUrl(),
+    site_url_setting: getConfiguredSiteUrl() ? "set" : "automatic (set NEXT_PUBLIC_SITE_URL once your domain is connected)",
     server_key: getSupabaseSecretKey() ? "set" : "missing",
     payments: getRazorpayEnv()?.mode ?? "not set up",
     email: getEmailEnv()?.provider ?? "not set up",

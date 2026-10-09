@@ -1,7 +1,7 @@
 import "server-only";
 import { getAdminSupabase } from "@/lib/supabase/admin";
 import { getAllSettings } from "@/lib/settings";
-import { getSiteUrl } from "@/lib/env";
+import { getRequestSiteUrl } from "@/lib/site-url";
 import { sendEmail } from "@/lib/email/send";
 import { escapeHtml, fillTemplate, renderOrderEmail, type EmailOrder } from "@/lib/email/templates";
 import { logError } from "@/lib/monitoring";
@@ -62,7 +62,7 @@ export async function notifyOrder(
       .maybeSingle();
     if (!order) return;
 
-    const siteUrl = getSiteUrl();
+    const siteUrl = await getRequestSiteUrl();
     const emailOrder: EmailOrder = {
       ...order,
       shipping_address: (order.shipping_address ?? {}) as Record<string, string>,

@@ -4,7 +4,7 @@ import { requireStaffPage } from "@/lib/auth/session";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getSetting } from "@/lib/settings";
 import { paiseToRupeesInput } from "@/lib/money";
-import { getSiteUrl } from "@/lib/env";
+import { getRequestSiteUrl } from "@/lib/site-url";
 import { PageHeader } from "@/components/admin/ui";
 import { ProductEditor, type EditorProduct } from "@/components/admin/product-editor";
 import { Badge } from "@/components/ui/misc";
@@ -100,7 +100,7 @@ export default async function EditProductPage({ params }: { params: Promise<{ id
         categories={(categories ?? []).map((c) => ({ id: c.id, name: c.name, is_active: c.is_active }))}
         canWrite={access.permissions.has("products.write")}
         gstRegistered={tax.gst_registered}
-        siteHost={new URL(getSiteUrl()).host}
+        siteHost={new URL(await getRequestSiteUrl()).host}
       />
     </div>
   );
