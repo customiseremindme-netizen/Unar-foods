@@ -1,7 +1,7 @@
 "use server";
 
 import { z } from "zod";
-import { getAdminSupabase } from "@/lib/supabase/admin";
+import { getServiceDb } from "@/lib/db/client";
 import { getSessionUser } from "@/lib/auth/session";
 import { getAllSettings } from "@/lib/settings";
 import { checkRateLimit } from "@/lib/security/rate-limit";
@@ -39,7 +39,7 @@ export async function subscribeNewsletterAction(_prev: FormState, formData: Form
   if (!(await checkRateLimit("newsletter", await getClientIp()))) {
     return { ok: false, message: "Too many attempts. Please try again later." };
   }
-  const admin = getAdminSupabase();
+  const admin = getServiceDb();
   if (!admin) return { ok: false, message: "Sign-ups are not available right now. Please try again later." };
   const settings = await getAllSettings();
   if (!settings.newsletter.enabled) return { ok: false, message: "Newsletter sign-ups are currently closed." };
@@ -68,7 +68,7 @@ export async function subscribeNewsletterAction(_prev: FormState, formData: Form
 export async function unsubscribeAction(_prev: FormState, formData: FormData): Promise<FormState> {
   const token = String(formData.get("token") ?? "");
   if (!/^[A-Za-z0-9_-]{20,64}$/.test(token)) return { ok: false, message: "This unsubscribe link is not valid." };
-  const admin = getAdminSupabase();
+  const admin = getServiceDb();
   if (!admin) return { ok: false, message: "Please try again later." };
   const { data, error } = await admin
     .from("subscribers")
@@ -117,7 +117,7 @@ export async function submitContactAction(_prev: FormState, formData: FormData):
   if (!(await checkRateLimit("contact", await getClientIp()))) {
     return { ok: false, message: "You've sent several messages recently. Please try again later or email us directly." };
   }
-  const admin = getAdminSupabase();
+  const admin = getServiceDb();
   if (!admin) return { ok: false, message: "Our contact form is not available right now. Please email us directly." };
 
   const { error } = await admin.from("contact_messages").insert({
@@ -180,7 +180,7 @@ export async function submitReviewAction(_prev: FormState, formData: FormData): 
   if (parsed.data.website) return { ok: true, message: "Thank you! Your review will appear once it has been checked." };
   if (!(await checkRateLimit("review", user.id))) return { ok: false, message: "Please wait a while before posting another review." };
 
-  const admin = getAdminSupabase();
+  const admin = getServiceDb();
   if (!admin) return { ok: false, message: "Reviews are not available right now." };
   const settings = await getAllSettings();
   if (!settings.reviews.enabled) return { ok: false, message: "Reviews are currently closed." };

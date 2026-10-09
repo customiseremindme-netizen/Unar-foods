@@ -1,6 +1,9 @@
 import type { MetadataRoute } from "next";
 import { getPublicSettings } from "@/lib/settings";
 
+/** Pages read the live database, so they are rendered when visitors open them (not while building). */
+export const dynamic = "force-dynamic";
+
 export default async function manifest(): Promise<MetadataRoute.Manifest> {
   const { store, seo, theme } = await getPublicSettings();
   return {

@@ -1,5 +1,5 @@
 import "server-only";
-import { getAdminSupabase } from "@/lib/supabase/admin";
+import { getServiceDb } from "@/lib/db/client";
 import { logError } from "@/lib/monitoring";
 
 export type RateLimitRule = { limit: number; windowSeconds: number };
@@ -7,6 +7,7 @@ export type RateLimitRule = { limit: number; windowSeconds: number };
 /** Shared limits, tuned for a small shop. */
 export const RATE_LIMITS = {
   login: { limit: 8, windowSeconds: 600 },
+  setup: { limit: 10, windowSeconds: 3600 },
   signup: { limit: 5, windowSeconds: 3600 },
   passwordReset: { limit: 5, windowSeconds: 3600 },
   contact: { limit: 5, windowSeconds: 3600 },
@@ -26,9 +27,9 @@ export const RATE_LIMITS = {
  */
 export async function checkRateLimit(bucket: keyof typeof RATE_LIMITS, identifier: string): Promise<boolean> {
   const rule = RATE_LIMITS[bucket];
-  const supabase = getAdminSupabase();
-  if (!supabase) return true;
-  const { data, error } = await supabase.rpc("check_rate_limit", {
+  const db = getServiceDb();
+  if (!db) return true;
+  const { data, error } = await db.rpc("check_rate_limit", {
     p_key: `${bucket}:${identifier}`,
     p_limit: rule.limit,
     p_window_seconds: rule.windowSeconds,

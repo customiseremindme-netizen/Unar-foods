@@ -1,8 +1,8 @@
 # Project status
 
-Status as of the first complete build (October 2026). "Tested" means it was run
-for real — in a browser against the local database, or by the automated
-tests in `tests/` — not just written.
+Status as of the move to Hostinger MySQL (October 2026). "Tested" means it
+was run for real — in a browser against a local MySQL/MariaDB database, or
+by the automated tests in `tests/` — not just written.
 
 ## ✅ Built and tested
 
@@ -24,7 +24,11 @@ tests in `tests/` — not just written.
   against a local mock of the Razorpay API**.
 - Cash on Delivery order flow — tested.
 - Order confirmation, private order link, order tracking page, printable
-  invoice, customer accounts (orders, addresses, profile), password reset.
+  invoice, customer accounts (orders, addresses, profile).
+- Own sign-in system (no outside service): sign-up with email confirmation,
+  sign-in, password reset by email, single-use links that email scanners
+  can't use up, one-time `/setup` page for the owner account — tested
+  end-to-end with a local mail server.
 - About, Contact (rate-limited, spam-protected), FAQs, Journal, policy pages
   (marked *Owner review required*), 404/error pages, sitemap, robots,
   web manifest, favicon from the official leaf mark.
@@ -56,20 +60,32 @@ tests in `tests/` — not just written.
   buttons, webhook and email logs), staff roles, activity log, reports with
   CSV (sales by day, products, coupons, GST, refunds).
 
+**Database (Hostinger MySQL)**
+- The site creates and updates its own tables on first start (no SQL to
+  paste), loads the starter content once, and never deletes data. Safe when
+  several server processes start at once.
+- Tested on **MySQL 8.0** and **MariaDB 10.6, 10.11 and 11.4**.
+- Images uploaded in the dashboard are stored in the database and served by
+  the site itself.
+
 **Security & quality**
-- Row Level Security on every table; 8 database security tests pass
-  (visitors can't read private data, customers can't change prices/stock,
-  can't make themselves staff, can't publish fake reviews, last owner can't
-  be removed).
+- Access rules on every visitor/customer/staff query (the same rules the
+  shop had before); 11 database tests pass on all four database versions
+  (visitors can't read private data, password hashes are never returned,
+  customers can't change prices/stock, can't make themselves staff, can't
+  publish fake reviews, only see their own orders and addresses, staff only
+  get what their role allows, last owner can't be removed or demoted, three
+  shoppers racing for the last pack → exactly one order, a payment confirmed
+  twice at the same moment is recorded once).
 - Server-side price/stock/coupon checks, signed payment verification,
-  idempotent webhooks, rate limits on login/contact/reviews/checkout,
-  security headers + Content Security Policy, CSV formula-injection guard,
-  test-only settings ignored in production.
-- 52 unit tests, 31 browser tests (desktop + phone), 8 database security
-  tests, lint and type checks pass; production
-  build succeeds. Production dependencies: 0 known vulnerabilities
-  (`npm audit --omit=dev`). The only audit warnings are in the developer
-  lint tool and are not part of the website.
+  idempotent webhooks, rate limits on login/sign-up/setup/contact/reviews/
+  checkout, scrypt password hashing, hashed session tokens, security headers
+  + Content Security Policy, CSV formula-injection guard, test-only settings
+  ignored in production.
+- 61 unit tests, 33 browser tests (desktop + phone, run on both the
+  development server and the production build), 17 database tests, lint and
+  type checks pass; the production build succeeds without database access
+  (as on Hostinger's build servers).
 
 ## ⏳ Waiting for your accounts / credentials
 These are fully built but can only be switched on with your own accounts
@@ -77,13 +93,15 @@ These are fully built but can only be switched on with your own accounts
 - **Real Razorpay payments** — needs your Razorpay keys, webhook secret and
   KYC approval. (Tested only against a mock; do a test-mode purchase after
   setup.)
-- **Emails** (order confirmations, shipping updates, admin alerts, Supabase
-  login emails) — needs your Hostinger mailbox (SMTP) or a Resend account. SMTP sending was tested end-to-end against a local mail server. Until then the
-  dashboard logs them as "skipped".
+- **Emails** (order confirmations, shipping updates, admin alerts, account
+  confirmation and password-reset emails) — needs your Hostinger mailbox
+  (SMTP) or a Resend account. SMTP sending was tested end-to-end against a
+  local mail server. Until then order emails are logged as "skipped" and new
+  customers can't create accounts (guest checkout still works).
 - **Shiprocket** — needs a Shiprocket API user. The integration has not been
   tested against the real Shiprocket service.
-- **Live database, hosting and domain** — Supabase project, Hostinger Node.js app (or Vercel),
-  DNS records.
+- **Live database, hosting and domain** — a MySQL database and a Node.js
+  app in Hostinger, DNS records, then your owner account via `/setup`.
 - **WhatsApp notifications** — a placeholder only (needs a WhatsApp Business
   API provider; not built).
 
@@ -96,10 +114,11 @@ when available (two Fresh Raw Banana images show nuts as props); check the
 Fresh Raw Banana back-label text.
 
 ## Known limitations
-- The payment reconcile job is scheduled daily (Vercel cron, or a Hostinger cron job you add); it also runs on every
-  checkout and when staff open the dashboard). Pro allows more frequent runs.
-- Supabase Free projects pause after a week of inactivity — use Pro for the
-  live shop.
+- The payment reconcile job runs daily from a Hostinger cron job you add (it
+  also runs on every checkout and when staff open the dashboard).
+- Pages are rendered when visitors open them (the database isn't available
+  while Hostinger builds the site). With the database on the same server this
+  is fast; if traffic grows a lot, caching can be added.
 - Reports count revenue when payment is received (COD when marked
   collected). They are management figures, not accounting statements.
 - Only one language (English) and INR.

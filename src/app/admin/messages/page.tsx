@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { requireStaffPage } from "@/lib/auth/session";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { getUserDb } from "@/lib/db/client";
 import { formatDateTime } from "@/lib/utils";
 import { PageHeader, Pagination } from "@/components/admin/ui";
 import { MessageActions } from "@/components/admin/moderation";
@@ -14,8 +14,8 @@ export default async function MessagesPage({ searchParams }: { searchParams: Pro
   const params = await searchParams;
   const status = ["new", "read", "archived"].includes(params.status ?? "") ? params.status! : "inbox";
   const page = Math.max(1, Number(params.page) || 1);
-  const supabase = (await createSupabaseServerClient())!;
-  let query = supabase
+  const db = (await getUserDb())!;
+  let query = db
     .from("contact_messages")
     .select("id, name, email, phone, subject, message, status, created_at", { count: "exact" })
     .order("created_at", { ascending: false })

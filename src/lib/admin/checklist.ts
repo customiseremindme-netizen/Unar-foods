@@ -1,13 +1,13 @@
 import "server-only";
 import { getEmailEnv, getRazorpayEnv, getCronSecret } from "@/lib/env";
 import { getAllSettings } from "@/lib/settings";
-import { requireAdminSupabase } from "@/lib/supabase/admin";
+import { requireServiceDb } from "@/lib/db/client";
 
 export type ChecklistItem = { label: string; done: boolean; detail: string; href: string };
 
 /** Launch readiness checks shown on the dashboard overview (all computed from real data/config). */
 export async function getLaunchChecklist(): Promise<ChecklistItem[]> {
-  const admin = requireAdminSupabase();
+  const admin = requireServiceDb();
   const settings = await getAllSettings();
   const [products, variants, zones, policies] = await Promise.all([
     admin.from("products").select("id, status, claims, shelf_life, shelf_life_approved, gst_rate"),
@@ -90,7 +90,7 @@ export async function getLaunchChecklist(): Promise<ChecklistItem[]> {
     {
       label: "Schedule the payment clean-up job",
       done: !!getCronSecret(),
-      detail: "Set CRON_SECRET and schedule the daily job (Vercel does this automatically; on Hostinger add a cron job — see the setup guide).",
+      detail: "Set CRON_SECRET and add a daily Hostinger cron job — see the setup guide, Part 5.",
       href: "/admin/integrations",
     },
   ];

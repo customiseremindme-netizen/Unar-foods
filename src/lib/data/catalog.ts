@@ -1,8 +1,7 @@
 import "server-only";
 import { cache } from "react";
 import { draftMode } from "next/headers";
-import { getPublicSupabase } from "@/lib/supabase/public";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { getPublicDb, getUserDb } from "@/lib/db/client";
 import { getStaffAccess } from "@/lib/auth/session";
 import { logError } from "@/lib/monitoring";
 
@@ -142,9 +141,9 @@ function mapProduct(row: Row): Product {
 
 /** All published products (row level security hides drafts). */
 export const getPublishedProducts = cache(async (): Promise<Product[]> => {
-  const supabase = getPublicSupabase();
-  if (!supabase) return [];
-  const { data, error } = await supabase
+  const db = getPublicDb();
+  if (!db) return [];
+  const { data, error } = await db
     .from("products")
     .select(PRODUCT_SELECT)
     .eq("status", "published")
@@ -171,9 +170,9 @@ export const getPreviewProductBySlug = cache(async (slug: string): Promise<Produ
   if (!(await draftMode()).isEnabled) return null;
   const access = await getStaffAccess();
   if (!access?.permissions.has("products.read")) return null;
-  const supabase = await createSupabaseServerClient();
-  if (!supabase) return null;
-  const { data, error } = await supabase.from("products").select(PRODUCT_SELECT).eq("slug", slug).maybeSingle();
+  const db = await getUserDb();
+  if (!db) return null;
+  const { data, error } = await db.from("products").select(PRODUCT_SELECT).eq("slug", slug).maybeSingle();
   if (error || !data) return null;
   return mapProduct(data as unknown as Row);
 });
@@ -181,9 +180,9 @@ export const getPreviewProductBySlug = cache(async (slug: string): Promise<Produ
 export type Category = { id: string; slug: string; name: string; description: string | null };
 
 export const getCategories = cache(async (): Promise<Category[]> => {
-  const supabase = getPublicSupabase();
-  if (!supabase) return [];
-  const { data, error } = await supabase
+  const db = getPublicDb();
+  if (!db) return [];
+  const { data, error } = await db
     .from("categories")
     .select("id, slug, name, description")
     .eq("is_active", true)

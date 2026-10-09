@@ -6,7 +6,6 @@ import { Breadcrumbs, EmptyState } from "@/components/ui/misc";
 import { LeafSprig } from "@/components/brand/botanical";
 import { formatDate } from "@/lib/utils";
 
-export const revalidate = 300;
 export const metadata: Metadata = {
   title: "Journal",
   description: "Stories, tips and news from UNAR.",

@@ -6,7 +6,6 @@ import { ButtonLink } from "@/components/ui/button";
 import { LeafSprig } from "@/components/brand/botanical";
 import { JsonLd } from "@/lib/seo/jsonld";
 
-export const revalidate = 300;
 export const metadata: Metadata = {
   title: "FAQs",
   description: "Answers to common questions about UNAR Banana Chewy, ingredients, allergens, orders and delivery.",

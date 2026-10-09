@@ -1,6 +1,6 @@
 import "server-only";
 import { cookies } from "next/headers";
-import { getAdminSupabase, type AdminSupabase } from "@/lib/supabase/admin";
+import { getServiceDb, type Db } from "@/lib/db/client";
 import { getSessionUser } from "@/lib/auth/session";
 import { getPublicSettings } from "@/lib/settings";
 import { logError } from "@/lib/monitoring";
@@ -77,7 +77,7 @@ async function writeCartCookie(cartId: string) {
 
 const CART_COLUMNS = "id, user_id, coupon_code, email, recovery_consent";
 
-async function mergeCarts(admin: AdminSupabase, fromId: string, intoId: string) {
+async function mergeCarts(admin: Db, fromId: string, intoId: string) {
   const { data: items } = await admin.from("cart_items").select("variant_id, quantity").eq("cart_id", fromId);
   for (const item of items ?? []) {
     const { data: existing } = await admin
@@ -99,10 +99,11 @@ async function mergeCarts(admin: AdminSupabase, fromId: string, intoId: string) 
  * Finds the visitor's active cart. When `create` is true a new cart is made
  * if none exists. Handles guest → account merging on sign-in.
  */
-export async function resolveCart(options: { create: boolean }): Promise<CartRow | null> {
-  const admin = getAdminSupabase();
+export async function resolveCart(options: { create: boolean; userId?: string }): Promise<CartRow | null> {
+  const admin = getServiceDb();
   if (!admin) return null;
-  const user = await getSessionUser();
+  // Right after sign-in the new session is passed in directly.
+  const user = options.userId ? { id: options.userId } : await getSessionUser();
   const cookieId = await readCartCookie();
 
   let cookieCart: CartRow | null = null;
@@ -185,7 +186,7 @@ type ItemRow = {
 
 /** Loads cart items with LIVE prices and stock from the database. */
 export async function loadCartLines(cartId: string): Promise<(QuoteLine & { shortTitle: string; imageAlt: string })[]> {
-  const admin = getAdminSupabase();
+  const admin = getServiceDb();
   if (!admin) return [];
   const { data, error } = await admin
     .from("cart_items")
@@ -276,7 +277,7 @@ export async function changeCartItem(input: { variantId: string; quantity: numbe
   cart: CartView;
   message: string | null;
 }> {
-  const admin = getAdminSupabase();
+  const admin = getServiceDb();
   if (!admin) throw new CartError("The shop is not connected to its database yet.");
   if (!UUID_RE.test(input.variantId)) throw new CartError("That product could not be found.");
 
@@ -331,7 +332,7 @@ export async function changeCartItem(input: { variantId: string; quantity: numbe
 }
 
 export async function setCartCoupon(code: string | null): Promise<CartRow | null> {
-  const admin = getAdminSupabase();
+  const admin = getServiceDb();
   const cart = await resolveCart({ create: false });
   if (!admin || !cart) return cart;
   const { data } = await admin.from("carts").update({ coupon_code: code }).eq("id", cart.id).select(CART_COLUMNS).single();
@@ -340,7 +341,7 @@ export async function setCartCoupon(code: string | null): Promise<CartRow | null
 
 /** Stores the checkout email (and optional reminder consent) on the cart. */
 export async function saveCartContact(email: string, consent: boolean) {
-  const admin = getAdminSupabase();
+  const admin = getServiceDb();
   const cart = await resolveCart({ create: false });
   if (!admin || !cart) return;
   await admin

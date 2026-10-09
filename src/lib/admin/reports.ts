@@ -1,5 +1,5 @@
 import "server-only";
-import type { ServerSupabase } from "@/lib/supabase/server";
+import { type Db } from "@/lib/db/client";
 import type { DateRange } from "./date-range";
 import type { TaxBreakdown } from "@/lib/commerce/types";
 
@@ -15,11 +15,11 @@ export const REPORT_TABS: { key: ReportType; label: string }[] = [
 ];
 
 /** Builds a report as plain rows (used by both the page and the CSV export). */
-export async function loadReport(supabase: ServerSupabase, type: ReportType, range: DateRange): Promise<{ headers: string[]; rows: (string | number | null)[][]; money: number[] }> {
+export async function loadReport(db: Db, type: ReportType, range: DateRange): Promise<{ headers: string[]; rows: (string | number | null)[][]; money: number[] }> {
   const args = { p_from: range.from.toISOString(), p_to: range.to.toISOString() };
   switch (type) {
     case "daily": {
-      const { data } = await supabase.rpc("report_daily_sales", args);
+      const { data } = await db.rpc("report_daily_sales", args);
       return {
         headers: ["Day", "Paid orders", "Revenue", "Refunds", "Net"],
         rows: (data ?? []).map((d) => [d.day, Number(d.orders), Number(d.revenue_paise), Number(d.refunds_paise), Number(d.revenue_paise) - Number(d.refunds_paise)]),
@@ -27,7 +27,7 @@ export async function loadReport(supabase: ServerSupabase, type: ReportType, ran
       };
     }
     case "products": {
-      const { data } = await supabase.rpc("report_product_sales", args);
+      const { data } = await db.rpc("report_product_sales", args);
       return {
         headers: ["Product", "SKU", "Units sold", "Revenue (before order discounts)"],
         rows: (data ?? []).map((d) => [d.title, d.sku, Number(d.units), Number(d.revenue_paise)]),
@@ -35,7 +35,7 @@ export async function loadReport(supabase: ServerSupabase, type: ReportType, ran
       };
     }
     case "coupons": {
-      const { data } = await supabase.rpc("report_coupon_usage", args);
+      const { data } = await db.rpc("report_coupon_usage", args);
       return {
         headers: ["Code", "Paid orders", "Discount given", "Order revenue"],
         rows: (data ?? []).map((d) => [d.code, Number(d.uses), Number(d.discount_paise), Number(d.revenue_paise)]),
@@ -43,7 +43,7 @@ export async function loadReport(supabase: ServerSupabase, type: ReportType, ran
       };
     }
     case "tax": {
-      const { data } = await supabase
+      const { data } = await db
         .from("orders")
         .select("order_number, paid_at, shipping_address, total_paise, tax_paise, tax_breakdown")
         .in("payment_status", PAID)
@@ -62,7 +62,7 @@ export async function loadReport(supabase: ServerSupabase, type: ReportType, ran
       };
     }
     case "refunds": {
-      const { data } = await supabase
+      const { data } = await db
         .from("refunds")
         .select("created_at, amount_paise, status, provider, reason, restocked, orders(order_number)")
         .gte("created_at", args.p_from)

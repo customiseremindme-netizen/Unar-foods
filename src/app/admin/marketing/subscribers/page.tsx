@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { Download } from "lucide-react";
 import { requireStaffPage } from "@/lib/auth/session";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { getUserDb } from "@/lib/db/client";
 import { formatDateTime } from "@/lib/utils";
 import { FilterBar, PageHeader, Pagination, Table, Td, Th, smallInput } from "@/components/admin/ui";
 import { SubscriberActions } from "@/components/admin/subscriber-actions";
@@ -16,8 +16,8 @@ export default async function SubscribersPage({ searchParams }: { searchParams: 
   const q = (params.q ?? "").trim().slice(0, 80).replace(/[%,()]/g, " ");
   const status = params.status === "unsubscribed" ? "unsubscribed" : params.status === "all" ? "all" : "subscribed";
   const page = Math.max(1, Number(params.page) || 1);
-  const supabase = (await createSupabaseServerClient())!;
-  let query = supabase
+  const db = (await getUserDb())!;
+  let query = db
     .from("subscribers")
     .select("id, email, status, source, consent_at, consent_text, unsubscribed_at", { count: "exact" })
     .order("consent_at", { ascending: false })

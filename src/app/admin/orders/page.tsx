@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { Download, TriangleAlert } from "lucide-react";
 import { requireStaffPage } from "@/lib/auth/session";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { getUserDb } from "@/lib/db/client";
 import { resolveRange } from "@/lib/admin/date-range";
 import { formatINR } from "@/lib/money";
 import { formatDateTime } from "@/lib/utils";
@@ -16,13 +16,13 @@ export const metadata = { title: "Orders" };
 export default async function AdminOrdersPage({ searchParams }: { searchParams: Promise<Record<string, string | undefined>> }) {
   await requireStaffPage("orders.read");
   const params = await searchParams;
-  const supabase = (await createSupabaseServerClient())!;
+  const db = (await getUserDb())!;
   const page = Math.max(1, Number(params.page) || 1);
   const q = (params.q ?? "").trim().slice(0, 80);
   const useRange = !!(params.from && params.to);
   const range = resolveRange({ range: "custom", from: params.from, to: params.to });
 
-  let query = supabase
+  let query = db
     .from("orders")
     .select("id, order_number, customer_name, email, phone, total_paise, status, payment_status, fulfillment_status, payment_method, created_at, needs_attention", { count: "exact" })
     .order("created_at", { ascending: false })

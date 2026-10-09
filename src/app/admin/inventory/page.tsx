@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { Download } from "lucide-react";
 import { requireStaffPage } from "@/lib/auth/session";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { getUserDb } from "@/lib/db/client";
 import { formatDateTime } from "@/lib/utils";
 import { Card, Notice, PageHeader, Table, Td, Th } from "@/components/admin/ui";
 import { StockAdjuster } from "@/components/admin/stock-adjuster";
@@ -25,15 +25,15 @@ const REASONS: Record<string, string> = {
 export default async function InventoryPage({ searchParams }: { searchParams: Promise<{ variant?: string }> }) {
   const { access } = await requireStaffPage("inventory.read");
   const { variant: variantFilter } = await searchParams;
-  const supabase = (await createSupabaseServerClient())!;
+  const db = (await getUserDb())!;
   const canWrite = access.permissions.has("inventory.write");
 
-  const { data: variants } = await supabase
+  const { data: variants } = await db
     .from("product_variants")
     .select("id, title, sku, stock, low_stock_threshold, is_active, is_demo_stock, products(id, title, status)")
     .order("sku");
 
-  let movementsQuery = supabase
+  let movementsQuery = db
     .from("inventory_movements")
     .select("id, delta, stock_after, reason, note, created_at, order_id, variant_id, product_variants(sku), orders(order_number)")
     .order("created_at", { ascending: false })

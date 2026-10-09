@@ -3,8 +3,6 @@ import { notFound, permanentRedirect } from "next/navigation";
 import { getCmsPage } from "@/lib/data/content";
 import { CmsPageView } from "@/components/content/cms-page";
 
-export const revalidate = 300;
-
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params;
   const page = await getCmsPage("page", slug);

@@ -1,0 +1,91 @@
+import { expect, test, type Page } from "@playwright/test";
+
+/**
+ * Customer accounts: sign-up with email confirmation, sign-in, password reset.
+ * Needs a local mail catcher (Mailpit) receiving the site's SMTP email:
+ *   E2E_MAILPIT_URL=http://127.0.0.1:8025 npm run test:e2e
+ */
+const mailpit = process.env.E2E_MAILPIT_URL;
+
+async function linkFromEmail(to: string, subject: RegExp): Promise<string> {
+  for (let i = 0; i < 30; i++) {
+    const res = await fetch(`${mailpit}/api/v1/search?query=${encodeURIComponent(`to:${to}`)}`);
+    const { messages } = (await res.json()) as { messages: { ID: string; Subject: string }[] };
+    const msg = messages.find((m) => subject.test(m.Subject));
+    if (msg) {
+      const full = (await (await fetch(`${mailpit}/api/v1/message/${msg.ID}`)).json()) as { Text: string };
+      const url = /(https?:\/\/\S+\/auth\/confirm\?\S+)/.exec(full.Text)?.[1];
+      if (url) return url;
+    }
+    await new Promise((r) => setTimeout(r, 1000));
+  }
+  throw new Error(`No "${subject}" email for ${to}`);
+}
+
+async function signIn(page: Page, email: string, password: string) {
+  await page.goto("/login");
+  await page.fill("#email", email);
+  await page.fill("#password", password);
+  await page.getByRole("button", { name: /^sign in$/i }).click();
+}
+
+test.describe("accounts", () => {
+  test.skip(!mailpit, "Set E2E_MAILPIT_URL to run the email tests");
+
+  test("sign up, confirm by email, reset the password", async ({ page }) => {
+    const email = `account+${Date.now()}@example.com`;
+    await page.goto("/register");
+    await page.fill("#full_name", "Asha Customer");
+    await page.fill("#email", email);
+    await page.fill("#password", "FirstPass123");
+    await page.fill("#confirm", "FirstPass123");
+    await page.getByRole("button", { name: /create account/i }).click();
+    await expect(page.getByText(/sent a confirmation link/i)).toBeVisible();
+
+    // Not confirmed yet → can't sign in.
+    await signIn(page, email, "FirstPass123");
+    await expect(page.getByText(/confirm your email address first/i)).toBeVisible();
+
+    // Opening the link alone does not use it up (protects against email scanners).
+    const confirm = await linkFromEmail(email, /confirm/i);
+    await page.goto(confirm);
+    await page.getByRole("button", { name: /confirm my email/i }).click();
+    await page.waitForURL((u) => u.pathname.startsWith("/account"));
+    await expect(page.locator("body")).toContainText("Asha");
+
+    // The same link can't be used twice.
+    await page.context().clearCookies();
+    await page.goto(confirm);
+    await page.getByRole("button", { name: /confirm my email/i }).click();
+    await page.waitForURL(/\/login\?error=link/);
+
+    // Wrong password is refused with a neutral message.
+    await signIn(page, email, "WrongPass123");
+    await expect(page.getByText("Incorrect email or password.")).toBeVisible();
+
+    // Password reset.
+    await page.goto("/forgot-password");
+    await page.fill("#email", email);
+    await page.getByRole("button", { name: /send reset link/i }).click();
+    await expect(page.getByText(/we've sent a link/i)).toBeVisible();
+    const reset = await linkFromEmail(email, /reset/i);
+    await page.goto(reset);
+    await page.getByRole("button", { name: /continue/i }).click();
+    await page.waitForURL((u) => u.pathname === "/reset-password");
+    await page.fill("#password", "SecondPass456");
+    await page.fill("#confirm", "SecondPass456");
+    await page.getByRole("button", { name: /update password|save|set password/i }).click();
+    await expect(page.getByText("Your password has been updated.")).toBeVisible();
+
+    await page.context().clearCookies();
+    await signIn(page, email, "FirstPass123");
+    await expect(page.getByText("Incorrect email or password.")).toBeVisible();
+    await signIn(page, email, "SecondPass456");
+    await page.waitForURL((u) => u.pathname.startsWith("/account"));
+  });
+
+  test("the setup page is closed once the owner exists", async ({ page }) => {
+    await page.goto("/setup");
+    await expect(page.getByRole("heading", { name: "Your store is set up" })).toBeVisible();
+  });
+});

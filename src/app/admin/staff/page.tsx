@@ -1,5 +1,5 @@
 import { requireStaffPage } from "@/lib/auth/session";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { getUserDb } from "@/lib/db/client";
 import { ROLE_DESCRIPTIONS, ROLE_LABELS, STAFF_ROLES } from "@/lib/auth/permissions";
 import { formatDate } from "@/lib/utils";
 import { Card, PageHeader } from "@/components/admin/ui";
@@ -9,10 +9,10 @@ export const metadata = { title: "Staff" };
 
 export default async function StaffPage() {
   const { user } = await requireStaffPage("staff.manage");
-  const supabase = (await createSupabaseServerClient())!;
-  const { data: staff } = await supabase.from("staff_members").select("user_id, role, created_at").order("created_at");
+  const db = (await getUserDb())!;
+  const { data: staff } = await db.from("staff_members").select("user_id, role, created_at").order("created_at");
   const ids = (staff ?? []).map((s) => s.user_id);
-  const { data: profiles } = ids.length ? await supabase.from("profiles").select("id, email, full_name").in("id", ids) : { data: [] };
+  const { data: profiles } = ids.length ? await db.from("profiles").select("id, email, full_name").in("id", ids) : { data: [] };
   const byId = new Map((profiles ?? []).map((p) => [p.id, p]));
 
   return (

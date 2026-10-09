@@ -1,5 +1,5 @@
 import { requireStaffPage } from "@/lib/auth/session";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { getUserDb } from "@/lib/db/client";
 import { getAllSettings } from "@/lib/settings";
 import { Notice, PageHeader } from "@/components/admin/ui";
 import { ZoneManager, type Zone } from "@/components/admin/marketing-managers";
@@ -9,8 +9,8 @@ export const metadata = { title: "Shipping" };
 
 export default async function ShippingPage() {
   await requireStaffPage("shipping.write");
-  const supabase = (await createSupabaseServerClient())!;
-  const [{ data: zones }, settings] = await Promise.all([supabase.from("shipping_zones").select("*").order("sort_order"), getAllSettings()]);
+  const db = (await getUserDb())!;
+  const [{ data: zones }, settings] = await Promise.all([db.from("shipping_zones").select("*").order("sort_order"), getAllSettings()]);
   const active = (zones ?? []).filter((z) => z.is_active);
 
   return (

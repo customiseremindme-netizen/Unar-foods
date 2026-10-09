@@ -1,5 +1,5 @@
 import { requireStaffPage } from "@/lib/auth/session";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { getUserDb } from "@/lib/db/client";
 import { PageHeader } from "@/components/admin/ui";
 import { CollectionsManager } from "@/components/admin/collections-manager";
 
@@ -7,10 +7,10 @@ export const metadata = { title: "Collections" };
 
 export default async function CollectionsPage() {
   const { access } = await requireStaffPage("products.read");
-  const supabase = (await createSupabaseServerClient())!;
+  const db = (await getUserDb())!;
   const [{ data: categories }, { data: links }] = await Promise.all([
-    supabase.from("categories").select("id, name, slug, description, sort_order, is_active").order("sort_order"),
-    supabase.from("product_categories").select("category_id"),
+    db.from("categories").select("id, name, slug, description, sort_order, is_active").order("sort_order"),
+    db.from("product_categories").select("category_id"),
   ]);
   const counts = new Map<string, number>();
   for (const l of links ?? []) counts.set(l.category_id, (counts.get(l.category_id) ?? 0) + 1);

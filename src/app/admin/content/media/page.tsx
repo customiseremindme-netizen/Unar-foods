@@ -1,5 +1,5 @@
 import { requireStaffPage } from "@/lib/auth/session";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { getUserDb } from "@/lib/db/client";
 import { PageHeader } from "@/components/admin/ui";
 import { MediaLibrary } from "@/components/admin/content-managers";
 import { BUNDLED_MEDIA } from "@/lib/admin/bundled-media";
@@ -8,8 +8,8 @@ export const metadata = { title: "Media library" };
 
 export default async function MediaPage() {
   await requireStaffPage("media.write");
-  const supabase = (await createSupabaseServerClient())!;
-  const { data } = await supabase.from("media_assets").select("id, url, alt, width, height, size_bytes, mime_type, created_at").order("created_at", { ascending: false }).limit(300);
+  const db = (await getUserDb())!;
+  const { data } = await db.from("media_assets").select("id, url, alt, width, height, size_bytes, mime_type, created_at").order("created_at", { ascending: false }).limit(300);
   return (
     <div>
       <PageHeader

@@ -1,5 +1,5 @@
 import { requireStaffPage } from "@/lib/auth/session";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { getUserDb } from "@/lib/db/client";
 import { PageHeader } from "@/components/admin/ui";
 import { HomeEditor, type EditorSection } from "@/components/admin/home-editor";
 
@@ -10,10 +10,10 @@ const comparable = (rows: { key: string; type: string; is_visible: boolean; cont
 
 export default async function HomeContentPage() {
   await requireStaffPage("content.write");
-  const supabase = (await createSupabaseServerClient())!;
+  const db = (await getUserDb())!;
   const [{ data: sections }, { data: products }] = await Promise.all([
-    supabase.from("cms_sections").select("key, type, state, sort_order, is_visible, content, updated_at, published_at").eq("page", "home").order("sort_order"),
-    supabase.from("products").select("slug, title").neq("status", "archived").order("sort_order"),
+    db.from("cms_sections").select("key, type, state, sort_order, is_visible, content, updated_at, published_at").eq("page", "home").order("sort_order"),
+    db.from("products").select("slug, title").neq("status", "archived").order("sort_order"),
   ]);
   const draft = (sections ?? []).filter((s) => s.state === "draft");
   const published = (sections ?? []).filter((s) => s.state === "published");

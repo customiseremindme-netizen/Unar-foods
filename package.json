@@ -2,7 +2,7 @@
   "name": "unar-foods",
   "version": "1.0.0",
   "private": true,
-  "description": "UNAR \u2014 One Healthy Habit a Day. Premium e-commerce storefront and admin dashboard.",
+  "description": "UNAR — One Healthy Habit a Day. Premium e-commerce storefront and admin dashboard.",
   "engines": {
     "node": ">=22.0.0"
   },
@@ -16,16 +16,15 @@
     "test:watch": "vitest",
     "test:e2e": "playwright test",
     "check": "npm run lint && npm run typecheck && npm run test",
-    "db:types": "supabase gen types typescript --local --schema public > src/lib/db/database.types.ts",
     "test:db": "VITEST_INTEGRATION=1 vitest run",
-    "db:bundle": "node scripts/bundle-migrations.mjs"
+    "db:types": "node --no-warnings scripts/generate-db-types.mts"
   },
   "dependencies": {
-    "@supabase/ssr": "0.12.7",
-    "@supabase/supabase-js": "2.117.3",
+    "@supabase/postgrest-js": "2.117.3",
     "clsx": "2.1.1",
     "lucide-react": "1.53.0",
     "motion": "14.0.0",
+    "mysql2": "3.24.4",
     "next": "16.4.0",
     "nodemailer": "10.0.10",
     "react": "19.3.0",
@@ -46,7 +45,6 @@
     "@types/react-dom": "19.3.0",
     "eslint": "9.39.5",
     "eslint-config-next": "16.4.0",
-    "supabase": "2.120.0",
     "tailwindcss": "4.3.3",
     "typescript": "5.9.3",
     "vitest": "5.0.3"

@@ -1,12 +1,12 @@
 import { requireUser } from "@/lib/auth/session";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { getUserDb } from "@/lib/db/client";
 import { ProfileForm } from "@/components/account/profile-form";
 import { ResetPasswordForm } from "@/components/auth/auth-forms";
 
 export default async function ProfilePage() {
   const user = await requireUser("/account/profile");
-  const supabase = await createSupabaseServerClient();
-  const { data } = await supabase!.from("profiles").select("full_name, phone, marketing_consent").eq("id", user.id).maybeSingle();
+  const db = await getUserDb();
+  const { data } = await db!.from("profiles").select("full_name, phone, marketing_consent").eq("id", user.id).maybeSingle();
   return (
     <div className="space-y-12">
       <section>

@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { requireStaffPage } from "@/lib/auth/session";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { getUserDb } from "@/lib/db/client";
 import { formatDateTime } from "@/lib/utils";
 import { FilterBar, PageHeader, Pagination, Table, Td, Th, smallInput } from "@/components/admin/ui";
 import { EmptyState } from "@/components/ui/misc";
@@ -13,8 +13,8 @@ export default async function ActivityPage({ searchParams }: { searchParams: Pro
   const params = await searchParams;
   const q = (params.q ?? "").trim().slice(0, 60).replace(/[%,()]/g, " ");
   const page = Math.max(1, Number(params.page) || 1);
-  const supabase = (await createSupabaseServerClient())!;
-  let query = supabase
+  const db = (await getUserDb())!;
+  let query = db
     .from("audit_logs")
     .select("id, actor_email, action, entity_type, entity_id, summary, created_at", { count: "exact" })
     .order("created_at", { ascending: false })

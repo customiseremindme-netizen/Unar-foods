@@ -1,5 +1,5 @@
 import { getStaffAccess } from "@/lib/auth/session";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { getUserDb } from "@/lib/db/client";
 import { csvResponse, toCsv } from "@/lib/csv";
 
 export const dynamic = "force-dynamic";
@@ -9,8 +9,8 @@ export async function GET(request: Request) {
   const access = await getStaffAccess();
   if (!access?.permissions.has("marketing.write")) return new Response("Forbidden", { status: 403 });
   const status = new URL(request.url).searchParams.get("status") ?? "subscribed";
-  const supabase = (await createSupabaseServerClient())!;
-  let query = supabase.from("subscribers").select("email, status, consent_at, consent_text, source, unsubscribed_at").order("consent_at").limit(50000);
+  const db = (await getUserDb())!;
+  let query = db.from("subscribers").select("email, status, consent_at, consent_text, source, unsubscribed_at").order("consent_at").limit(50000);
   if (status === "subscribed" || status === "unsubscribed") query = query.eq("status", status);
   const { data, error } = await query;
   if (error) return new Response("Export failed", { status: 500 });

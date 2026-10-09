@@ -3,7 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ExternalLink, FileText, Printer, TriangleAlert } from "lucide-react";
 import { requireStaffPage } from "@/lib/auth/session";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { getUserDb } from "@/lib/db/client";
 import { isShiprocketConfigured } from "@/lib/shipping/shiprocket";
 import { formatINR } from "@/lib/money";
 import { formatDateTime, titleCase } from "@/lib/utils";
@@ -26,8 +26,8 @@ export default async function AdminOrderPage({ params }: { params: Promise<{ id:
   const { access } = await requireStaffPage("orders.read");
   const { id } = await params;
   if (!/^[0-9a-f-]{36}$/.test(id)) notFound();
-  const supabase = (await createSupabaseServerClient())!;
-  const { data: order } = await supabase
+  const db = (await getUserDb())!;
+  const { data: order } = await db
     .from("orders")
     .select(
       `*, order_items(*), order_events(id, type, message, visibility, created_at, actor_id),

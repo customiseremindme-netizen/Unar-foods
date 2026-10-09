@@ -1,6 +1,6 @@
 import "server-only";
 import type { Json } from "@/lib/db/database.types";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { getUserDb } from "@/lib/db/client";
 import { logError } from "@/lib/monitoring";
 
 /** Records an admin action in the audit log (who did what, when). */
@@ -11,9 +11,9 @@ export async function logAdminAction(input: {
   summary: string;
   diff?: Record<string, unknown> | null;
 }) {
-  const supabase = await createSupabaseServerClient();
-  if (!supabase) return;
-  const { error } = await supabase.rpc("log_admin_action", {
+  const db = await getUserDb();
+  if (!db) return;
+  const { error } = await db.rpc("log_admin_action", {
     p_action: input.action,
     p_entity_type: input.entityType,
     p_entity_id: input.entityId ?? "",

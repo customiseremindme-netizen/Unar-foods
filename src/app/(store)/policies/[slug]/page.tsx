@@ -1,14 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { getCmsPage, listCmsPages } from "@/lib/data/content";
+import { getCmsPage } from "@/lib/data/content";
 import { CmsPageView } from "@/components/content/cms-page";
-
-export const revalidate = 300;
-export const dynamicParams = true;
-
-export async function generateStaticParams() {
-  return (await listCmsPages("policy")).map((p) => ({ slug: p.slug }));
-}
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params;

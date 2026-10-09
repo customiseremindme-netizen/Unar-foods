@@ -1,5 +1,5 @@
 import { requireStaffPage } from "@/lib/auth/session";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { getUserDb } from "@/lib/db/client";
 import { PageHeader } from "@/components/admin/ui";
 import { CouponManager, type Coupon } from "@/components/admin/marketing-managers";
 
@@ -7,10 +7,10 @@ export const metadata = { title: "Coupons" };
 
 export default async function CouponsPage() {
   await requireStaffPage("marketing.write");
-  const supabase = (await createSupabaseServerClient())!;
+  const db = (await getUserDb())!;
   const [{ data: coupons }, { data: usages }] = await Promise.all([
-    supabase.from("coupons").select("*").order("created_at", { ascending: false }),
-    supabase.from("coupon_usages").select("coupon_id"),
+    db.from("coupons").select("*").order("created_at", { ascending: false }),
+    db.from("coupon_usages").select("coupon_id"),
   ]);
   const used = new Map<string, number>();
   for (const u of usages ?? []) used.set(u.coupon_id, (used.get(u.coupon_id) ?? 0) + 1);

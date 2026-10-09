@@ -1,11 +1,11 @@
 import { requireUser } from "@/lib/auth/session";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { getUserDb } from "@/lib/db/client";
 import { AddressManager, type Address } from "@/components/account/address-manager";
 
 export default async function AddressesPage() {
   const user = await requireUser("/account/addresses");
-  const supabase = await createSupabaseServerClient();
-  const { data } = await supabase!
+  const db = await getUserDb();
+  const { data } = await db!
     .from("addresses")
     .select("id, label, full_name, phone, line1, line2, landmark, city, state, pincode, is_default")
     .eq("user_id", user.id)

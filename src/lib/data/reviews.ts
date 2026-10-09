@@ -1,6 +1,6 @@
 import "server-only";
 import { cache } from "react";
-import { getPublicSupabase } from "@/lib/supabase/public";
+import { getPublicDb } from "@/lib/db/client";
 import { logError } from "@/lib/monitoring";
 
 export type PublicReview = {
@@ -19,9 +19,9 @@ export type ReviewStats = { count: number; average: number };
 
 /** Approved reviews only (row level security hides everything else). */
 export const getApprovedReviews = cache(async (): Promise<PublicReview[]> => {
-  const supabase = getPublicSupabase();
-  if (!supabase) return [];
-  const { data, error } = await supabase
+  const db = getPublicDb();
+  if (!db) return [];
+  const { data, error } = await db
     .from("reviews")
     .select("id, product_id, author_name, rating, title, body, is_verified_purchase, admin_reply, created_at")
     .eq("status", "approved")

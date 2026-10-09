@@ -94,7 +94,7 @@ const productSchema = z.object({
 export type ProductPayload = z.input<typeof productSchema>;
 
 export async function saveProductAction(payload: ProductPayload): Promise<ActionResult> {
-  return runAdminAction("products.write", async ({ supabase }) => {
+  return runAdminAction("products.write", async ({ db }) => {
     const p = productSchema.parse(payload);
 
     const variants = p.variants.map((v, i) => {
@@ -113,10 +113,10 @@ export async function saveProductAction(payload: ProductPayload): Promise<Action
       if (p.images.some((i) => !i.alt)) throw new UserFacingError("Add a description (alt text) to every image before publishing.");
     }
 
-    const { data: current } = check(await supabase.from("products").select("published_at, status").eq("id", p.id).single());
+    const { data: current } = check(await db.from("products").select("published_at, status").eq("id", p.id).single());
 
     check(
-      await supabase
+      await db
         .from("products")
         .update({
           title: p.title,
@@ -153,16 +153,16 @@ export async function saveProductAction(payload: ProductPayload): Promise<Action
     );
 
     // Collections
-    check(await supabase.from("product_categories").delete().eq("product_id", p.id));
+    check(await db.from("product_categories").delete().eq("product_id", p.id));
     if (p.category_ids.length) {
-      check(await supabase.from("product_categories").insert(p.category_ids.map((category_id) => ({ product_id: p.id, category_id }))));
+      check(await db.from("product_categories").insert(p.category_ids.map((category_id) => ({ product_id: p.id, category_id }))));
     }
 
     // Variants (stock is managed in Inventory, never here)
-    const { data: existingVariants } = check(await supabase.from("product_variants").select("id").eq("product_id", p.id));
+    const { data: existingVariants } = check(await db.from("product_variants").select("id").eq("product_id", p.id));
     const keepIds = new Set(variants.filter((v) => v.id).map((v) => v.id!));
     const toDelete = (existingVariants ?? []).filter((v) => !keepIds.has(v.id)).map((v) => v.id);
-    if (toDelete.length) check(await supabase.from("product_variants").delete().in("id", toDelete));
+    if (toDelete.length) check(await db.from("product_variants").delete().in("id", toDelete));
     for (const v of variants) {
       const row = {
         title: v.title,
@@ -175,19 +175,19 @@ export async function saveProductAction(payload: ProductPayload): Promise<Action
         is_active: v.is_active,
         sort_order: v.sort_order,
       };
-      if (v.id) check(await supabase.from("product_variants").update(row).eq("id", v.id).eq("product_id", p.id), `Could not save variant ${v.sku} (is the SKU already used?).`);
-      else check(await supabase.from("product_variants").insert({ ...row, product_id: p.id, stock: 0 }), `Could not add variant ${v.sku} (is the SKU already used?).`);
+      if (v.id) check(await db.from("product_variants").update(row).eq("id", v.id).eq("product_id", p.id), `Could not save variant ${v.sku} (is the SKU already used?).`);
+      else check(await db.from("product_variants").insert({ ...row, product_id: p.id, stock: 0 }), `Could not add variant ${v.sku} (is the SKU already used?).`);
     }
 
     // Images (order = position in the list)
-    const { data: existingImages } = check(await supabase.from("product_images").select("id").eq("product_id", p.id));
+    const { data: existingImages } = check(await db.from("product_images").select("id").eq("product_id", p.id));
     const keepImages = new Set(p.images.filter((i) => i.id).map((i) => i.id!));
     const removeImages = (existingImages ?? []).filter((i) => !keepImages.has(i.id)).map((i) => i.id);
-    if (removeImages.length) check(await supabase.from("product_images").delete().in("id", removeImages));
+    if (removeImages.length) check(await db.from("product_images").delete().in("id", removeImages));
     for (const [index, img] of p.images.entries()) {
       const row = { url: img.url, alt: img.alt, kind: img.kind, width: img.width, height: img.height, sort_order: index + 1 };
-      if (img.id) check(await supabase.from("product_images").update(row).eq("id", img.id).eq("product_id", p.id));
-      else check(await supabase.from("product_images").insert({ ...row, product_id: p.id }));
+      if (img.id) check(await db.from("product_images").update(row).eq("id", img.id).eq("product_id", p.id));
+      else check(await db.from("product_images").insert({ ...row, product_id: p.id }));
     }
 
     await logAdminAction({
@@ -203,13 +203,13 @@ export async function saveProductAction(payload: ProductPayload): Promise<Action
 }
 
 export async function createProductAction(): Promise<void> {
-  const result = await runAdminAction("products.write", async ({ supabase }) => {
+  const result = await runAdminAction("products.write", async ({ db }) => {
     const suffix = randomToken(4).toLowerCase().replace(/[^a-z0-9]/g, "x");
     const { data } = check(
-      await supabase.from("products").insert({ title: "New product", slug: `new-product-${suffix}`, status: "draft" }).select("id").single(),
+      await db.from("products").insert({ title: "New product", slug: `new-product-${suffix}`, status: "draft" }).select("id").single(),
     );
     check(
-      await supabase.from("product_variants").insert({
+      await db.from("product_variants").insert({
         product_id: data!.id,
         title: "100 g",
         sku: `NEW-${suffix.toUpperCase()}`,
@@ -226,10 +226,10 @@ export async function createProductAction(): Promise<void> {
 }
 
 export async function duplicateProductAction(productId: string): Promise<ActionResult<string>> {
-  return runAdminAction("products.write", async ({ supabase }) => {
+  return runAdminAction("products.write", async ({ db }) => {
     z.uuid().parse(productId);
     const { data: src } = check(
-      await supabase
+      await db
         .from("products")
         .select("*, product_variants(*), product_images(*), product_categories(category_id)")
         .eq("id", productId)
@@ -242,7 +242,7 @@ export async function duplicateProductAction(productId: string): Promise<ActionR
     void _u;
     void _p;
     const { data: copy } = check(
-      await supabase
+      await db
         .from("products")
         .insert({ ...rest, title: `${src!.title} (copy)`, slug: `${src!.slug}-copy-${suffix}`.slice(0, 120), status: "draft", is_featured: false })
         .select("id")
@@ -250,7 +250,7 @@ export async function duplicateProductAction(productId: string): Promise<ActionR
     );
     for (const v of product_variants ?? []) {
       check(
-        await supabase.from("product_variants").insert({
+        await db.from("product_variants").insert({
           product_id: copy!.id,
           title: v.title,
           sku: `${v.sku}-COPY-${suffix.toUpperCase()}`.slice(0, 64),
@@ -267,13 +267,13 @@ export async function duplicateProductAction(productId: string): Promise<ActionR
     }
     if ((product_images ?? []).length) {
       check(
-        await supabase.from("product_images").insert(
+        await db.from("product_images").insert(
           product_images.map((i) => ({ product_id: copy!.id, url: i.url, alt: i.alt, kind: i.kind, width: i.width, height: i.height, sort_order: i.sort_order })),
         ),
       );
     }
     if ((product_categories ?? []).length) {
-      check(await supabase.from("product_categories").insert(product_categories.map((c) => ({ product_id: copy!.id, category_id: c.category_id }))));
+      check(await db.from("product_categories").insert(product_categories.map((c) => ({ product_id: copy!.id, category_id: c.category_id }))));
     }
     await logAdminAction({ action: "product.duplicate", entityType: "product", entityId: copy!.id, summary: `Duplicated “${src!.title}”` });
     revalidatePath("/admin/products");
@@ -282,17 +282,17 @@ export async function duplicateProductAction(productId: string): Promise<ActionR
 }
 
 export async function setProductStatusAction(productId: string, status: "draft" | "published" | "archived"): Promise<ActionResult> {
-  return runAdminAction("products.write", async ({ supabase }) => {
+  return runAdminAction("products.write", async ({ db }) => {
     z.uuid().parse(productId);
     const { data: product } = check(
-      await supabase.from("products").select("title, published_at, product_images(id), product_variants(id, is_active, price_paise)").eq("id", productId).single(),
+      await db.from("products").select("title, published_at, product_images(id), product_variants(id, is_active, price_paise)").eq("id", productId).single(),
     );
     if (status === "published") {
       if (!(product!.product_images ?? []).length) throw new UserFacingError("Add at least one image before publishing.");
       if (!(product!.product_variants ?? []).some((v) => v.is_active && v.price_paise > 0)) throw new UserFacingError("Set a price before publishing.");
     }
     check(
-      await supabase
+      await db
         .from("products")
         .update({ status, published_at: status === "published" ? (product!.published_at ?? new Date().toISOString()) : product!.published_at })
         .eq("id", productId),
@@ -305,11 +305,11 @@ export async function setProductStatusAction(productId: string, status: "draft" 
 }
 
 export async function deleteProductAction(productId: string): Promise<ActionResult> {
-  return runAdminAction("products.write", async ({ supabase }) => {
+  return runAdminAction("products.write", async ({ db }) => {
     z.uuid().parse(productId);
-    const { data: product } = check(await supabase.from("products").select("title, status").eq("id", productId).single());
+    const { data: product } = check(await db.from("products").select("title, status").eq("id", productId).single());
     if (product!.status === "published") throw new UserFacingError("Archive or unpublish the product before deleting it.");
-    check(await supabase.from("products").delete().eq("id", productId), "Could not delete the product.");
+    check(await db.from("products").delete().eq("id", productId), "Could not delete the product.");
     await logAdminAction({ action: "product.delete", entityType: "product", entityId: productId, summary: `Deleted “${product!.title}”` });
     revalidateStorefront();
     revalidatePath("/admin/products");
@@ -330,7 +330,7 @@ const categorySchema = z.object({
 });
 
 export async function saveCategoryAction(formData: FormData): Promise<ActionResult> {
-  return runAdminAction("products.write", async ({ supabase }) => {
+  return runAdminAction("products.write", async ({ db }) => {
     const c = categorySchema.parse({
       id: formData.get("id") ?? "",
       name: formData.get("name"),
@@ -340,8 +340,8 @@ export async function saveCategoryAction(formData: FormData): Promise<ActionResu
       is_active: formData.get("is_active") === "on",
     });
     const row = { name: c.name, slug: c.slug, description: c.description || null, sort_order: c.sort_order, is_active: c.is_active };
-    if (c.id) check(await supabase.from("categories").update(row).eq("id", c.id));
-    else check(await supabase.from("categories").insert(row));
+    if (c.id) check(await db.from("categories").update(row).eq("id", c.id));
+    else check(await db.from("categories").insert(row));
     await logAdminAction({ action: "collection.save", entityType: "category", entityId: c.id || null, summary: `Saved collection “${c.name}”` });
     revalidateStorefront();
     revalidatePath("/admin/products/collections");
@@ -350,9 +350,9 @@ export async function saveCategoryAction(formData: FormData): Promise<ActionResu
 }
 
 export async function deleteCategoryAction(id: string): Promise<ActionResult> {
-  return runAdminAction("products.write", async ({ supabase }) => {
+  return runAdminAction("products.write", async ({ db }) => {
     z.uuid().parse(id);
-    check(await supabase.from("categories").delete().eq("id", id));
+    check(await db.from("categories").delete().eq("id", id));
     await logAdminAction({ action: "collection.delete", entityType: "category", entityId: id, summary: "Deleted a collection" });
     revalidateStorefront();
     revalidatePath("/admin/products/collections");

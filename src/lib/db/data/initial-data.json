@@ -1,0 +1,1523 @@
+{
+ "settings": [
+  {
+   "key": "brand",
+   "value": {
+    "logo_alt": "UNAR — One Healthy Habit a Day",
+    "logo_url": "/brand/unar-logo-transparent.webp",
+    "logo_width": 960,
+    "favicon_url": "",
+    "logo_height": 307,
+    "logo_svg_url": ""
+   },
+   "is_public": true,
+   "updated_by": null
+  },
+  {
+   "key": "checkout",
+   "value": {
+    "cod_enabled": false,
+    "cod_fee_paise": 0,
+    "min_order_paise": 0,
+    "cod_max_order_paise": null,
+    "reservation_minutes": 30,
+    "max_quantity_per_item": 10,
+    "guest_checkout_enabled": true,
+    "online_payments_enabled": true
+   },
+   "is_public": true,
+   "updated_by": null
+  },
+  {
+   "key": "footer",
+   "value": {
+    "note": "",
+    "blurb": "Chewy dehydrated banana snacks, made for one healthy habit a day."
+   },
+   "is_public": true,
+   "updated_by": null
+  },
+  {
+   "key": "maintenance",
+   "value": {
+    "enabled": false,
+    "message": "We're making a few improvements to our store. Please check back soon."
+   },
+   "is_public": true,
+   "updated_by": null
+  },
+  {
+   "key": "navigation",
+   "value": {
+    "header": [
+     {
+      "href": "/shop",
+      "label": "Shop"
+     },
+     {
+      "href": "/about",
+      "label": "Our Story"
+     },
+     {
+      "href": "/#why-unar",
+      "label": "Why UNAR"
+     },
+     {
+      "href": "/faqs",
+      "label": "FAQs"
+     },
+     {
+      "href": "/contact",
+      "label": "Contact"
+     }
+    ],
+    "footer_help": [
+     {
+      "href": "/track-order",
+      "label": "Track your order"
+     },
+     {
+      "href": "/faqs",
+      "label": "FAQs"
+     },
+     {
+      "href": "/contact",
+      "label": "Contact us"
+     },
+     {
+      "href": "/policies/shipping-policy",
+      "label": "Shipping policy"
+     },
+     {
+      "href": "/policies/refund-policy",
+      "label": "Refunds & returns"
+     }
+    ],
+    "footer_shop": [
+     {
+      "href": "/shop",
+      "label": "All products"
+     },
+     {
+      "href": "/shop?collection=banana-chewy",
+      "label": "Banana Chewy"
+     },
+     {
+      "href": "/blog",
+      "label": "Journal"
+     }
+    ]
+   },
+   "is_public": true,
+   "updated_by": null
+  },
+  {
+   "key": "newsletter",
+   "value": {
+    "enabled": true,
+    "consent_text": "Yes, email me news and offers from UNAR. I can unsubscribe at any time."
+   },
+   "is_public": true,
+   "updated_by": null
+  },
+  {
+   "key": "notifications",
+   "value": {
+    "reply_to": "unarfoods@gmail.com",
+    "from_name": "UNAR",
+    "templates": {
+     "order_placed": {
+      "intro": "Thank you for shopping with UNAR. Here is a summary of your order.",
+      "enabled": true,
+      "subject": "We've received your order {{order_number}}"
+     },
+     "order_shipped": {
+      "intro": "Good news — your order is on its way.",
+      "enabled": true,
+      "subject": "Your UNAR order {{order_number}} has shipped"
+     },
+     "refund_issued": {
+      "intro": "A refund has been issued for your order.",
+      "enabled": true,
+      "subject": "Refund update for order {{order_number}}"
+     },
+     "order_cancelled": {
+      "intro": "Your order has been cancelled. If a payment was made, any refund will be processed to the original payment method.",
+      "enabled": true,
+      "subject": "Your UNAR order {{order_number}} was cancelled"
+     },
+     "order_delivered": {
+      "intro": "Your order has been marked as delivered. We hope you enjoy it!",
+      "enabled": true,
+      "subject": "Your UNAR order {{order_number}} was delivered"
+     },
+     "payment_confirmed": {
+      "intro": "Your payment was successful and your order is confirmed. We'll let you know when it ships.",
+      "enabled": true,
+      "subject": "Payment received for order {{order_number}}"
+     }
+    },
+    "admin_recipients": [
+     "unarfoods@gmail.com"
+    ],
+    "whatsapp_enabled": false,
+    "notify_admin_new_order": true
+   },
+   "is_public": false,
+   "updated_by": null
+  },
+  {
+   "key": "product_defaults",
+   "value": {
+    "shipping_returns_md": "Shipping charges are calculated at checkout from your PIN code. See our [Shipping Policy](/policies/shipping-policy) and [Refunds & Returns](/policies/refund-policy) for details."
+   },
+   "is_public": true,
+   "updated_by": null
+  },
+  {
+   "key": "reviews",
+   "value": {
+    "enabled": true,
+    "require_verified_purchase": false
+   },
+   "is_public": true,
+   "updated_by": null
+  },
+  {
+   "key": "seo",
+   "value": {
+    "site_title": "UNAR — One Healthy Habit a Day",
+    "description": "UNAR Banana Chewy: chewy dehydrated banana snacks in two varieties — Fresh Raw Banana, and With Dry Fruits & Seeds. Shop online from UNAR.",
+    "og_image_url": "/images/products/dry-fruits-seeds/01-main-hero-pouch.webp",
+    "allow_indexing": true,
+    "title_template": "%s · UNAR"
+   },
+   "is_public": true,
+   "updated_by": null
+  },
+  {
+   "key": "shipping",
+   "value": {
+    "enabled": true,
+    "checkout_note": "",
+    "origin_pincode": "641664",
+    "blocked_pincodes": [],
+    "packaging_weight_grams": 0
+   },
+   "is_public": true,
+   "updated_by": null
+  },
+  {
+   "key": "shiprocket",
+   "value": {
+    "enabled": false,
+    "pickup_location": "",
+    "default_height_cm": 5,
+    "default_length_cm": 20,
+    "default_breadth_cm": 15
+   },
+   "is_public": false,
+   "updated_by": null
+  },
+  {
+   "key": "social",
+   "value": {
+    "youtube_url": "",
+    "facebook_url": "",
+    "instagram_url": "",
+    "whatsapp_number": "9994657693"
+   },
+   "is_public": true,
+   "updated_by": null
+  },
+  {
+   "key": "store",
+   "value": {
+    "city": "Palladam",
+    "name": "UNAR",
+    "email": "unarfoods@gmail.com",
+    "phone": "9994657693",
+    "state": "Tamil Nadu",
+    "country": "India",
+    "pincode": "641664",
+    "tagline": "One Healthy Habit a Day",
+    "whatsapp": "9994657693",
+    "legal_name": "",
+    "address_lines": [
+     "107 A2-4, Sulochana Villa",
+     "SAPS Cinema Theatre Thottam, Trichy Road",
+     "Palladam, Tiruppur - 641664"
+    ],
+    "fssai_license": "22426493000447",
+    "business_hours": "",
+    "details_confirmed": false
+   },
+   "is_public": true,
+   "updated_by": null
+  },
+  {
+   "key": "tax",
+   "value": {
+    "gstin": "",
+    "legal_name": "",
+    "seller_state": "Tamil Nadu",
+    "gst_registered": false,
+    "invoice_footer": "Thank you for choosing UNAR.",
+    "prices_include_tax": true
+   },
+   "is_public": true,
+   "updated_by": null
+  },
+  {
+   "key": "theme",
+   "value": {
+    "sage": "#A8B99A",
+    "cream": "#F2F1E6",
+    "olive": "#7A8F3D",
+    "accent": "#E2B33C",
+    "forest": "#2E4E36"
+   },
+   "is_public": true,
+   "updated_by": null
+  }
+ ],
+ "categories": [
+  {
+   "id": "6a0f0c34-0b5e-4d3a-9a0e-0d6c9b7f1a01",
+   "slug": "banana-chewy",
+   "name": "Banana Chewy",
+   "description": "Chewy dehydrated banana snacks from UNAR.",
+   "image_url": null,
+   "sort_order": 1,
+   "is_active": true,
+   "seo_title": null,
+   "seo_description": null
+  }
+ ],
+ "products": [
+  {
+   "id": "2b7f3a10-5c1e-4f7e-8a51-6f0d9b1c2e01",
+   "slug": "banana-chewy-dry-fruits-seeds",
+   "title": "Dehydrated Banana Chewy — With Dry Fruits & Seeds",
+   "short_title": "Banana Chewy — Dry Fruits & Seeds",
+   "subtitle": "With Dry Fruits & Seeds",
+   "short_description": "Dehydrated banana with almonds, cashews, black dry grapes and seeds. 100 g pack.",
+   "description_md": "A perfect blend of naturally dehydrated bananas and dry fruits & seeds.\n\nUNAR Banana Chewy with Dry Fruits & Seeds brings together dehydrated banana with almonds (badam), cashews, black dry grapes, and sesame (black & white), sunflower, melon and pumpkin seeds.\n\nEach 100 g pack holds about four 25 g servings.",
+   "status": "draft",
+   "ingredients": "Banana, Black & White Sesame Seed, Badam (Almonds), Cashew, Sunflower Seed, Black Dry Grapes, Melon Seed, Pumpkin Seed.",
+   "allergens": "Contains Sesame Seeds and Tree Nuts (Almonds, Cashews).",
+   "dietary_mark": "vegetarian",
+   "nutrition": [
+    {
+     "nutrient": "Energy",
+     "per_100g": "380.85 kcal"
+    },
+    {
+     "nutrient": "Protein",
+     "per_100g": "9.53 g"
+    },
+    {
+     "nutrient": "Carbohydrates",
+     "per_100g": "71.08 g"
+    },
+    {
+     "nutrient": "Total Fat",
+     "per_100g": "6.49 g"
+    },
+    {
+     "nutrient": "Total Sugars",
+     "per_100g": "10.4 g"
+    },
+    {
+     "nutrient": "Added Sugar",
+     "per_100g": "0 g"
+    }
+   ],
+   "nutrition_note": "Serving size 25 grams · Servings per pack 4",
+   "claims": [
+    {
+     "label": "100% Natural",
+     "approved": false
+    },
+    {
+     "label": "No Added Sugar",
+     "approved": false
+    },
+    {
+     "label": "No Preservatives",
+     "approved": false
+    },
+    {
+     "label": "No Artificial Colour",
+     "approved": false
+    },
+    {
+     "label": "Gluten Free",
+     "approved": false
+    }
+   ],
+   "benefits": [
+    {
+     "label": "Natural Source of Energy",
+     "approved": false
+    },
+    {
+     "label": "Made with Banana, Nuts & Seeds",
+     "approved": false
+    },
+    {
+     "label": "Naturally Sweet",
+     "approved": false
+    },
+    {
+     "label": "Clean & Wholesome",
+     "approved": false
+    },
+    {
+     "label": "Chewy & Satisfying snack",
+     "approved": false
+    },
+    {
+     "label": "Perfect Anytime Snack",
+     "approved": false
+    }
+   ],
+   "storage_instructions": "Store in a cool, dry place. Keep away from direct sunlight.",
+   "shelf_life": "Best Before 45 days from the date of Mfg.",
+   "shelf_life_approved": false,
+   "shipping_returns_md": null,
+   "manufacturer_info": "Manufactured and Marketed by: UNAR, 107 A2-4, Sulochana Villa, SAPS Cinema Theatre Thottam, Trichy Road, Palladam, Tiruppur - 641664.",
+   "fssai_license": "22426493000447",
+   "hsn_code": null,
+   "gst_rate": null,
+   "is_featured": true,
+   "sort_order": 1,
+   "seo_title": "Banana Chewy with Dry Fruits & Seeds (100 g)",
+   "seo_description": "UNAR Dehydrated Banana Chewy with almonds, cashews, black dry grapes and seeds. 100 g pack. See ingredients, allergen advice and nutrition per 100 g.",
+   "og_image_url": null,
+   "published_at": null
+  },
+  {
+   "id": "2b7f3a10-5c1e-4f7e-8a51-6f0d9b1c2e02",
+   "slug": "banana-chewy-fresh-raw-banana",
+   "title": "Dehydrated Banana Chewy — Fresh Raw Banana",
+   "short_title": "Banana Chewy — Fresh Raw Banana",
+   "subtitle": "Fresh Raw Banana",
+   "short_description": "Dehydrated banana. Ingredient as printed on the pack: fresh raw banana. 100 g pack.",
+   "description_md": "UNAR Banana Chewy — Fresh Raw Banana is dehydrated banana with a chewy bite. The ingredient list on the pack reads simply: fresh raw banana.\n\nEach 100 g pack holds about four 25 g servings.",
+   "status": "draft",
+   "ingredients": "FRESH RAW BANANA",
+   "allergens": null,
+   "dietary_mark": "vegetarian",
+   "nutrition": [
+    {
+     "nutrient": "Energy",
+     "per_100g": "348.72 kcal"
+    },
+    {
+     "nutrient": "Protein",
+     "per_100g": "0.3 g"
+    },
+    {
+     "nutrient": "Carbohydrates",
+     "per_100g": "86.49 g"
+    },
+    {
+     "nutrient": "Total Fat",
+     "per_100g": "0.5 g"
+    },
+    {
+     "nutrient": "Total Sugars",
+     "per_100g": "8.75 g"
+    },
+    {
+     "nutrient": "Added Sugar",
+     "per_100g": "0 g"
+    }
+   ],
+   "nutrition_note": "Serving size 25 grams · Servings per pack 4",
+   "claims": [
+    {
+     "label": "100% Natural",
+     "approved": false
+    },
+    {
+     "label": "No Added Sugar",
+     "approved": false
+    },
+    {
+     "label": "No Preservatives",
+     "approved": false
+    },
+    {
+     "label": "No Artificial Colour",
+     "approved": false
+    },
+    {
+     "label": "Gluten Free",
+     "approved": false
+    }
+   ],
+   "benefits": [
+    {
+     "label": "Natural Source of Energy",
+     "approved": false
+    },
+    {
+     "label": "Made with Banana",
+     "approved": false
+    },
+    {
+     "label": "Naturally Sweet",
+     "approved": false
+    },
+    {
+     "label": "Clean & Wholesome",
+     "approved": false
+    },
+    {
+     "label": "Chewy & Satisfying snack",
+     "approved": false
+    },
+    {
+     "label": "Perfect Anytime Snack",
+     "approved": false
+    }
+   ],
+   "storage_instructions": "Store in a cool, dry place. Keep away from direct sunlight.",
+   "shelf_life": "Best Before 45 days from the date of Mfg.",
+   "shelf_life_approved": false,
+   "shipping_returns_md": null,
+   "manufacturer_info": "Manufactured and Marketed by: UNAR, 107 A2-4, Sulochana Villa, SAPS Cinema Theatre Thottam, Trichy Road, Palladam, Tiruppur - 641664.",
+   "fssai_license": "22426493000447",
+   "hsn_code": null,
+   "gst_rate": null,
+   "is_featured": true,
+   "sort_order": 2,
+   "seo_title": "Banana Chewy — Fresh Raw Banana (100 g)",
+   "seo_description": "UNAR Dehydrated Banana Chewy made from fresh raw banana. 100 g pack. See ingredients and nutrition per 100 g.",
+   "og_image_url": null,
+   "published_at": null
+  }
+ ],
+ "product_variants": [
+  {
+   "id": "9c1d2e3f-4a5b-4c6d-8e7f-0a1b2c3d4e01",
+   "product_id": "2b7f3a10-5c1e-4f7e-8a51-6f0d9b1c2e01",
+   "title": "100 g",
+   "sku": "UNAR-BC-NUTS-100",
+   "barcode": "8254567868449",
+   "weight_grams": 100,
+   "mrp_paise": 14900,
+   "price_paise": 14900,
+   "stock": 0,
+   "low_stock_threshold": 5,
+   "is_demo_stock": false,
+   "is_active": true,
+   "sort_order": 1
+  },
+  {
+   "id": "9c1d2e3f-4a5b-4c6d-8e7f-0a1b2c3d4e02",
+   "product_id": "2b7f3a10-5c1e-4f7e-8a51-6f0d9b1c2e02",
+   "title": "100 g",
+   "sku": "UNAR-BC-RAW-100",
+   "barcode": "8254567878646",
+   "weight_grams": 100,
+   "mrp_paise": 12000,
+   "price_paise": 12000,
+   "stock": 0,
+   "low_stock_threshold": 5,
+   "is_demo_stock": false,
+   "is_active": true,
+   "sort_order": 1
+  }
+ ],
+ "product_images": [
+  {
+   "id": "0c7cbc55-5190-48f6-836c-c49261f65a99",
+   "product_id": "2b7f3a10-5c1e-4f7e-8a51-6f0d9b1c2e02",
+   "url": "/images/products/raw-front.webp",
+   "storage_path": null,
+   "alt": "UNAR Dehydrated Banana Chewy Fresh Raw Banana — front of pack label artwork",
+   "kind": "front_label",
+   "width": 2048,
+   "height": 1157,
+   "sort_order": 6
+  },
+  {
+   "id": "365e5ef8-8f3c-4232-bc87-1db861ca7cf6",
+   "product_id": "2b7f3a10-5c1e-4f7e-8a51-6f0d9b1c2e01",
+   "url": "/images/products/dry-fruits-seeds/01-main-hero-pouch.webp",
+   "storage_path": null,
+   "alt": "UNAR Dehydrated Banana Chewy With Dry Fruits & Seeds pouch beside bananas, almonds, cashews and seeds",
+   "kind": "packshot",
+   "width": 1254,
+   "height": 1254,
+   "sort_order": 1
+  },
+  {
+   "id": "4e78b6ed-4410-4943-aa5b-f440fb0f373c",
+   "product_id": "2b7f3a10-5c1e-4f7e-8a51-6f0d9b1c2e02",
+   "url": "/images/products/fresh-raw-banana/02-front-and-back-pouch.webp",
+   "storage_path": null,
+   "alt": "Front and back of the UNAR Banana Chewy Fresh Raw Banana pouch",
+   "kind": "packshot",
+   "width": 1254,
+   "height": 1254,
+   "sort_order": 4
+  },
+  {
+   "id": "5124e0b5-ccd6-42fc-a8f0-0d2d7f7c16ab",
+   "product_id": "2b7f3a10-5c1e-4f7e-8a51-6f0d9b1c2e01",
+   "url": "/images/products/nuts-front.webp",
+   "storage_path": null,
+   "alt": "UNAR Dehydrated Banana Chewy With Dry Fruits & Seeds — front of pack label artwork",
+   "kind": "front_label",
+   "width": 2048,
+   "height": 1157,
+   "sort_order": 6
+  },
+  {
+   "id": "6720d595-1452-4bca-8fd5-e75fa6b79b8d",
+   "product_id": "2b7f3a10-5c1e-4f7e-8a51-6f0d9b1c2e01",
+   "url": "/images/products/dry-fruits-seeds/05-lifestyle-support-image.webp",
+   "storage_path": null,
+   "alt": "UNAR Banana Chewy With Dry Fruits & Seeds served on a plate next to the pouch",
+   "kind": "lifestyle",
+   "width": 1254,
+   "height": 1254,
+   "sort_order": 5
+  },
+  {
+   "id": "6a9d960f-f015-415c-ad98-d2df72d0e5c2",
+   "product_id": "2b7f3a10-5c1e-4f7e-8a51-6f0d9b1c2e01",
+   "url": "/images/products/dry-fruits-seeds/02-front-and-back-pouch.webp",
+   "storage_path": null,
+   "alt": "Front and back of the UNAR Banana Chewy With Dry Fruits & Seeds pouch",
+   "kind": "packshot",
+   "width": 1254,
+   "height": 1254,
+   "sort_order": 3
+  },
+  {
+   "id": "6bfdeaf0-61a7-45ac-9e2f-57b3faffd9eb",
+   "product_id": "2b7f3a10-5c1e-4f7e-8a51-6f0d9b1c2e02",
+   "url": "/images/products/fresh-raw-banana/05-lifestyle-support-image.webp",
+   "storage_path": null,
+   "alt": "UNAR Banana Chewy Fresh Raw Banana served in a bowl next to the pouch",
+   "kind": "lifestyle",
+   "width": 1254,
+   "height": 1254,
+   "sort_order": 3
+  },
+  {
+   "id": "8733a4ad-7bbf-4e0d-98ae-94c4329e9e47",
+   "product_id": "2b7f3a10-5c1e-4f7e-8a51-6f0d9b1c2e02",
+   "url": "/images/products/fresh-raw-banana/03-ingredients-benefits-display.webp",
+   "storage_path": null,
+   "alt": "UNAR Banana Chewy Fresh Raw Banana pouch with bowls of dehydrated banana and fresh bananas",
+   "kind": "packshot",
+   "width": 1254,
+   "height": 1254,
+   "sort_order": 2
+  },
+  {
+   "id": "8b213345-0b15-4fb7-ae03-23cf8a42b19c",
+   "product_id": "2b7f3a10-5c1e-4f7e-8a51-6f0d9b1c2e02",
+   "url": "/images/products/raw-back.webp",
+   "storage_path": null,
+   "alt": "UNAR Banana Chewy Fresh Raw Banana — back of pack label with ingredients and nutritional information",
+   "kind": "back_label",
+   "width": 1811,
+   "height": 2048,
+   "sort_order": 7
+  },
+  {
+   "id": "92b61a62-d7b3-4d51-816b-20e4ca02aaca",
+   "product_id": "2b7f3a10-5c1e-4f7e-8a51-6f0d9b1c2e02",
+   "url": "/images/products/fresh-raw-banana/01-main-hero-pouch.webp",
+   "storage_path": null,
+   "alt": "UNAR Banana Chewy Fresh Raw Banana pouch beside bananas (nuts in the background are props, not ingredients)",
+   "kind": "packshot",
+   "width": 1254,
+   "height": 1254,
+   "sort_order": 5
+  },
+  {
+   "id": "d293d318-b62d-4a37-b997-486b14b1a910",
+   "product_id": "2b7f3a10-5c1e-4f7e-8a51-6f0d9b1c2e02",
+   "url": "/images/products/fresh-raw-banana/04-beauty-shot-pouch.webp",
+   "storage_path": null,
+   "alt": "UNAR Dehydrated Banana Chewy Fresh Raw Banana pouch with bananas and banana chewy slices",
+   "kind": "packshot",
+   "width": 1254,
+   "height": 1254,
+   "sort_order": 1
+  },
+  {
+   "id": "d78f3c3a-6068-4e40-a056-b269de2876c3",
+   "product_id": "2b7f3a10-5c1e-4f7e-8a51-6f0d9b1c2e01",
+   "url": "/images/products/dry-fruits-seeds/04-beauty-shot-pouch.webp",
+   "storage_path": null,
+   "alt": "UNAR Banana Chewy With Dry Fruits & Seeds pouch on a stone stand with bowls of nuts and seeds",
+   "kind": "packshot",
+   "width": 1254,
+   "height": 1254,
+   "sort_order": 2
+  },
+  {
+   "id": "edac76bc-f363-46c0-9ebe-d95ecfa694b2",
+   "product_id": "2b7f3a10-5c1e-4f7e-8a51-6f0d9b1c2e01",
+   "url": "/images/products/dry-fruits-seeds/03-ingredients-benefits-display.webp",
+   "storage_path": null,
+   "alt": "UNAR Banana Chewy With Dry Fruits & Seeds pouch with bowls of its ingredients: banana, almonds, cashews, black dry grapes and seeds",
+   "kind": "lifestyle",
+   "width": 1254,
+   "height": 1254,
+   "sort_order": 4
+  },
+  {
+   "id": "f81417bc-6d2a-4fb5-a914-f6a0237cffd7",
+   "product_id": "2b7f3a10-5c1e-4f7e-8a51-6f0d9b1c2e01",
+   "url": "/images/products/nuts-back.webp",
+   "storage_path": null,
+   "alt": "UNAR Banana Chewy With Dry Fruits & Seeds — back of pack label with ingredients, allergen advice and nutritional information",
+   "kind": "back_label",
+   "width": 1811,
+   "height": 2048,
+   "sort_order": 7
+  }
+ ],
+ "product_categories": [
+  {
+   "product_id": "2b7f3a10-5c1e-4f7e-8a51-6f0d9b1c2e01",
+   "category_id": "6a0f0c34-0b5e-4d3a-9a0e-0d6c9b7f1a01"
+  },
+  {
+   "product_id": "2b7f3a10-5c1e-4f7e-8a51-6f0d9b1c2e02",
+   "category_id": "6a0f0c34-0b5e-4d3a-9a0e-0d6c9b7f1a01"
+  }
+ ],
+ "shipping_zones": [
+  {
+   "id": "222bfb5e-24bf-4c10-86b0-d5c16fe4f80d",
+   "name": "All India — Standard",
+   "is_active": false,
+   "sort_order": 0,
+   "match_type": "all",
+   "states": [],
+   "pincode_prefixes": [],
+   "rate_type": "flat",
+   "flat_rate_paise": 0,
+   "base_weight_grams": 500,
+   "base_rate_paise": 0,
+   "additional_weight_step_grams": 500,
+   "additional_rate_paise": 0,
+   "free_shipping_threshold_paise": null,
+   "cod_available": false,
+   "delivery_estimate": null,
+   "notes": "Enter your shipping rate, then switch this zone on."
+  }
+ ],
+ "cms_sections": [
+  {
+   "id": "010e4917-6f3f-4ec6-85d5-4157b33ad8c9",
+   "page": "home",
+   "key": "story",
+   "type": "story_split",
+   "state": "draft",
+   "sort_order": 40,
+   "is_visible": true,
+   "content": {
+    "cta": {
+     "href": "/about",
+     "label": "Read our story"
+    },
+    "body_md": "At UNAR, we believe wellness begins with small, consistent choices. One healthy habit a day can lead to a better you, every day.\n\nBanana Chewy starts with banana, dehydrated to a satisfying chew. Our Dry Fruits & Seeds variety adds almonds, cashews, black dry grapes and a mix of seeds.",
+    "eyebrow": "Our Story",
+    "heading": "Small daily choices, made simple.",
+    "image_alt": "UNAR Banana Chewy With Dry Fruits & Seeds served on a plate next to the pouch",
+    "image_url": "/images/products/dry-fruits-seeds/05-lifestyle-support-image.webp"
+   },
+   "updated_by": null,
+   "published_at": null
+  },
+  {
+   "id": "0725b90d-982c-4d38-8fcd-2b14a251b6fd",
+   "page": "home",
+   "key": "shop",
+   "type": "featured_products",
+   "state": "draft",
+   "sort_order": 30,
+   "is_visible": true,
+   "content": {
+    "eyebrow": "Shop",
+    "heading": "Shop the Goodness",
+    "cta_href": "/shop",
+    "cta_label": "View all products",
+    "description": "Two ways to enjoy Banana Chewy, each in a 100 g pack.",
+    "product_slugs": []
+   },
+   "updated_by": null,
+   "published_at": null
+  },
+  {
+   "id": "1190a862-e585-46b2-ab80-941e5c82ca2d",
+   "page": "home",
+   "key": "made",
+   "type": "how_its_made",
+   "state": "published",
+   "sort_order": 70,
+   "is_visible": false,
+   "content": {
+    "steps": [],
+    "eyebrow": "How it's made",
+    "heading": "From banana to Banana Chewy",
+    "description": ""
+   },
+   "updated_by": null,
+   "published_at": "2026-10-09T06:31:42.802779+00:00"
+  },
+  {
+   "id": "19b28093-cc14-496d-9b12-6d7fbf95bf19",
+   "page": "home",
+   "key": "instagram",
+   "type": "instagram",
+   "state": "draft",
+   "sort_order": 110,
+   "is_visible": true,
+   "content": {
+    "handle": "",
+    "heading": "Follow along",
+    "profile_url": ""
+   },
+   "updated_by": null,
+   "published_at": null
+  },
+  {
+   "id": "2be10293-b5a3-472c-9b4e-e25e450ede50",
+   "page": "home",
+   "key": "trust",
+   "type": "trust_strip",
+   "state": "draft",
+   "sort_order": 20,
+   "is_visible": false,
+   "content": {
+    "items": [
+     {
+      "icon": "leaf",
+      "label": "100% Natural"
+     },
+     {
+      "icon": "candy-off",
+      "label": "No Added Sugar"
+     },
+     {
+      "icon": "flask-off",
+      "label": "No Preservatives"
+     },
+     {
+      "icon": "droplet-off",
+      "label": "No Artificial Colour"
+     }
+    ]
+   },
+   "updated_by": null,
+   "published_at": null
+  },
+  {
+   "id": "45b0803b-33e6-4965-91d8-422b2eb395ce",
+   "page": "home",
+   "key": "promise",
+   "type": "promise",
+   "state": "draft",
+   "sort_order": 50,
+   "is_visible": true,
+   "content": {
+    "items": [
+     {
+      "body": "Banana comes first. Our Dry Fruits & Seeds variety adds almonds, cashews, black dry grapes and seeds — every one listed on the pack.",
+      "icon": "sprout",
+      "title": "Ingredients you can name"
+     },
+     {
+      "body": "Ingredients, allergen advice and nutrition per 100 g are printed on every pack and shown on every product page.",
+      "icon": "scan-eye",
+      "title": "Full transparency"
+     },
+     {
+      "body": "Each 100 g pack holds about four 25 g servings — an easy way to make one healthy habit a day.",
+      "icon": "sun",
+      "title": "Mindful daily snacking"
+     }
+    ],
+    "eyebrow": "Why UNAR",
+    "heading": "The UNAR Promise"
+   },
+   "updated_by": null,
+   "published_at": null
+  },
+  {
+   "id": "55e42ec1-1e71-4118-98ff-a32e9d726f2b",
+   "page": "home",
+   "key": "shop",
+   "type": "featured_products",
+   "state": "published",
+   "sort_order": 30,
+   "is_visible": true,
+   "content": {
+    "eyebrow": "Shop",
+    "heading": "Shop the Goodness",
+    "cta_href": "/shop",
+    "cta_label": "View all products",
+    "description": "Two ways to enjoy Banana Chewy, each in a 100 g pack.",
+    "product_slugs": []
+   },
+   "updated_by": null,
+   "published_at": "2026-10-09T06:31:42.802779+00:00"
+  },
+  {
+   "id": "5b9bd854-9683-4db2-a7af-ef34fbb9fb3d",
+   "page": "home",
+   "key": "faq",
+   "type": "faq",
+   "state": "published",
+   "sort_order": 90,
+   "is_visible": true,
+   "content": {
+    "limit": 5,
+    "eyebrow": "FAQs",
+    "heading": "Questions, answered",
+    "cta_href": "/faqs",
+    "cta_label": "See all FAQs"
+   },
+   "updated_by": null,
+   "published_at": "2026-10-09T06:31:42.802779+00:00"
+  },
+  {
+   "id": "6b9ff6fe-70bb-4779-9f48-6217741c4e49",
+   "page": "home",
+   "key": "trust",
+   "type": "trust_strip",
+   "state": "published",
+   "sort_order": 20,
+   "is_visible": false,
+   "content": {
+    "items": [
+     {
+      "icon": "leaf",
+      "label": "100% Natural"
+     },
+     {
+      "icon": "candy-off",
+      "label": "No Added Sugar"
+     },
+     {
+      "icon": "flask-off",
+      "label": "No Preservatives"
+     },
+     {
+      "icon": "droplet-off",
+      "label": "No Artificial Colour"
+     }
+    ]
+   },
+   "updated_by": null,
+   "published_at": "2026-10-09T06:31:42.802779+00:00"
+  },
+  {
+   "id": "78381b39-a802-404c-8066-5695fb914d0c",
+   "page": "home",
+   "key": "faq",
+   "type": "faq",
+   "state": "draft",
+   "sort_order": 90,
+   "is_visible": true,
+   "content": {
+    "limit": 5,
+    "eyebrow": "FAQs",
+    "heading": "Questions, answered",
+    "cta_href": "/faqs",
+    "cta_label": "See all FAQs"
+   },
+   "updated_by": null,
+   "published_at": null
+  },
+  {
+   "id": "8321b0bf-0c2a-406a-a747-12c381c9793e",
+   "page": "home",
+   "key": "reviews",
+   "type": "reviews",
+   "state": "draft",
+   "sort_order": 80,
+   "is_visible": true,
+   "content": {
+    "eyebrow": "Reviews",
+    "heading": "What customers say",
+    "empty_text": "No reviews yet. Tried Banana Chewy? Share your thoughts on the product page.",
+    "description": "Every review comes from a real customer and is checked before it appears."
+   },
+   "updated_by": null,
+   "published_at": null
+  },
+  {
+   "id": "83a22882-00a9-47d2-a635-828cc158c143",
+   "page": "home",
+   "key": "story",
+   "type": "story_split",
+   "state": "published",
+   "sort_order": 40,
+   "is_visible": true,
+   "content": {
+    "cta": {
+     "href": "/about",
+     "label": "Read our story"
+    },
+    "body_md": "At UNAR, we believe wellness begins with small, consistent choices. One healthy habit a day can lead to a better you, every day.\n\nBanana Chewy starts with banana, dehydrated to a satisfying chew. Our Dry Fruits & Seeds variety adds almonds, cashews, black dry grapes and a mix of seeds.",
+    "eyebrow": "Our Story",
+    "heading": "Small daily choices, made simple.",
+    "image_alt": "UNAR Banana Chewy With Dry Fruits & Seeds served on a plate next to the pouch",
+    "image_url": "/images/products/dry-fruits-seeds/05-lifestyle-support-image.webp"
+   },
+   "updated_by": null,
+   "published_at": "2026-10-09T06:31:42.802779+00:00"
+  },
+  {
+   "id": "998e9f69-fa8f-4dd3-a90f-38168038690b",
+   "page": "home",
+   "key": "hero",
+   "type": "hero",
+   "state": "published",
+   "sort_order": 10,
+   "is_visible": true,
+   "content": {
+    "eyebrow": "One Healthy Habit a Day",
+    "headline": "Everyday snacking, naturally better.",
+    "image_alt": "UNAR Banana Chewy With Dry Fruits & Seeds pouch beside bananas, nuts and seeds",
+    "image_url": "/images/products/dry-fruits-seeds/01-main-hero-pouch.webp",
+    "primary_cta": {
+     "href": "/shop",
+     "label": "Shop Banana Chewy"
+    },
+    "subheadline": "Chewy dehydrated banana from UNAR — choose Fresh Raw Banana, or Banana Chewy with Dry Fruits & Seeds.",
+    "secondary_cta": {
+     "href": "/about",
+     "label": "Our Story"
+    },
+    "secondary_image_alt": "UNAR Banana Chewy Fresh Raw Banana pouch with bananas",
+    "secondary_image_url": "/images/products/fresh-raw-banana/04-beauty-shot-pouch.webp"
+   },
+   "updated_by": null,
+   "published_at": "2026-10-09T06:31:42.802779+00:00"
+  },
+  {
+   "id": "99c7efac-b5dc-4db3-b2ad-f1e07173e8b4",
+   "page": "home",
+   "key": "newsletter",
+   "type": "newsletter",
+   "state": "draft",
+   "sort_order": 100,
+   "is_visible": true,
+   "content": {
+    "heading": "Join the UNAR circle",
+    "description": "Occasional emails about new products and offers. Unsubscribe any time."
+   },
+   "updated_by": null,
+   "published_at": null
+  },
+  {
+   "id": "a73044a8-2f7b-413a-a7ab-c416766b8b2d",
+   "page": "home",
+   "key": "compare",
+   "type": "comparison",
+   "state": "draft",
+   "sort_order": 60,
+   "is_visible": true,
+   "content": {
+    "eyebrow": "Compare",
+    "heading": "Which Banana Chewy is yours?",
+    "description": "The same chewy banana base, two different experiences. Compare ingredients, allergen advice and nutrition at a glance."
+   },
+   "updated_by": null,
+   "published_at": null
+  },
+  {
+   "id": "afaa6931-b985-422a-85ba-70c54e782a20",
+   "page": "home",
+   "key": "contact",
+   "type": "contact_cta",
+   "state": "draft",
+   "sort_order": 120,
+   "is_visible": true,
+   "content": {
+    "cta": {
+     "href": "/contact",
+     "label": "Contact us"
+    },
+    "body": "Questions about an order or our snacks? Write to us and we'll get back to you.",
+    "heading": "We'd love to hear from you"
+   },
+   "updated_by": null,
+   "published_at": null
+  },
+  {
+   "id": "b76aa99e-d55c-43c0-b56d-82d17b5f0f83",
+   "page": "home",
+   "key": "contact",
+   "type": "contact_cta",
+   "state": "published",
+   "sort_order": 120,
+   "is_visible": true,
+   "content": {
+    "cta": {
+     "href": "/contact",
+     "label": "Contact us"
+    },
+    "body": "Questions about an order or our snacks? Write to us and we'll get back to you.",
+    "heading": "We'd love to hear from you"
+   },
+   "updated_by": null,
+   "published_at": "2026-10-09T06:31:42.802779+00:00"
+  },
+  {
+   "id": "bda5b645-fd96-496c-bfb9-5c43967e98a1",
+   "page": "home",
+   "key": "reviews",
+   "type": "reviews",
+   "state": "published",
+   "sort_order": 80,
+   "is_visible": true,
+   "content": {
+    "eyebrow": "Reviews",
+    "heading": "What customers say",
+    "empty_text": "No reviews yet. Tried Banana Chewy? Share your thoughts on the product page.",
+    "description": "Every review comes from a real customer and is checked before it appears."
+   },
+   "updated_by": null,
+   "published_at": "2026-10-09T06:31:42.802779+00:00"
+  },
+  {
+   "id": "ca968f08-ee29-4e7f-a263-d310543cfd05",
+   "page": "home",
+   "key": "made",
+   "type": "how_its_made",
+   "state": "draft",
+   "sort_order": 70,
+   "is_visible": false,
+   "content": {
+    "steps": [],
+    "eyebrow": "How it's made",
+    "heading": "From banana to Banana Chewy",
+    "description": ""
+   },
+   "updated_by": null,
+   "published_at": null
+  },
+  {
+   "id": "ecb5abb5-11f8-4650-b185-19793bda6f6b",
+   "page": "home",
+   "key": "newsletter",
+   "type": "newsletter",
+   "state": "published",
+   "sort_order": 100,
+   "is_visible": true,
+   "content": {
+    "heading": "Join the UNAR circle",
+    "description": "Occasional emails about new products and offers. Unsubscribe any time."
+   },
+   "updated_by": null,
+   "published_at": "2026-10-09T06:31:42.802779+00:00"
+  },
+  {
+   "id": "f244b637-f4c1-47cd-a282-cc7b29277867",
+   "page": "home",
+   "key": "instagram",
+   "type": "instagram",
+   "state": "published",
+   "sort_order": 110,
+   "is_visible": true,
+   "content": {
+    "handle": "",
+    "heading": "Follow along",
+    "profile_url": ""
+   },
+   "updated_by": null,
+   "published_at": "2026-10-09T06:31:42.802779+00:00"
+  },
+  {
+   "id": "f890ad48-1c28-448f-bc3c-10f34f10ca49",
+   "page": "home",
+   "key": "hero",
+   "type": "hero",
+   "state": "draft",
+   "sort_order": 10,
+   "is_visible": true,
+   "content": {
+    "eyebrow": "One Healthy Habit a Day",
+    "headline": "Everyday snacking, naturally better.",
+    "image_alt": "UNAR Banana Chewy With Dry Fruits & Seeds pouch beside bananas, nuts and seeds",
+    "image_url": "/images/products/dry-fruits-seeds/01-main-hero-pouch.webp",
+    "primary_cta": {
+     "href": "/shop",
+     "label": "Shop Banana Chewy"
+    },
+    "subheadline": "Chewy dehydrated banana from UNAR — choose Fresh Raw Banana, or Banana Chewy with Dry Fruits & Seeds.",
+    "secondary_cta": {
+     "href": "/about",
+     "label": "Our Story"
+    },
+    "secondary_image_alt": "UNAR Banana Chewy Fresh Raw Banana pouch with bananas",
+    "secondary_image_url": "/images/products/fresh-raw-banana/04-beauty-shot-pouch.webp"
+   },
+   "updated_by": null,
+   "published_at": null
+  },
+  {
+   "id": "fb06825a-7132-4993-ae2c-b16323796fd4",
+   "page": "home",
+   "key": "promise",
+   "type": "promise",
+   "state": "published",
+   "sort_order": 50,
+   "is_visible": true,
+   "content": {
+    "items": [
+     {
+      "body": "Banana comes first. Our Dry Fruits & Seeds variety adds almonds, cashews, black dry grapes and seeds — every one listed on the pack.",
+      "icon": "sprout",
+      "title": "Ingredients you can name"
+     },
+     {
+      "body": "Ingredients, allergen advice and nutrition per 100 g are printed on every pack and shown on every product page.",
+      "icon": "scan-eye",
+      "title": "Full transparency"
+     },
+     {
+      "body": "Each 100 g pack holds about four 25 g servings — an easy way to make one healthy habit a day.",
+      "icon": "sun",
+      "title": "Mindful daily snacking"
+     }
+    ],
+    "eyebrow": "Why UNAR",
+    "heading": "The UNAR Promise"
+   },
+   "updated_by": null,
+   "published_at": "2026-10-09T06:31:42.802779+00:00"
+  },
+  {
+   "id": "fbd1e1d1-dfef-4da4-8b27-f0bf8214fb0c",
+   "page": "home",
+   "key": "compare",
+   "type": "comparison",
+   "state": "published",
+   "sort_order": 60,
+   "is_visible": true,
+   "content": {
+    "eyebrow": "Compare",
+    "heading": "Which Banana Chewy is yours?",
+    "description": "The same chewy banana base, two different experiences. Compare ingredients, allergen advice and nutrition at a glance."
+   },
+   "updated_by": null,
+   "published_at": "2026-10-09T06:31:42.802779+00:00"
+  }
+ ],
+ "cms_pages": [
+  {
+   "id": "04b19bb4-a442-4568-bcc6-50a4c880724f",
+   "group_id": "b1a2c3d4-0000-4000-8000-000000000001",
+   "kind": "page",
+   "state": "published",
+   "slug": "about",
+   "title": "Our Story",
+   "excerpt": "UNAR is built on a simple belief: small daily habits create a healthier, happier life.",
+   "body_md": "## Inspired by nature. Built on habit.\n\nAt UNAR, we believe that wellness begins with small, consistent choices. One healthy habit a day can lead to a better you, every day.\n\n## What we make\n\nOur first range is **Banana Chewy** — dehydrated banana with a satisfying, chewy bite. It comes in two varieties:\n\n- **Fresh Raw Banana** — the ingredient list on the pack reads simply: fresh raw banana.\n- **With Dry Fruits & Seeds** — banana with almonds, cashews, black dry grapes, and sesame (black & white), sunflower, melon and pumpkin seeds.\n\nEvery pack carries its full ingredient list, allergen advice and nutrition information per 100 g — and so does every product page on this website.\n\n## Where we are\n\nUNAR is based in Palladam, Tiruppur, Tamil Nadu.",
+   "cover_image_url": null,
+   "cover_image_alt": null,
+   "author_name": null,
+   "seo_title": null,
+   "seo_description": "The story behind UNAR and Banana Chewy — one healthy habit a day.",
+   "requires_owner_review": false,
+   "published_at": "2026-10-09T06:31:42.802779+00:00",
+   "updated_by": null
+  },
+  {
+   "id": "0780e869-5d72-47f7-ac07-a2821f65b0e0",
+   "group_id": "b1a2c3d4-0000-4000-8000-000000000001",
+   "kind": "page",
+   "state": "draft",
+   "slug": "about",
+   "title": "Our Story",
+   "excerpt": "UNAR is built on a simple belief: small daily habits create a healthier, happier life.",
+   "body_md": "## Inspired by nature. Built on habit.\n\nAt UNAR, we believe that wellness begins with small, consistent choices. One healthy habit a day can lead to a better you, every day.\n\n## What we make\n\nOur first range is **Banana Chewy** — dehydrated banana with a satisfying, chewy bite. It comes in two varieties:\n\n- **Fresh Raw Banana** — the ingredient list on the pack reads simply: fresh raw banana.\n- **With Dry Fruits & Seeds** — banana with almonds, cashews, black dry grapes, and sesame (black & white), sunflower, melon and pumpkin seeds.\n\nEvery pack carries its full ingredient list, allergen advice and nutrition information per 100 g — and so does every product page on this website.\n\n## Where we are\n\nUNAR is based in Palladam, Tiruppur, Tamil Nadu.",
+   "cover_image_url": null,
+   "cover_image_alt": null,
+   "author_name": null,
+   "seo_title": null,
+   "seo_description": "The story behind UNAR and Banana Chewy — one healthy habit a day.",
+   "requires_owner_review": false,
+   "published_at": null,
+   "updated_by": null
+  },
+  {
+   "id": "27237a5c-37d1-4f81-aa89-8fd5584c92f9",
+   "group_id": "b1a2c3d4-0000-4000-8000-000000000005",
+   "kind": "policy",
+   "state": "published",
+   "slug": "privacy-policy",
+   "title": "Privacy Policy",
+   "excerpt": "How UNAR collects, uses and protects your personal data.",
+   "body_md": "**This policy is a template. The business owner must review and complete it before launch. It has not been reviewed by a lawyer.**\n\nThis policy explains how UNAR (\"we\", \"us\") handles personal data collected through this website, in line with applicable Indian law including the Digital Personal Data Protection Act, 2023.\n\n## What we collect\n\n- **Account details:** your name, email address, phone number and saved addresses when you create an account.\n- **Order details:** the products you buy, delivery and billing addresses, contact details and order history.\n- **Payment details:** payments are processed by Razorpay. We receive confirmation of payment and limited details such as the payment method type. We do not see or store your full card, UPI PIN or bank login details.\n- **Messages:** information you send through our contact form or by email.\n- **Newsletter:** your email address and consent, only if you choose to subscribe.\n- **Technical data:** essential cookies needed to keep you signed in and to remember your cart.\n\n## How we use it\n\nTo process and deliver your orders, provide customer support, send order-related emails, prevent fraud and abuse, meet legal and tax obligations, and — only with your consent — send marketing emails.\n\n## Who we share it with\n\nOnly with service providers who help us run the store, such as our payment partner (Razorpay), courier partners for delivery, our email provider, and our hosting and database providers. We do not sell your personal data.\n\n## How long we keep it\n\nWe keep order records for as long as required for legal, tax and accounting purposes, and other data only as long as needed for the purposes above.\n\n## Your choices and rights\n\nYou can view and update your account details at any time, unsubscribe from marketing emails using the link in any email, and ask us to access, correct or erase your personal data, subject to legal requirements.\n\n## Grievance contact\n\n**[NAME OF GRIEVANCE OFFICER]**, UNAR, 107 A2-4, Sulochana Villa, SAPS Cinema Theatre Thottam, Trichy Road, Palladam, Tiruppur - 641664. Email: unarfoods@gmail.com\n\n## Changes\n\nWe may update this policy from time to time. The latest version will always be available on this page.",
+   "cover_image_url": null,
+   "cover_image_alt": null,
+   "author_name": null,
+   "seo_title": null,
+   "seo_description": "How UNAR collects, uses and protects your personal data.",
+   "requires_owner_review": true,
+   "published_at": "2026-10-09T06:31:42.802779+00:00",
+   "updated_by": null
+  },
+  {
+   "id": "31bd3f8a-f711-4308-85cd-e6781ee453b1",
+   "group_id": "b1a2c3d4-0000-4000-8000-000000000002",
+   "kind": "policy",
+   "state": "draft",
+   "slug": "shipping-policy",
+   "title": "Shipping Policy",
+   "excerpt": "How we process and deliver your orders.",
+   "body_md": "**This policy is a template. The business owner must review and complete it before launch.**\n\n## Where we ship\n\nWe currently deliver to the PIN codes that our checkout accepts. Enter your PIN code at checkout to see whether delivery is available to your address.\n\n## Shipping charges\n\nShipping charges are calculated at checkout based on your delivery location and order details, and are shown before you pay. Any free-shipping offer is shown at checkout when it applies.\n\n## Processing time\n\nOrders are packed after payment is confirmed (or after a Cash on Delivery order is placed, where available). We aim to dispatch orders within **[NUMBER] business days**. Orders are not dispatched on **[DAYS / PUBLIC HOLIDAYS]**.\n\n## Delivery time\n\nDelivery times depend on your location and our courier partner. Any delivery estimate shown on our website is indicative and is not a guarantee.\n\n## Tracking your order\n\nWhen your order ships we will share tracking details by email where available. You can also check your order status anytime from **My Account → Orders** or the **Track Order** page.\n\n## Damaged or incorrect parcels\n\nIf your parcel arrives damaged or tampered with, please contact us within **[NUMBER] hours** of delivery with your order number and photos of the parcel and products. See our Refunds & Returns policy.\n\n## Contact\n\nEmail unarfoods@gmail.com or call/WhatsApp 9994657693.",
+   "cover_image_url": null,
+   "cover_image_alt": null,
+   "author_name": null,
+   "seo_title": null,
+   "seo_description": "UNAR shipping policy — delivery areas, charges, processing and tracking.",
+   "requires_owner_review": true,
+   "published_at": null,
+   "updated_by": null
+  },
+  {
+   "id": "5208de05-4e5a-455b-99f2-e1428bb14dd8",
+   "group_id": "b1a2c3d4-0000-4000-8000-000000000003",
+   "kind": "policy",
+   "state": "published",
+   "slug": "refund-policy",
+   "title": "Refunds & Returns",
+   "excerpt": "Our policy on returns, replacements and refunds.",
+   "body_md": "**This policy is a template. The business owner must review and complete it before launch.**\n\n## Food safety\n\nBecause our products are food items, we cannot accept returns of opened packs or packs that have left our care, except where the product is damaged, defective or incorrect.\n\n## Damaged, defective or incorrect items\n\nIf you receive a damaged, defective or incorrect item, contact us within **[NUMBER] days** of delivery with:\n\n- your order number,\n- clear photos of the outer parcel, the pack and the product, and\n- a short description of the problem.\n\nAfter reviewing your request we will offer a **[replacement / refund]** where the request is approved.\n\n## Refunds\n\nApproved refunds for online payments are issued to the original payment method through our payment partner, Razorpay. Banks and payment providers may take additional working days to show the refund in your account. For Cash on Delivery orders, we will contact you to arrange the refund.\n\n## Cancellations\n\nSee our Cancellation Policy.\n\n## Contact\n\nEmail unarfoods@gmail.com or call/WhatsApp 9994657693 with your order number.",
+   "cover_image_url": null,
+   "cover_image_alt": null,
+   "author_name": null,
+   "seo_title": null,
+   "seo_description": "UNAR refunds and returns policy for damaged, defective or incorrect items.",
+   "requires_owner_review": true,
+   "published_at": "2026-10-09T06:31:42.802779+00:00",
+   "updated_by": null
+  },
+  {
+   "id": "7230db7b-be02-4323-92c4-82a0d306b217",
+   "group_id": "b1a2c3d4-0000-4000-8000-000000000006",
+   "kind": "policy",
+   "state": "draft",
+   "slug": "terms",
+   "title": "Terms & Conditions",
+   "excerpt": "The terms that apply when you use this website and buy from UNAR.",
+   "body_md": "**These terms are a template. The business owner must review and complete them before launch. They have not been reviewed by a lawyer.**\n\n## About us\n\nThis website is operated by UNAR, 107 A2-4, Sulochana Villa, SAPS Cinema Theatre Thottam, Trichy Road, Palladam, Tiruppur - 641664, Tamil Nadu, India.\n\n## Products and prices\n\nAll prices are in Indian Rupees (₹) and include applicable taxes unless stated otherwise. Product images on this website may show label artwork; the product you receive is the packed product described on its page. We try to keep information accurate, but if we find an error in a price or description after you order, we will contact you before processing the order.\n\n## Orders\n\nAn order is confirmed when payment is successfully received (or, for Cash on Delivery where available, when the order is placed). We may decline or cancel orders in the circumstances described in our Cancellation Policy.\n\n## Payments\n\nOnline payments are processed securely by Razorpay. By paying online you also agree to Razorpay's terms.\n\n## Delivery, returns and refunds\n\nPlease see our Shipping Policy, Refunds & Returns policy and Cancellation Policy.\n\n## Allergens and dietary information\n\nIngredient and allergen information is shown on each product page and printed on each pack. Please read it carefully before consuming, especially if you have food allergies.\n\n## Accounts\n\nYou are responsible for keeping your account password confidential and for activity under your account.\n\n## Governing law\n\nThese terms are governed by the laws of India. Courts at **[CITY]** shall have jurisdiction.\n\n## Contact\n\nEmail unarfoods@gmail.com or call/WhatsApp 9994657693.",
+   "cover_image_url": null,
+   "cover_image_alt": null,
+   "author_name": null,
+   "seo_title": null,
+   "seo_description": "Terms and conditions for using the UNAR website and buying UNAR products.",
+   "requires_owner_review": true,
+   "published_at": null,
+   "updated_by": null
+  },
+  {
+   "id": "84cda6d4-473e-4422-830d-cb9f72b1404f",
+   "group_id": "b1a2c3d4-0000-4000-8000-000000000003",
+   "kind": "policy",
+   "state": "draft",
+   "slug": "refund-policy",
+   "title": "Refunds & Returns",
+   "excerpt": "Our policy on returns, replacements and refunds.",
+   "body_md": "**This policy is a template. The business owner must review and complete it before launch.**\n\n## Food safety\n\nBecause our products are food items, we cannot accept returns of opened packs or packs that have left our care, except where the product is damaged, defective or incorrect.\n\n## Damaged, defective or incorrect items\n\nIf you receive a damaged, defective or incorrect item, contact us within **[NUMBER] days** of delivery with:\n\n- your order number,\n- clear photos of the outer parcel, the pack and the product, and\n- a short description of the problem.\n\nAfter reviewing your request we will offer a **[replacement / refund]** where the request is approved.\n\n## Refunds\n\nApproved refunds for online payments are issued to the original payment method through our payment partner, Razorpay. Banks and payment providers may take additional working days to show the refund in your account. For Cash on Delivery orders, we will contact you to arrange the refund.\n\n## Cancellations\n\nSee our Cancellation Policy.\n\n## Contact\n\nEmail unarfoods@gmail.com or call/WhatsApp 9994657693 with your order number.",
+   "cover_image_url": null,
+   "cover_image_alt": null,
+   "author_name": null,
+   "seo_title": null,
+   "seo_description": "UNAR refunds and returns policy for damaged, defective or incorrect items.",
+   "requires_owner_review": true,
+   "published_at": null,
+   "updated_by": null
+  },
+  {
+   "id": "a5d59527-0b35-44e6-a5cc-a1717f809282",
+   "group_id": "b1a2c3d4-0000-4000-8000-000000000005",
+   "kind": "policy",
+   "state": "draft",
+   "slug": "privacy-policy",
+   "title": "Privacy Policy",
+   "excerpt": "How UNAR collects, uses and protects your personal data.",
+   "body_md": "**This policy is a template. The business owner must review and complete it before launch. It has not been reviewed by a lawyer.**\n\nThis policy explains how UNAR (\"we\", \"us\") handles personal data collected through this website, in line with applicable Indian law including the Digital Personal Data Protection Act, 2023.\n\n## What we collect\n\n- **Account details:** your name, email address, phone number and saved addresses when you create an account.\n- **Order details:** the products you buy, delivery and billing addresses, contact details and order history.\n- **Payment details:** payments are processed by Razorpay. We receive confirmation of payment and limited details such as the payment method type. We do not see or store your full card, UPI PIN or bank login details.\n- **Messages:** information you send through our contact form or by email.\n- **Newsletter:** your email address and consent, only if you choose to subscribe.\n- **Technical data:** essential cookies needed to keep you signed in and to remember your cart.\n\n## How we use it\n\nTo process and deliver your orders, provide customer support, send order-related emails, prevent fraud and abuse, meet legal and tax obligations, and — only with your consent — send marketing emails.\n\n## Who we share it with\n\nOnly with service providers who help us run the store, such as our payment partner (Razorpay), courier partners for delivery, our email provider, and our hosting and database providers. We do not sell your personal data.\n\n## How long we keep it\n\nWe keep order records for as long as required for legal, tax and accounting purposes, and other data only as long as needed for the purposes above.\n\n## Your choices and rights\n\nYou can view and update your account details at any time, unsubscribe from marketing emails using the link in any email, and ask us to access, correct or erase your personal data, subject to legal requirements.\n\n## Grievance contact\n\n**[NAME OF GRIEVANCE OFFICER]**, UNAR, 107 A2-4, Sulochana Villa, SAPS Cinema Theatre Thottam, Trichy Road, Palladam, Tiruppur - 641664. Email: unarfoods@gmail.com\n\n## Changes\n\nWe may update this policy from time to time. The latest version will always be available on this page.",
+   "cover_image_url": null,
+   "cover_image_alt": null,
+   "author_name": null,
+   "seo_title": null,
+   "seo_description": "How UNAR collects, uses and protects your personal data.",
+   "requires_owner_review": true,
+   "published_at": null,
+   "updated_by": null
+  },
+  {
+   "id": "a7f2b08f-0b9b-449a-ad70-297317881bd7",
+   "group_id": "b1a2c3d4-0000-4000-8000-000000000004",
+   "kind": "policy",
+   "state": "draft",
+   "slug": "cancellation-policy",
+   "title": "Cancellation Policy",
+   "excerpt": "When and how you can cancel an order.",
+   "body_md": "**This policy is a template. The business owner must review and complete it before launch.**\n\n## Before your order ships\n\nYou may request cancellation of an order that has not yet been shipped by contacting us as soon as possible with your order number. If the order has not been packed or dispatched, we will cancel it and refund any online payment to the original payment method.\n\n## After your order ships\n\nOrders that have already been shipped cannot be cancelled. Please see our Refunds & Returns policy.\n\n## Cancellations by UNAR\n\nWe may cancel an order if a product becomes unavailable, if we cannot deliver to the address provided, or if a payment cannot be verified. If this happens we will inform you and refund any payment received.\n\n## Contact\n\nEmail unarfoods@gmail.com or call/WhatsApp 9994657693.",
+   "cover_image_url": null,
+   "cover_image_alt": null,
+   "author_name": null,
+   "seo_title": null,
+   "seo_description": "UNAR order cancellation policy.",
+   "requires_owner_review": true,
+   "published_at": null,
+   "updated_by": null
+  },
+  {
+   "id": "a8e9c15e-5b61-4305-8577-b91ea647de58",
+   "group_id": "b1a2c3d4-0000-4000-8000-000000000004",
+   "kind": "policy",
+   "state": "published",
+   "slug": "cancellation-policy",
+   "title": "Cancellation Policy",
+   "excerpt": "When and how you can cancel an order.",
+   "body_md": "**This policy is a template. The business owner must review and complete it before launch.**\n\n## Before your order ships\n\nYou may request cancellation of an order that has not yet been shipped by contacting us as soon as possible with your order number. If the order has not been packed or dispatched, we will cancel it and refund any online payment to the original payment method.\n\n## After your order ships\n\nOrders that have already been shipped cannot be cancelled. Please see our Refunds & Returns policy.\n\n## Cancellations by UNAR\n\nWe may cancel an order if a product becomes unavailable, if we cannot deliver to the address provided, or if a payment cannot be verified. If this happens we will inform you and refund any payment received.\n\n## Contact\n\nEmail unarfoods@gmail.com or call/WhatsApp 9994657693.",
+   "cover_image_url": null,
+   "cover_image_alt": null,
+   "author_name": null,
+   "seo_title": null,
+   "seo_description": "UNAR order cancellation policy.",
+   "requires_owner_review": true,
+   "published_at": "2026-10-09T06:31:42.802779+00:00",
+   "updated_by": null
+  },
+  {
+   "id": "c20dd5ce-5091-4b75-809c-5597ed5010e7",
+   "group_id": "b1a2c3d4-0000-4000-8000-000000000006",
+   "kind": "policy",
+   "state": "published",
+   "slug": "terms",
+   "title": "Terms & Conditions",
+   "excerpt": "The terms that apply when you use this website and buy from UNAR.",
+   "body_md": "**These terms are a template. The business owner must review and complete them before launch. They have not been reviewed by a lawyer.**\n\n## About us\n\nThis website is operated by UNAR, 107 A2-4, Sulochana Villa, SAPS Cinema Theatre Thottam, Trichy Road, Palladam, Tiruppur - 641664, Tamil Nadu, India.\n\n## Products and prices\n\nAll prices are in Indian Rupees (₹) and include applicable taxes unless stated otherwise. Product images on this website may show label artwork; the product you receive is the packed product described on its page. We try to keep information accurate, but if we find an error in a price or description after you order, we will contact you before processing the order.\n\n## Orders\n\nAn order is confirmed when payment is successfully received (or, for Cash on Delivery where available, when the order is placed). We may decline or cancel orders in the circumstances described in our Cancellation Policy.\n\n## Payments\n\nOnline payments are processed securely by Razorpay. By paying online you also agree to Razorpay's terms.\n\n## Delivery, returns and refunds\n\nPlease see our Shipping Policy, Refunds & Returns policy and Cancellation Policy.\n\n## Allergens and dietary information\n\nIngredient and allergen information is shown on each product page and printed on each pack. Please read it carefully before consuming, especially if you have food allergies.\n\n## Accounts\n\nYou are responsible for keeping your account password confidential and for activity under your account.\n\n## Governing law\n\nThese terms are governed by the laws of India. Courts at **[CITY]** shall have jurisdiction.\n\n## Contact\n\nEmail unarfoods@gmail.com or call/WhatsApp 9994657693.",
+   "cover_image_url": null,
+   "cover_image_alt": null,
+   "author_name": null,
+   "seo_title": null,
+   "seo_description": "Terms and conditions for using the UNAR website and buying UNAR products.",
+   "requires_owner_review": true,
+   "published_at": "2026-10-09T06:31:42.802779+00:00",
+   "updated_by": null
+  },
+  {
+   "id": "f00d357a-ed57-46ef-9df5-17481a5a1679",
+   "group_id": "b1a2c3d4-0000-4000-8000-000000000002",
+   "kind": "policy",
+   "state": "published",
+   "slug": "shipping-policy",
+   "title": "Shipping Policy",
+   "excerpt": "How we process and deliver your orders.",
+   "body_md": "**This policy is a template. The business owner must review and complete it before launch.**\n\n## Where we ship\n\nWe currently deliver to the PIN codes that our checkout accepts. Enter your PIN code at checkout to see whether delivery is available to your address.\n\n## Shipping charges\n\nShipping charges are calculated at checkout based on your delivery location and order details, and are shown before you pay. Any free-shipping offer is shown at checkout when it applies.\n\n## Processing time\n\nOrders are packed after payment is confirmed (or after a Cash on Delivery order is placed, where available). We aim to dispatch orders within **[NUMBER] business days**. Orders are not dispatched on **[DAYS / PUBLIC HOLIDAYS]**.\n\n## Delivery time\n\nDelivery times depend on your location and our courier partner. Any delivery estimate shown on our website is indicative and is not a guarantee.\n\n## Tracking your order\n\nWhen your order ships we will share tracking details by email where available. You can also check your order status anytime from **My Account → Orders** or the **Track Order** page.\n\n## Damaged or incorrect parcels\n\nIf your parcel arrives damaged or tampered with, please contact us within **[NUMBER] hours** of delivery with your order number and photos of the parcel and products. See our Refunds & Returns policy.\n\n## Contact\n\nEmail unarfoods@gmail.com or call/WhatsApp 9994657693.",
+   "cover_image_url": null,
+   "cover_image_alt": null,
+   "author_name": null,
+   "seo_title": null,
+   "seo_description": "UNAR shipping policy — delivery areas, charges, processing and tracking.",
+   "requires_owner_review": true,
+   "published_at": "2026-10-09T06:31:42.802779+00:00",
+   "updated_by": null
+  }
+ ],
+ "faqs": [
+  {
+   "id": "05027570-15f4-45e7-8f33-cb32fe6cd1e6",
+   "question": "How much is in a pack?",
+   "answer_md": "Each pack has a net weight of 100 g. The nutrition panel lists a serving size of 25 g — about 4 servings per pack.",
+   "category": "Products",
+   "sort_order": 3,
+   "is_published": true,
+   "show_on_home": true
+  },
+  {
+   "id": "12969b3f-d701-49d8-8e2e-cdc4172f8ef8",
+   "question": "How can I pay?",
+   "answer_md": "Online payments are processed securely by Razorpay. The payment options available to you are shown in the Razorpay window at checkout. We never see or store your card details or UPI PIN.",
+   "category": "Orders",
+   "sort_order": 6,
+   "is_published": true,
+   "show_on_home": false
+  },
+  {
+   "id": "8a927f51-73a8-4df3-ad2f-1c3dcfdb06fc",
+   "question": "How do I track my order?",
+   "answer_md": "If you have an account, every order is listed under **My Account → Orders**. You can also use [Track Order](/track-order) with your order number and the email address or phone number you used at checkout.",
+   "category": "Orders",
+   "sort_order": 5,
+   "is_published": true,
+   "show_on_home": true
+  },
+  {
+   "id": "8e0d544b-89f9-4d41-bab8-2df2e1880975",
+   "question": "Can I cancel my order?",
+   "answer_md": "Please read our [Cancellation Policy](/policies/cancellation-policy) and [contact us](/contact) as soon as possible with your order number.",
+   "category": "Orders",
+   "sort_order": 7,
+   "is_published": true,
+   "show_on_home": false
+  },
+  {
+   "id": "aaf9c652-1851-496a-a114-cdda6ae73cc9",
+   "question": "Does Banana Chewy contain allergens?",
+   "answer_md": "The **With Dry Fruits & Seeds** pack carries this allergen advice: *Contains Sesame Seeds and Tree Nuts (Almonds, Cashews).* The **Fresh Raw Banana** pack does not carry an allergen statement; its listed ingredient is fresh raw banana. If you have a food allergy, always read the pack label and [contact us](/contact) with any questions before ordering.",
+   "category": "Products",
+   "sort_order": 2,
+   "is_published": true,
+   "show_on_home": true
+  },
+  {
+   "id": "cf342a44-ba6b-40a5-a795-f90a008bdf6a",
+   "question": "What is the difference between the two Banana Chewy varieties?",
+   "answer_md": "Banana Chewy — **Fresh Raw Banana** lists a single ingredient on the pack: fresh raw banana. Banana Chewy — **With Dry Fruits & Seeds** adds almonds (badam), cashews, black dry grapes, and sesame (black & white), sunflower, melon and pumpkin seeds. You can compare them side by side on our [home page](/#compare).",
+   "category": "Products",
+   "sort_order": 1,
+   "is_published": true,
+   "show_on_home": true
+  },
+  {
+   "id": "f749fcea-dfb8-4db5-85e6-5507495441b4",
+   "question": "How should I store Banana Chewy?",
+   "answer_md": "Store in a cool, dry place and keep away from direct sunlight, as printed on the pack.",
+   "category": "Products",
+   "sort_order": 4,
+   "is_published": true,
+   "show_on_home": true
+  }
+ ],
+ "banners": [
+  {
+   "id": "21d3ca44-96d1-4310-a15d-5b52f4f4bef9",
+   "placement": "announcement",
+   "title": "One Healthy Habit a Day — welcome to the UNAR store.",
+   "body": null,
+   "cta_label": "Shop now",
+   "cta_url": "/shop",
+   "image_url": null,
+   "image_alt": null,
+   "starts_at": null,
+   "ends_at": null,
+   "is_active": false,
+   "sort_order": 1
+  }
+ ]
+}

@@ -2,7 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { Plus, Star } from "lucide-react";
 import { requireStaffPage } from "@/lib/auth/session";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { getUserDb } from "@/lib/db/client";
 import { formatINR } from "@/lib/money";
 import { createProductAction } from "@/app/admin/_actions/products";
 import { Notice, PageHeader, Table, Td, Th } from "@/components/admin/ui";
@@ -17,10 +17,10 @@ const STATUS_TONE = { published: "success", draft: "neutral", archived: "muted" 
 export default async function AdminProductsPage({ searchParams }: { searchParams: Promise<{ error?: string; status?: string }> }) {
   const { access } = await requireStaffPage("products.read");
   const params = await searchParams;
-  const supabase = (await createSupabaseServerClient())!;
+  const db = (await getUserDb())!;
   const canWrite = access.permissions.has("products.write");
 
-  let query = supabase
+  let query = db
     .from("products")
     .select("id, title, slug, status, is_featured, updated_at, product_variants(id, sku, price_paise, mrp_paise, stock, is_active, is_demo_stock, low_stock_threshold), product_images(url, alt, sort_order)")
     .order("sort_order")

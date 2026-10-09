@@ -4,6 +4,9 @@ import { getPublicSettings } from "@/lib/settings";
 import { getSiteUrl } from "@/lib/env";
 import "./globals.css";
 
+/** Pages read the live database, so they are rendered when visitors open them (not while building). */
+export const dynamic = "force-dynamic";
+
 const fraunces = Fraunces({
   subsets: ["latin"],
   variable: "--font-fraunces",

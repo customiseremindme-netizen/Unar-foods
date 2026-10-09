@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { CircleCheck, Circle, TriangleAlert } from "lucide-react";
 import { requireStaffPage } from "@/lib/auth/session";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { getUserDb } from "@/lib/db/client";
 import { resolveRange } from "@/lib/admin/date-range";
 import { getLaunchChecklist } from "@/lib/admin/checklist";
 import { releaseExpiredReservations } from "@/lib/commerce/checkout";
@@ -31,7 +31,7 @@ export default async function AdminOverviewPage({ searchParams }: { searchParams
   const { access } = await requireStaffPage("dashboard.view");
   const params = await searchParams;
   const range = resolveRange(params);
-  const supabase = (await createSupabaseServerClient())!;
+  const db = (await getUserDb())!;
   const canReports = access.permissions.has("reports.view");
   const canOrders = access.permissions.has("orders.read");
 
@@ -39,18 +39,18 @@ export default async function AdminOverviewPage({ searchParams }: { searchParams
   if (canOrders) await releaseExpiredReservations(10).catch(() => undefined);
 
   const [summaryRes, dailyRes, productsRes, recentRes, lowStockRes, checklist] = await Promise.all([
-    canReports ? supabase.rpc("report_summary", { p_from: range.from.toISOString(), p_to: range.to.toISOString() }) : Promise.resolve({ data: null }),
-    canReports ? supabase.rpc("report_daily_sales", { p_from: range.from.toISOString(), p_to: range.to.toISOString() }) : Promise.resolve({ data: null }),
-    canReports ? supabase.rpc("report_product_sales", { p_from: range.from.toISOString(), p_to: range.to.toISOString() }) : Promise.resolve({ data: null }),
+    canReports ? db.rpc("report_summary", { p_from: range.from.toISOString(), p_to: range.to.toISOString() }) : Promise.resolve({ data: null }),
+    canReports ? db.rpc("report_daily_sales", { p_from: range.from.toISOString(), p_to: range.to.toISOString() }) : Promise.resolve({ data: null }),
+    canReports ? db.rpc("report_product_sales", { p_from: range.from.toISOString(), p_to: range.to.toISOString() }) : Promise.resolve({ data: null }),
     canOrders
-      ? supabase
+      ? db
           .from("orders")
           .select("id, order_number, customer_name, total_paise, status, payment_status, fulfillment_status, payment_method, created_at, needs_attention")
           .order("created_at", { ascending: false })
           .limit(8)
       : Promise.resolve({ data: null }),
     access.permissions.has("inventory.read")
-      ? supabase.from("product_variants").select("id, title, sku, stock, low_stock_threshold, products(title, status)").eq("is_active", true)
+      ? db.from("product_variants").select("id, title, sku, stock, low_stock_threshold, products(title, status)").eq("is_active", true)
       : Promise.resolve({ data: null }),
     access.permissions.has("settings.write") ? getLaunchChecklist() : Promise.resolve(null),
   ]);
@@ -62,16 +62,16 @@ export default async function AdminOverviewPage({ searchParams }: { searchParams
     const head = { count: "exact" as const, head: true };
     const [toFulfil, awaiting, cod, attention] = await Promise.all([
       count(
-        supabase
+        db
           .from("orders")
           .select("id", head)
           .eq("status", "placed")
           .in("fulfillment_status", ["unfulfilled", "processing", "packed"])
           .in("payment_status", ["paid", "partially_refunded", "cod_pending"]),
       ),
-      count(supabase.from("orders").select("id", head).eq("status", "pending_payment")),
-      count(supabase.from("orders").select("id", head).eq("status", "placed").eq("payment_status", "cod_pending")),
-      count(supabase.from("orders").select("id", head).eq("needs_attention", true)),
+      count(db.from("orders").select("id", head).eq("status", "pending_payment")),
+      count(db.from("orders").select("id", head).eq("status", "placed").eq("payment_status", "cod_pending")),
+      count(db.from("orders").select("id", head).eq("needs_attention", true)),
     ]);
     s = {
       paid_orders: 0,

@@ -1,7 +1,7 @@
 import Image from "next/image";
 import { notFound } from "next/navigation";
 import { requireStaffPage } from "@/lib/auth/session";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { getUserDb } from "@/lib/db/client";
 import { getPublicSettings } from "@/lib/settings";
 import { formatDate } from "@/lib/utils";
 import { PrintButton } from "@/components/orders/print-button";
@@ -12,8 +12,8 @@ export default async function PackingSlipPage({ params }: { params: Promise<{ id
   await requireStaffPage("orders.read");
   const { id } = await params;
   if (!/^[0-9a-f-]{36}$/.test(id)) notFound();
-  const supabase = (await createSupabaseServerClient())!;
-  const { data: order } = await supabase
+  const db = (await getUserDb())!;
+  const { data: order } = await db
     .from("orders")
     .select("order_number, created_at, customer_name, phone, shipping_address, payment_method, payment_status, total_paise, customer_note, order_items(title, variant_title, sku, quantity)")
     .eq("id", id)

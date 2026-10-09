@@ -11,6 +11,8 @@ export default defineConfig({
   test: {
     include: process.env.VITEST_INTEGRATION ? ["tests/integration/**/*.test.ts"] : ["tests/unit/**/*.test.ts"],
     testTimeout: 30_000,
+    // Database tests share one test database, so they run one file at a time.
+    fileParallelism: !process.env.VITEST_INTEGRATION,
     environment: "node",
   },
 });

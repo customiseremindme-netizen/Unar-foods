@@ -24,7 +24,7 @@ const STOCK_ERRORS: Record<string, string> = {
 };
 
 export async function adjustStockAction(formData: FormData): Promise<ActionResult<number>> {
-  return runAdminAction("inventory.write", async ({ supabase }) => {
+  return runAdminAction("inventory.write", async ({ db }) => {
     const s = stockSchema.parse({
       variant_id: formData.get("variant_id"),
       mode: formData.get("mode"),
@@ -32,9 +32,9 @@ export async function adjustStockAction(formData: FormData): Promise<ActionResul
       reason: formData.get("reason"),
       note: formData.get("note") ?? "",
     });
-    const { data: variant } = check(await supabase.from("product_variants").select("stock, sku").eq("id", s.variant_id).single());
+    const { data: variant } = check(await db.from("product_variants").select("stock, sku").eq("id", s.variant_id).single());
     const delta = s.mode === "add" ? s.quantity : s.mode === "remove" ? -s.quantity : s.quantity - variant!.stock;
-    const { data: stock, error } = await supabase.rpc("adjust_stock", {
+    const { data: stock, error } = await db.rpc("adjust_stock", {
       p_variant_id: s.variant_id,
       p_delta: delta,
       p_reason: s.reason,
@@ -60,11 +60,11 @@ export async function adjustStockAction(formData: FormData): Promise<ActionResul
 // Reviews
 // ---------------------------------------------------------------------------
 export async function setReviewStatusAction(id: string, status: "approved" | "rejected" | "spam" | "pending"): Promise<ActionResult> {
-  return runAdminAction("reviews.moderate", async ({ supabase }) => {
+  return runAdminAction("reviews.moderate", async ({ db }) => {
     z.uuid().parse(id);
     z.enum(["approved", "rejected", "spam", "pending"]).parse(status);
     check(
-      await supabase
+      await db
         .from("reviews")
         .update({ status, approved_at: status === "approved" ? new Date().toISOString() : null })
         .eq("id", id),
@@ -77,11 +77,11 @@ export async function setReviewStatusAction(id: string, status: "approved" | "re
 }
 
 export async function replyToReviewAction(formData: FormData): Promise<ActionResult> {
-  return runAdminAction("reviews.moderate", async ({ supabase }) => {
+  return runAdminAction("reviews.moderate", async ({ db }) => {
     const { id, reply } = z
       .object({ id: z.uuid(), reply: z.string().trim().max(1000, "Keep the reply under 1000 characters") })
       .parse({ id: formData.get("id"), reply: formData.get("reply") ?? "" });
-    check(await supabase.from("reviews").update({ admin_reply: reply || null }).eq("id", id));
+    check(await db.from("reviews").update({ admin_reply: reply || null }).eq("id", id));
     await logAdminAction({ action: "review.reply", entityType: "review", entityId: id, summary: reply ? "Replied to a review" : "Removed review reply" });
     revalidateStorefront();
     revalidatePath("/admin/reviews");
@@ -90,9 +90,9 @@ export async function replyToReviewAction(formData: FormData): Promise<ActionRes
 }
 
 export async function deleteReviewAction(id: string): Promise<ActionResult> {
-  return runAdminAction("reviews.moderate", async ({ supabase }) => {
+  return runAdminAction("reviews.moderate", async ({ db }) => {
     z.uuid().parse(id);
-    check(await supabase.from("reviews").delete().eq("id", id));
+    check(await db.from("reviews").delete().eq("id", id));
     await logAdminAction({ action: "review.delete", entityType: "review", entityId: id, summary: "Deleted a review" });
     revalidateStorefront();
     revalidatePath("/admin/reviews");
@@ -104,19 +104,19 @@ export async function deleteReviewAction(id: string): Promise<ActionResult> {
 // Contact messages
 // ---------------------------------------------------------------------------
 export async function setMessageStatusAction(id: string, status: "new" | "read" | "archived"): Promise<ActionResult> {
-  return runAdminAction("customers.read", async ({ supabase }) => {
+  return runAdminAction("customers.read", async ({ db }) => {
     z.uuid().parse(id);
     z.enum(["new", "read", "archived"]).parse(status);
-    check(await supabase.from("contact_messages").update({ status }).eq("id", id));
+    check(await db.from("contact_messages").update({ status }).eq("id", id));
     revalidatePath("/admin/messages");
     return { ok: true, message: null };
   });
 }
 
 export async function deleteMessageAction(id: string): Promise<ActionResult> {
-  return runAdminAction("customers.read", async ({ supabase }) => {
+  return runAdminAction("customers.read", async ({ db }) => {
     z.uuid().parse(id);
-    check(await supabase.from("contact_messages").delete().eq("id", id));
+    check(await db.from("contact_messages").delete().eq("id", id));
     await logAdminAction({ action: "message.delete", entityType: "contact_message", entityId: id, summary: "Deleted a contact message" });
     revalidatePath("/admin/messages");
     return { ok: true, message: "Message deleted." };

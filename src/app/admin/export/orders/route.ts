@@ -1,5 +1,5 @@
 import { getStaffAccess } from "@/lib/auth/session";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { getUserDb } from "@/lib/db/client";
 import { csvResponse, rupees, toCsv } from "@/lib/csv";
 import { resolveRange } from "@/lib/admin/date-range";
 
@@ -10,8 +10,8 @@ export async function GET(request: Request) {
   const access = await getStaffAccess();
   if (!access?.permissions.has("orders.read")) return new Response("Forbidden", { status: 403 });
   const params = Object.fromEntries(new URL(request.url).searchParams);
-  const supabase = (await createSupabaseServerClient())!;
-  let query = supabase
+  const db = (await getUserDb())!;
+  let query = db
     .from("orders")
     .select("order_number, created_at, paid_at, status, payment_status, fulfillment_status, payment_method, customer_name, email, phone, shipping_address, subtotal_paise, discount_paise, coupon_code, shipping_paise, cod_fee_paise, tax_paise, total_paise, refunded_paise, order_items(sku, quantity)")
     .order("created_at", { ascending: false })

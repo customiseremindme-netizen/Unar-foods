@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { Download } from "lucide-react";
 import { requireStaffPage } from "@/lib/auth/session";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { getUserDb } from "@/lib/db/client";
 import { formatINR } from "@/lib/money";
 import { formatDate } from "@/lib/utils";
 import { FilterBar, PageHeader, Pagination, Table, Td, Th, smallInput } from "@/components/admin/ui";
@@ -15,8 +15,8 @@ export default async function CustomersPage({ searchParams }: { searchParams: Pr
   const params = await searchParams;
   const q = (params.q ?? "").trim().slice(0, 80);
   const page = Math.max(1, Number(params.page) || 1);
-  const supabase = (await createSupabaseServerClient())!;
-  const { data: customers } = await supabase.rpc("admin_customers", { p_search: q, p_limit: PAGE_SIZE, p_offset: (page - 1) * PAGE_SIZE });
+  const db = (await getUserDb())!;
+  const { data: customers } = await db.rpc("admin_customers", { p_search: q, p_limit: PAGE_SIZE, p_offset: (page - 1) * PAGE_SIZE });
   const total = Number(customers?.[0]?.total_count ?? 0);
 
   return (

@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import { z } from "zod";
 import { requireStaffPage } from "@/lib/auth/session";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { getUserDb } from "@/lib/db/client";
 import { KIND_LABELS } from "@/lib/admin/content-paths";
 import { PageHeader } from "@/components/admin/ui";
 import { PageEditor, type EditorPage } from "@/components/admin/page-editor";
@@ -12,7 +12,7 @@ export default async function EditCmsPage({ params, searchParams }: { params: Pr
   const { access } = await requireStaffPage("content.write");
   const { groupId } = await params;
   const { kind: kindParam } = await searchParams;
-  const supabase = (await createSupabaseServerClient())!;
+  const db = (await getUserDb())!;
 
   let initial: EditorPage;
   let isLive = false;
@@ -33,7 +33,7 @@ export default async function EditCmsPage({ params, searchParams }: { params: Pr
     };
   } else {
     if (!z.uuid().safeParse(groupId).success) notFound();
-    const { data: rows } = await supabase.from("cms_pages").select("*").eq("group_id", groupId);
+    const { data: rows } = await db.from("cms_pages").select("*").eq("group_id", groupId);
     const draft = rows?.find((r) => r.state === "draft") ?? rows?.find((r) => r.state === "published");
     if (!draft) notFound();
     isLive = !!rows?.some((r) => r.state === "published");

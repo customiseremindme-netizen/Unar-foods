@@ -16,7 +16,7 @@ import {
   ShiprocketError,
   trackShiprocketShipment,
 } from "@/lib/shipping/shiprocket";
-import { requireAdminSupabase } from "@/lib/supabase/admin";
+import { requireServiceDb } from "@/lib/db/client";
 
 const id = z.uuid();
 
@@ -41,7 +41,7 @@ export async function setFulfillmentAction(input: {
   message?: string;
   notifyCustomer: boolean;
 }): Promise<ActionResult> {
-  return runAdminAction("orders.write", async ({ supabase }) => {
+  return runAdminAction("orders.write", async ({ db }) => {
     const data = z
       .object({
         orderId: id,
@@ -50,7 +50,7 @@ export async function setFulfillmentAction(input: {
         notifyCustomer: z.boolean(),
       })
       .parse(input);
-    const { error } = await supabase.rpc("set_fulfillment_status", {
+    const { error } = await db.rpc("set_fulfillment_status", {
       p_order_id: data.orderId,
       p_status: data.status,
       p_message: data.message ?? "",
@@ -58,7 +58,7 @@ export async function setFulfillmentAction(input: {
     });
     if (error) throw new UserFacingError(dbError(error.message));
     if (data.notifyCustomer && (data.status === "shipped" || data.status === "delivered")) {
-      const { data: shipment } = await supabase
+      const { data: shipment } = await db
         .from("shipments")
         .select("carrier, tracking_number, tracking_url")
         .eq("order_id", data.orderId)
@@ -96,7 +96,7 @@ export async function saveShipmentAction(input: {
   shipment: z.input<typeof shipmentSchema>;
   note?: string;
 }): Promise<ActionResult> {
-  return runAdminAction("orders.write", async ({ supabase }) => {
+  return runAdminAction("orders.write", async ({ db }) => {
     const orderId = id.parse(input.orderId);
     const s = shipmentSchema.parse(input.shipment);
     const timestamps = {
@@ -106,19 +106,19 @@ export async function saveShipmentAction(input: {
     let shipmentId = input.shipmentId;
     if (shipmentId) {
       id.parse(shipmentId);
-      const { data: existing } = check(await supabase.from("shipments").select("shipped_at, delivered_at").eq("id", shipmentId).single());
+      const { data: existing } = check(await db.from("shipments").select("shipped_at, delivered_at").eq("id", shipmentId).single());
       check(
-        await supabase
+        await db
           .from("shipments")
           .update({ ...s, shipped_at: existing?.shipped_at ?? timestamps.shipped_at, delivered_at: existing?.delivered_at ?? timestamps.delivered_at })
           .eq("id", shipmentId),
       );
     } else {
-      const { data } = check(await supabase.from("shipments").insert({ order_id: orderId, provider: "manual", ...s, ...timestamps }).select("id").single());
+      const { data } = check(await db.from("shipments").insert({ order_id: orderId, provider: "manual", ...s, ...timestamps }).select("id").single());
       shipmentId = data!.id;
     }
     check(
-      await supabase.from("shipment_events").insert({
+      await db.from("shipment_events").insert({
         shipment_id: shipmentId,
         status: s.status,
         description: input.note?.slice(0, 300) || null,
@@ -132,10 +132,10 @@ export async function saveShipmentAction(input: {
 }
 
 export async function addOrderNoteAction(orderId: string, message: string, customerVisible: boolean): Promise<ActionResult> {
-  return runAdminAction("orders.write", async ({ supabase, user }) => {
+  return runAdminAction("orders.write", async ({ db, user }) => {
     const text = z.string().trim().min(1, "Write a note first").max(1000).parse(message);
     check(
-      await supabase.from("order_events").insert({
+      await db.from("order_events").insert({
         order_id: id.parse(orderId),
         type: customerVisible ? "update" : "note",
         message: text,
@@ -149,8 +149,8 @@ export async function addOrderNoteAction(orderId: string, message: string, custo
 }
 
 export async function markCodCollectedAction(orderId: string): Promise<ActionResult> {
-  return runAdminAction("orders.write", async ({ supabase }) => {
-    const { error } = await supabase.rpc("mark_cod_collected", { p_order_id: id.parse(orderId) });
+  return runAdminAction("orders.write", async ({ db }) => {
+    const { error } = await db.rpc("mark_cod_collected", { p_order_id: id.parse(orderId) });
     if (error) throw new UserFacingError(dbError(error.message));
     await logAdminAction({ action: "order.cod_collected", entityType: "order", entityId: orderId, summary: "Marked COD payment as collected" });
     done(orderId);
@@ -159,9 +159,9 @@ export async function markCodCollectedAction(orderId: string): Promise<ActionRes
 }
 
 export async function clearAttentionAction(orderId: string): Promise<ActionResult> {
-  return runAdminAction("orders.write", async ({ supabase, user }) => {
-    check(await supabase.from("orders").update({ needs_attention: false }).eq("id", id.parse(orderId)));
-    check(await supabase.from("order_events").insert({ order_id: orderId, type: "note", message: "Attention flag cleared.", visibility: "internal", actor_id: user.id }));
+  return runAdminAction("orders.write", async ({ db, user }) => {
+    check(await db.from("orders").update({ needs_attention: false }).eq("id", id.parse(orderId)));
+    check(await db.from("order_events").insert({ order_id: orderId, type: "note", message: "Attention flag cleared.", visibility: "internal", actor_id: user.id }));
     done(orderId);
     return { ok: true, message: "Marked as resolved." };
   });
@@ -173,7 +173,7 @@ async function issueRefund(input: {
   reason: string;
   restock: boolean;
 }): Promise<{ provider: "razorpay" | "manual"; providerRefundId: string | null; status: "pending" | "processed" }> {
-  const admin = requireAdminSupabase();
+  const admin = requireServiceDb();
   const { data: order } = await admin
     .from("orders")
     .select("id, order_number, payment_method, payment_status, total_paise, refunded_paise")
@@ -217,13 +217,13 @@ async function issueRefund(input: {
 }
 
 export async function refundOrderAction(input: { orderId: string; amount: string; reason: string; restock: boolean }): Promise<ActionResult> {
-  return runAdminAction("orders.refund", async ({ supabase }) => {
+  return runAdminAction("orders.refund", async ({ db }) => {
     const orderId = id.parse(input.orderId);
     const amountPaise = rupeesToPaise(input.amount);
     if (amountPaise === null) throw new UserFacingError("Enter a valid amount, e.g. 149 or 149.50");
     const reason = z.string().trim().min(3, "Add a short reason").max(300).parse(input.reason);
     const refund = await issueRefund({ orderId, amountPaise, reason, restock: input.restock });
-    const { error } = await supabase.rpc("record_refund", {
+    const { error } = await db.rpc("record_refund", {
       p_order_id: orderId,
       p_provider: refund.provider,
       p_provider_refund_id: refund.providerRefundId ?? "",
@@ -253,11 +253,11 @@ export async function refundOrderAction(input: { orderId: string; amount: string
 }
 
 export async function cancelOrderAction(input: { orderId: string; reason: string; restock: boolean; refund: boolean }): Promise<ActionResult> {
-  return runAdminAction("orders.cancel", async ({ supabase, access }) => {
+  return runAdminAction("orders.cancel", async ({ db, access }) => {
     const orderId = id.parse(input.orderId);
     const reason = z.string().trim().min(3, "Add a short reason").max(300).parse(input.reason);
-    const { data: order } = check(await supabase.from("orders").select("payment_status, total_paise, refunded_paise").eq("id", orderId).single());
-    const { error } = await supabase.rpc("admin_cancel_order", { p_order_id: orderId, p_reason: reason, p_restock: input.restock });
+    const { data: order } = check(await db.from("orders").select("payment_status, total_paise, refunded_paise").eq("id", orderId).single());
+    const { error } = await db.rpc("admin_cancel_order", { p_order_id: orderId, p_reason: reason, p_restock: input.restock });
     if (error) throw new UserFacingError(dbError(error.message));
     let refundNote = "";
     const remaining = order!.total_paise - order!.refunded_paise;
@@ -266,7 +266,7 @@ export async function cancelOrderAction(input: { orderId: string; reason: string
         refundNote = " A refund still needs to be issued by an owner/admin.";
       } else {
         const refund = await issueRefund({ orderId, amountPaise: remaining, reason, restock: false });
-        const r = await supabase.rpc("record_refund", {
+        const r = await db.rpc("record_refund", {
           p_order_id: orderId,
           p_provider: refund.provider,
           p_provider_refund_id: refund.providerRefundId ?? "",
@@ -304,13 +304,13 @@ export async function reconcilePaymentAction(orderId: string): Promise<ActionRes
 }
 
 export async function resendEmailAction(orderId: string, template: OrderTemplate): Promise<ActionResult> {
-  return runAdminAction("orders.write", async ({ supabase }) => {
+  return runAdminAction("orders.write", async ({ db }) => {
     id.parse(orderId);
     // Allow re-sending once-only templates by clearing their earlier log entry.
-    check(await supabase.from("orders").select("id").eq("id", orderId).single());
-    await requireAdminSupabase().from("notification_log").delete().eq("order_id", orderId).eq("template", template);
+    check(await db.from("orders").select("id").eq("id", orderId).single());
+    await requireServiceDb().from("notification_log").delete().eq("order_id", orderId).eq("template", template);
     await notifyOrder(orderId, template);
-    const { data } = await supabase
+    const { data } = await db
       .from("notification_log")
       .select("status, error")
       .eq("order_id", orderId)
@@ -326,12 +326,12 @@ export async function resendEmailAction(orderId: string, template: OrderTemplate
 }
 
 export async function createShiprocketShipmentAction(orderId: string): Promise<ActionResult> {
-  return runAdminAction("orders.write", async ({ supabase }) => {
+  return runAdminAction("orders.write", async ({ db }) => {
     if (!isShiprocketConfigured()) throw new UserFacingError("Shiprocket is not connected.");
     const settings = await getAllSettings();
     if (!settings.shiprocket.pickup_location) throw new UserFacingError("Add your Shiprocket pickup location name in Settings → Shipping first.");
     const { data: order } = check(
-      await supabase
+      await db
         .from("orders")
         .select("id, order_number, created_at, customer_name, email, phone, shipping_address, payment_method, subtotal_paise, shipping_paise, discount_paise, total_weight_grams, status, order_items(title, sku, quantity, unit_price_paise)")
         .eq("id", id.parse(orderId))
@@ -359,7 +359,7 @@ export async function createShiprocketShipmentAction(orderId: string): Promise<A
         },
       });
       check(
-        await supabase.from("shipments").insert({
+        await db.from("shipments").insert({
           order_id: orderId,
           provider: "shiprocket",
           provider_order_id: String(result.order_id),
@@ -380,8 +380,8 @@ export async function createShiprocketShipmentAction(orderId: string): Promise<A
 }
 
 export async function syncShiprocketAction(shipmentId: string): Promise<ActionResult> {
-  return runAdminAction("orders.write", async ({ supabase }) => {
-    const { data: shipment } = check(await supabase.from("shipments").select("id, order_id, provider_shipment_id").eq("id", id.parse(shipmentId)).single());
+  return runAdminAction("orders.write", async ({ db }) => {
+    const { data: shipment } = check(await db.from("shipments").select("id, order_id, provider_shipment_id").eq("id", id.parse(shipmentId)).single());
     if (!shipment?.provider_shipment_id) throw new UserFacingError("This shipment isn't linked to Shiprocket.");
     try {
       const tracking = await trackShiprocketShipment(shipment.provider_shipment_id);
@@ -396,7 +396,7 @@ export async function syncShiprocketAction(shipmentId: string): Promise<ActionRe
             ? "in_transit"
             : null;
       check(
-        await supabase
+        await db
           .from("shipments")
           .update({
             awb_code: track?.awb_code ?? undefined,
@@ -409,8 +409,8 @@ export async function syncShiprocketAction(shipmentId: string): Promise<ActionRe
       );
       const activities = (t?.shipment_track_activities ?? []).slice(0, 20);
       if (activities.length > 0) {
-        await supabase.from("shipment_events").delete().eq("shipment_id", shipment.id).eq("source", "shiprocket");
-        await supabase.from("shipment_events").insert(
+        await db.from("shipment_events").delete().eq("shipment_id", shipment.id).eq("source", "shiprocket");
+        await db.from("shipment_events").insert(
           activities.map((a) => ({
             shipment_id: shipment.id,
             status: (a["sr-status-label"] ?? "update").slice(0, 60),

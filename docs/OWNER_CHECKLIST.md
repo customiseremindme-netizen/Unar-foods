@@ -91,8 +91,8 @@ the website. They are **not** legal advice and were not written by a lawyer.
 ## 7. Before taking real money
 - [ ] Razorpay KYC approved and **live** keys in your hosting settings (see SETUP_GUIDE Part 4.3).
 - [ ] A test purchase, refund and shipment completed successfully.
-- [ ] Hosting plan that supports Node.js apps (Hostinger Business/Cloud, or Vercel Pro); Supabase on **Pro** (backups, no pausing).
-- [ ] 2FA turned on for GitHub, Hostinger, Supabase, Razorpay (and Vercel/Resend if used).
+- [ ] Hostinger plan that supports Node.js apps (Business or Cloud) with a MySQL database; daily backups switched on.
+- [ ] 2FA turned on for GitHub, Hostinger and Razorpay (and Resend if used).
 
 ## Things deliberately left out (add only if true)
 - Customer reviews / testimonials — the reviews section shows an honest

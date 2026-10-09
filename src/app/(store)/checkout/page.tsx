@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { Lock } from "lucide-react";
 import { getSessionUser } from "@/lib/auth/session";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { getUserDb } from "@/lib/db/client";
 import { getPublicSettings } from "@/lib/settings";
 import { getRazorpayEnv } from "@/lib/env";
 import { getCartView } from "@/lib/commerce/cart";
@@ -33,11 +33,11 @@ export default async function CheckoutPage() {
   let profile: { full_name: string | null; phone: string | null } | null = null;
   let addresses: SavedAddress[] = [];
   if (user) {
-    const supabase = await createSupabaseServerClient();
-    if (supabase) {
+    const db = await getUserDb();
+    if (db) {
       const [p, a] = await Promise.all([
-        supabase.from("profiles").select("full_name, phone").eq("id", user.id).maybeSingle(),
-        supabase
+        db.from("profiles").select("full_name, phone").eq("id", user.id).maybeSingle(),
+        db
           .from("addresses")
           .select("id, label, full_name, phone, line1, line2, landmark, city, state, pincode, is_default")
           .eq("user_id", user.id)

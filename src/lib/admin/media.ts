@@ -1,13 +1,39 @@
 import "server-only";
 import sharp, { type Metadata as SharpMetadata, type Sharp } from "sharp";
+import { randomUUID } from "node:crypto";
 import { randomToken } from "@/lib/security/tokens";
-import { requireAdminSupabase } from "@/lib/supabase/admin";
+import { getReadyPool } from "@/lib/db/install";
 import { UserFacingError } from "./action";
 
 const MAX_BYTES = Math.floor(4.4 * 1024 * 1024);
 const MAX_DIMENSION = 2400;
 
-export type UploadedImage = { url: string; storagePath: string; width: number; height: number; mimeType: string; sizeBytes: number };
+export type UploadedImage = { id: string; url: string; storagePath: string; width: number; height: number; mimeType: string; sizeBytes: number };
+
+/**
+ * Saves the image in the database (table media_assets). It is then served
+ * from /media/<id>.<ext> by src/app/media/[file]/route.ts.
+ */
+async function saveImage(
+  data: Buffer,
+  input: { ext: "webp" | "svg"; mimeType: string; folder: string; width: number; height: number; alt: string; uploadedBy: string | null },
+): Promise<UploadedImage> {
+  const id = randomUUID();
+  const url = `/media/${id}.${input.ext}`;
+  const storagePath = `${input.folder}/${new Date().toISOString().slice(0, 10)}-${randomToken(9)}.${input.ext}`;
+  const pool = await getReadyPool();
+  try {
+    // execute() sends the image bytes in binary form (half the size of a text query).
+    await pool.execute(
+      "INSERT INTO media_assets (id, url, storage_path, mime_type, size_bytes, width, height, alt, data, uploaded_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+      [id, url, storagePath, input.mimeType, data.length, input.width, input.height, input.alt, data, input.uploadedBy],
+    );
+  } catch (error) {
+    if ((error as { errno?: number }).errno === 1153) throw new UserFacingError("This image is too large for the database. Please use a smaller image.");
+    throw error;
+  }
+  return { id, url, storagePath, width: input.width, height: input.height, mimeType: input.mimeType, sizeBytes: data.length };
+}
 
 function looksLikeSafeSvg(text: string) {
   const lower = text.toLowerCase();
@@ -23,31 +49,29 @@ function looksLikeSafeSvg(text: string) {
  *   neutralises disguised files) and resized to at most 2400px.
  * - SVG is accepted only for logos/icons and only if it contains no scripts.
  */
-export async function processAndStoreImage(file: File, folder: string, options: { allowSvg?: boolean } = {}): Promise<UploadedImage> {
+export async function processAndStoreImage(
+  file: File,
+  folder: string,
+  options: { allowSvg?: boolean; alt?: string; uploadedBy?: string | null } = {},
+): Promise<UploadedImage> {
   if (!(file instanceof File) || file.size === 0) throw new UserFacingError("Please choose an image file.");
   if (file.size > MAX_BYTES) throw new UserFacingError("This image is too large. Please use an image under 4 MB.");
   const buffer = Buffer.from(await file.arrayBuffer());
-  const admin = requireAdminSupabase();
   const safeFolder = folder.replace(/[^a-z0-9/-]/gi, "").slice(0, 40) || "uploads";
-  const stamp = new Date().toISOString().slice(0, 10);
+  const saveAs = { folder: safeFolder, alt: (options.alt ?? "").slice(0, 200), uploadedBy: options.uploadedBy ?? null };
 
   if (file.type === "image/svg+xml" || file.name.toLowerCase().endsWith(".svg")) {
     if (!options.allowSvg) throw new UserFacingError("SVG files can only be used for the logo.");
     const text = buffer.toString("utf8");
     if (!looksLikeSafeSvg(text)) throw new UserFacingError("This SVG contains unsupported or unsafe content.");
-    const path = `${safeFolder}/${stamp}-${randomToken(9)}.svg`;
-    const { error } = await admin.storage.from("media").upload(path, buffer, { contentType: "image/svg+xml", upsert: false });
-    if (error) throw new UserFacingError("Upload failed. Please try again.");
-    const { data } = admin.storage.from("media").getPublicUrl(path);
     const dims = text.match(/viewBox=["'][\d.\s-]+\s([\d.]+)\s([\d.]+)["']/i);
-    return {
-      url: data.publicUrl,
-      storagePath: path,
+    return saveImage(buffer, {
+      ...saveAs,
+      ext: "svg",
+      mimeType: "image/svg+xml",
       width: dims ? Math.round(Number(dims[1])) : 600,
       height: dims ? Math.round(Number(dims[2])) : 200,
-      mimeType: "image/svg+xml",
-      sizeBytes: buffer.length,
-    };
+    });
   }
 
   let image: Sharp;
@@ -67,20 +91,5 @@ export async function processAndStoreImage(file: File, folder: string, options: 
     .webp({ quality: 86, alphaQuality: 100, effort: 5, ...(hasAlpha ? {} : { smartSubsample: true }) })
     .toBuffer({ resolveWithObject: true });
 
-  const path = `${safeFolder}/${stamp}-${randomToken(9)}.webp`;
-  const { error } = await admin.storage.from("media").upload(path, output.data, {
-    contentType: "image/webp",
-    cacheControl: "31536000",
-    upsert: false,
-  });
-  if (error) throw new UserFacingError("Upload failed. Please try again.");
-  const { data } = admin.storage.from("media").getPublicUrl(path);
-  return {
-    url: data.publicUrl,
-    storagePath: path,
-    width: output.info.width,
-    height: output.info.height,
-    mimeType: "image/webp",
-    sizeBytes: output.data.length,
-  };
+  return saveImage(output.data, { ...saveAs, ext: "webp", mimeType: "image/webp", width: output.info.width, height: output.info.height });
 }

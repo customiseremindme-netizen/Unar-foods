@@ -1,7 +1,7 @@
 "use server";
 
 import { z } from "zod";
-import { getAdminSupabase } from "@/lib/supabase/admin";
+import { getServiceDb } from "@/lib/db/client";
 import { checkRateLimit } from "@/lib/security/rate-limit";
 import { getClientIp } from "@/lib/security/request";
 import { normalizeIndianPhone } from "@/lib/validation/common";
@@ -42,7 +42,7 @@ export async function trackOrderAction(_prev: TrackResult | null, formData: Form
   if (!(await checkRateLimit("trackOrder", await getClientIp()))) {
     return { ok: false, message: "Too many attempts. Please wait a few minutes." };
   }
-  const admin = getAdminSupabase();
+  const admin = getServiceDb();
   if (!admin) return { ok: false, message: "Order tracking is not available right now." };
 
   const { data: order } = await admin

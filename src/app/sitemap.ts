@@ -3,7 +3,8 @@ import { getSiteUrl } from "@/lib/env";
 import { getPublishedProducts } from "@/lib/data/catalog";
 import { listCmsPages } from "@/lib/data/content";
 
-export const revalidate = 3600;
+/** Pages read the live database, so they are rendered when visitors open them (not while building). */
+export const dynamic = "force-dynamic";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const site = getSiteUrl();

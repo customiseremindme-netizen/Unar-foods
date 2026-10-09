@@ -1,7 +1,6 @@
 import "server-only";
 import { cache } from "react";
-import { getPublicSupabase } from "@/lib/supabase/public";
-import { getAdminSupabase } from "@/lib/supabase/admin";
+import { getPublicDb, getServiceDb } from "@/lib/db/client";
 import { logError } from "@/lib/monitoring";
 import {
   defaultSettings,
@@ -42,18 +41,18 @@ function build(rows: { key: string; value: unknown }[] | null): AllSettings {
 
 /** Public settings (safe for any page). Falls back to defaults if unavailable. */
 export const getPublicSettings = cache(async (): Promise<PublicSettings> => {
-  const supabase = getPublicSupabase();
-  if (!supabase) return build(null);
-  const { data, error } = await supabase.from("settings").select("key, value").eq("is_public", true);
+  const db = getPublicDb();
+  if (!db) return build(null);
+  const { data, error } = await db.from("settings").select("key, value").eq("is_public", true);
   if (error) logError("settings.public", error);
   return build(data);
 });
 
 /** All settings including private ones (server-only trusted code). */
 export const getAllSettings = cache(async (): Promise<AllSettings> => {
-  const supabase = getAdminSupabase();
-  if (!supabase) return build(null);
-  const { data, error } = await supabase.from("settings").select("key, value");
+  const db = getServiceDb();
+  if (!db) return build(null);
+  const { data, error } = await db.from("settings").select("key, value");
   if (error) logError("settings.all", error);
   return build(data);
 });

@@ -1,34 +1,26 @@
 import type { NextConfig } from "next";
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
-let supabaseHost: URL | null = null;
-try {
-  supabaseHost = supabaseUrl ? new URL(supabaseUrl) : null;
-} catch {
-  supabaseHost = null;
-}
-const isLocalSupabase =
-  supabaseHost !== null && ["127.0.0.1", "localhost"].includes(supabaseHost.hostname);
-
 /**
  * Security headers applied to every response.
  * The Content-Security-Policy allows Razorpay Checkout (payment window) and
- * Supabase (database/auth/storage) and nothing else.
+ * nothing else from other sites. Images uploaded in the dashboard are served
+ * by this site itself (/media/...).
  */
-const supabaseOrigin = supabaseHost ? supabaseHost.origin : "";
+const testRun = process.env.UNAR_ALLOW_TEST_OVERRIDES === "1";
 const csp = [
   "default-src 'self'",
   `script-src 'self' 'unsafe-inline' https://checkout.razorpay.com${process.env.NODE_ENV === "development" ? " 'unsafe-eval'" : ""}`,
   "style-src 'self' 'unsafe-inline'",
-  `img-src 'self' data: blob: ${supabaseOrigin} https://*.razorpay.com`,
+  "img-src 'self' data: blob: https://*.razorpay.com",
   "font-src 'self' data:",
-  `connect-src 'self' ${supabaseOrigin} https://*.razorpay.com https://lumberjack.razorpay.com`,
+  "connect-src 'self' https://*.razorpay.com https://lumberjack.razorpay.com",
   "frame-src https://api.razorpay.com https://checkout.razorpay.com",
   "object-src 'none'",
   "base-uri 'self'",
   "form-action 'self' https://api.razorpay.com",
   "frame-ancestors 'none'",
-  ...(process.env.NODE_ENV === "production" && !isLocalSupabase ? ["upgrade-insecure-requests"] : []),
+  // Local test runs use plain http://localhost.
+  ...(process.env.NODE_ENV === "production" && !testRun ? ["upgrade-insecure-requests"] : []),
 ].join("; ");
 
 const securityHeaders = [
@@ -41,30 +33,17 @@ const securityHeaders = [
 ];
 
 const nextConfig: NextConfig = {
-  // This project uses the classic Next.js caching model: public pages are
-  // statically generated and refreshed when the admin publishes changes.
+  // Classic caching model. Pages that read the database are rendered when
+  // visitors open them (the database is not available while building).
   cacheComponents: false,
   poweredByHeader: false,
   images: {
     formats: ["image/avif", "image/webp"],
     qualities: [70, 75, 85],
-    remotePatterns: supabaseHost
-      ? [
-          {
-            protocol: supabaseHost.protocol.replace(":", "") as "http" | "https",
-            hostname: supabaseHost.hostname,
-            port: supabaseHost.port,
-            pathname: "/storage/v1/object/public/**",
-          },
-        ]
-      : [],
-    // Only needed when developing against a local Supabase instance.
-    dangerouslyAllowLocalIP: isLocalSupabase,
   },
-  serverExternalPackages: ["sharp", "nodemailer"],
+  serverExternalPackages: ["sharp", "nodemailer", "mysql2"],
   experimental: {
-    // Image uploads in the dashboard (photos are pre-shrunk in the browser to
-    // stay under Vercel's 4.5 MB request limit).
+    // Image uploads in the dashboard (photos are pre-shrunk in the browser).
     serverActions: { bodySizeLimit: "4.5mb" },
   },
   async headers() {

@@ -2,7 +2,8 @@ import type { MetadataRoute } from "next";
 import { getSiteUrl } from "@/lib/env";
 import { getPublicSettings } from "@/lib/settings";
 
-export const revalidate = 3600;
+/** Pages read the live database, so they are rendered when visitors open them (not while building). */
+export const dynamic = "force-dynamic";
 
 export default async function robots(): Promise<MetadataRoute.Robots> {
   const site = getSiteUrl();

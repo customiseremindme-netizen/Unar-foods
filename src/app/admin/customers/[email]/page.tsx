@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireStaffPage } from "@/lib/auth/session";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { getUserDb } from "@/lib/db/client";
 import { formatINR } from "@/lib/money";
 import { formatDate, formatDateTime } from "@/lib/utils";
 import { orderStatusLabel } from "@/lib/orders/view";
@@ -18,22 +18,22 @@ export default async function CustomerPage({ params }: { params: Promise<{ email
   const email = parsed.data;
   // exact, case-insensitive match (escape LIKE wildcards such as "_" in emails)
   const like = email.replace(/[\\%_]/g, (m) => `\\${m}`);
-  const supabase = (await createSupabaseServerClient())!;
+  const db = (await getUserDb())!;
 
   const [{ data: profile }, { data: orders }, { data: subscriber }, { data: messages }] = await Promise.all([
-    supabase.from("profiles").select("id, full_name, phone, marketing_consent, created_at").ilike("email", like).maybeSingle(),
+    db.from("profiles").select("id, full_name, phone, marketing_consent, created_at").ilike("email", like).maybeSingle(),
     access.permissions.has("orders.read")
-      ? supabase
+      ? db
           .from("orders")
           .select("id, order_number, created_at, total_paise, refunded_paise, status, payment_status, fulfillment_status, payment_method, customer_name, phone, shipping_address")
           .ilike("email", like)
           .order("created_at", { ascending: false })
           .limit(100)
       : Promise.resolve({ data: null }),
-    access.permissions.has("marketing.write") ? supabase.from("subscribers").select("status, consent_at, unsubscribed_at").eq("email", email).maybeSingle() : Promise.resolve({ data: null }),
-    supabase.from("contact_messages").select("id, subject, created_at, status").ilike("email", like).order("created_at", { ascending: false }).limit(20),
+    access.permissions.has("marketing.write") ? db.from("subscribers").select("status, consent_at, unsubscribed_at").eq("email", email).maybeSingle() : Promise.resolve({ data: null }),
+    db.from("contact_messages").select("id, subject, created_at, status").ilike("email", like).order("created_at", { ascending: false }).limit(20),
   ]);
-  const { data: addresses } = profile ? await supabase.from("addresses").select("*").eq("user_id", profile.id).order("is_default", { ascending: false }) : { data: null };
+  const { data: addresses } = profile ? await db.from("addresses").select("*").eq("user_id", profile.id).order("is_default", { ascending: false }) : { data: null };
 
   if (!profile && (!orders || orders.length === 0) && !messages?.length) notFound();
 

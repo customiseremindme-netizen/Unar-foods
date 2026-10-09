@@ -6,7 +6,6 @@ import { Breadcrumbs } from "@/components/ui/misc";
 import { WhatsappIcon } from "@/components/brand/icons";
 import { LeafSprig } from "@/components/brand/botanical";
 
-export const revalidate = 300;
 export const metadata: Metadata = {
   title: "Contact us",
   description: "Get in touch with UNAR — questions about orders, products or anything else.",

@@ -150,7 +150,8 @@ describe("email provider selection", () => {
 
 describe("hosting panel placeholders", () => {
   it("treats 'none', empty and quoted values sensibly", async () => {
-    const { getEmailEnv, getRazorpayEnv, getSupabaseEnv } = await import("@/lib/env");
+    const { getEmailEnv, getRazorpayEnv, getSetupKey } = await import("@/lib/env");
+    const { getDbConfig } = await import("@/lib/db/pool");
     const saved = { ...process.env };
     process.env.RAZORPAY_KEY_ID = "none";
     process.env.RAZORPAY_KEY_SECRET = "none";
@@ -161,11 +162,19 @@ describe("hosting panel placeholders", () => {
     process.env.SMTP_USER = "none";
     process.env.SMTP_PASSWORD = "none";
     expect(getEmailEnv()).toBeNull();
-    process.env.NEXT_PUBLIC_SUPABASE_URL = "PASTE_FROM_SUPABASE";
-    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY = "sb_publishable_x";
-    expect(getSupabaseEnv()).toBeNull();
-    process.env.NEXT_PUBLIC_SUPABASE_URL = '"https://abc.supabase.co"';
-    expect(getSupabaseEnv()?.url).toBe("https://abc.supabase.co");
+    delete process.env.DATABASE_URL;
+    process.env.DB_HOST = "localhost";
+    process.env.DB_NAME = "PASTE_DATABASE_NAME";
+    process.env.DB_USER = "u1_unar";
+    process.env.DB_PASSWORD = "secret";
+    expect(getDbConfig()).toBeNull();
+    process.env.DB_NAME = '"u1_unar"';
+    process.env.DB_PORT = "none";
+    expect(getDbConfig()).toEqual({ host: "localhost", port: 3306, database: "u1_unar", user: "u1_unar", password: "secret" });
+    process.env.SETUP_KEY = "short";
+    expect(getSetupKey()).toBeNull();
+    process.env.SETUP_KEY = "a-long-enough-setup-phrase";
+    expect(getSetupKey()).toBe("a-long-enough-setup-phrase");
     process.env = saved;
   });
 });

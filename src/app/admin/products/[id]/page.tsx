@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import { z } from "zod";
 import { requireStaffPage } from "@/lib/auth/session";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { getUserDb } from "@/lib/db/client";
 import { getSetting } from "@/lib/settings";
 import { paiseToRupeesInput } from "@/lib/money";
 import { getRequestSiteUrl } from "@/lib/site-url";
@@ -19,14 +19,14 @@ export default async function EditProductPage({ params }: { params: Promise<{ id
   const { access } = await requireStaffPage("products.read");
   const { id } = await params;
   if (!z.uuid().safeParse(id).success) notFound();
-  const supabase = (await createSupabaseServerClient())!;
+  const db = (await getUserDb())!;
   const [{ data: p }, { data: categories }, tax] = await Promise.all([
-    supabase
+    db
       .from("products")
       .select("*, product_variants(*), product_images(*), product_categories(category_id)")
       .eq("id", id)
       .maybeSingle(),
-    supabase.from("categories").select("id, name, is_active").order("sort_order"),
+    db.from("categories").select("id, name, is_active").order("sort_order"),
     getSetting("tax"),
   ]);
   if (!p) notFound();

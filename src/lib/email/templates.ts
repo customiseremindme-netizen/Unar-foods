@@ -162,3 +162,52 @@ export function renderOrderEmail(input: {
 
   return { html, text };
 }
+
+/** Simple branded email with one button (account confirmation, password reset). */
+export function renderActionEmail(input: {
+  siteUrl: string;
+  storeName: string;
+  heading: string;
+  greetingName?: string | null;
+  paragraphs: string[];
+  buttonLabel: string;
+  buttonUrl: string;
+  footnote: string;
+}): { html: string; text: string } {
+  const paragraphs = input.paragraphs
+    .map((p) => `<p style="margin:0 0 16px;font-size:15px;line-height:1.6;color:#262823;">${escapeHtml(p)}</p>`)
+    .join("");
+  const html = `<!doctype html><html><body style="margin:0;padding:0;background:#F2F1E6;font-family:Arial,Helvetica,sans-serif;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#F2F1E6;padding:24px 12px;">
+    <tr><td align="center">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;background:#FBFAF5;border-radius:16px;overflow:hidden;">
+        <tr><td style="padding:28px 32px 8px;text-align:center;background:#F2F1E6;">
+          <img src="${input.siteUrl}/brand/unar-logo-email.png" width="180" alt="${escapeHtml(input.storeName)}" style="display:inline-block;border:0;max-width:180px;height:auto;">
+        </td></tr>
+        <tr><td style="padding:24px 32px 0;">
+          <h1 style="margin:0 0 12px;font-family:Georgia,'Times New Roman',serif;font-weight:normal;font-size:24px;color:#2E4E36;">${escapeHtml(input.heading)}</h1>
+          <p style="margin:0 0 16px;font-size:15px;line-height:1.6;color:#262823;">Hi${input.greetingName ? ` ${escapeHtml(input.greetingName)}` : ""},</p>
+          ${paragraphs}
+        </td></tr>
+        <tr><td style="padding:8px 32px 28px;" align="center">
+          <a href="${escapeHtml(input.buttonUrl)}" style="display:inline-block;background:#2E4E36;color:#F2F1E6;text-decoration:none;padding:12px 28px;border-radius:999px;font-size:14px;font-weight:bold;">${escapeHtml(input.buttonLabel)}</a>
+        </td></tr>
+        <tr><td style="padding:20px 32px 28px;border-top:1px solid #e4e2d6;text-align:center;">
+          <p style="margin:0;font-size:12px;line-height:1.6;color:#6b6e64;">${escapeHtml(input.footnote)}</p>
+          <p style="margin:8px 0 0;font-size:12px;color:#6b6e64;">${escapeHtml(input.storeName)} — One Healthy Habit a Day</p>
+        </td></tr>
+      </table>
+    </td></tr>
+  </table></body></html>`;
+  const text = [
+    input.heading,
+    "",
+    `Hi${input.greetingName ? ` ${input.greetingName}` : ""},`,
+    ...input.paragraphs,
+    "",
+    `${input.buttonLabel}: ${input.buttonUrl}`,
+    "",
+    input.footnote,
+  ].join("\n");
+  return { html, text };
+}

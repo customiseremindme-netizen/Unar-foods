@@ -69,7 +69,7 @@ const couponSchema = z
   .refine((c) => !c.starts_at || !c.ends_at || c.ends_at > c.starts_at, { path: ["ends_at"], message: "End must be after start" });
 
 export async function saveCouponAction(formData: FormData): Promise<ActionResult> {
-  return runAdminAction("marketing.write", async ({ supabase }) => {
+  return runAdminAction("marketing.write", async ({ db }) => {
     const raw = Object.fromEntries(formData) as Record<string, string>;
     const c = couponSchema.parse({ ...raw, is_active: raw.is_active === "on" });
     let discount_value = 0;
@@ -95,8 +95,8 @@ export async function saveCouponAction(formData: FormData): Promise<ActionResult
       ends_at: c.ends_at,
       is_active: c.is_active,
     };
-    if (c.id) check(await supabase.from("coupons").update(row).eq("id", c.id), "Could not save. Is the code already used?");
-    else check(await supabase.from("coupons").insert(row), "Could not save. Is the code already used?");
+    if (c.id) check(await db.from("coupons").update(row).eq("id", c.id), "Could not save. Is the code already used?");
+    else check(await db.from("coupons").insert(row), "Could not save. Is the code already used?");
     await logAdminAction({ action: "coupon.save", entityType: "coupon", entityId: c.id ?? null, summary: `Saved coupon ${c.code}` });
     revalidatePath("/admin/marketing/coupons");
     return { ok: true, message: `Coupon ${c.code} saved.` };
@@ -104,15 +104,15 @@ export async function saveCouponAction(formData: FormData): Promise<ActionResult
 }
 
 export async function deleteCouponAction(id: string): Promise<ActionResult> {
-  return runAdminAction("marketing.write", async ({ supabase }) => {
+  return runAdminAction("marketing.write", async ({ db }) => {
     z.uuid().parse(id);
-    const { count } = await supabase.from("coupon_usages").select("id", { count: "exact", head: true }).eq("coupon_id", id);
+    const { count } = await db.from("coupon_usages").select("id", { count: "exact", head: true }).eq("coupon_id", id);
     if (count) {
       // Keep history: switch it off instead.
-      check(await supabase.from("coupons").update({ is_active: false }).eq("id", id));
+      check(await db.from("coupons").update({ is_active: false }).eq("id", id));
       return { ok: true, message: "This coupon has been used, so it was switched off instead of deleted (keeps your records)." };
     }
-    check(await supabase.from("coupons").delete().eq("id", id));
+    check(await db.from("coupons").delete().eq("id", id));
     await logAdminAction({ action: "coupon.delete", entityType: "coupon", entityId: id, summary: "Deleted a coupon" });
     revalidatePath("/admin/marketing/coupons");
     return { ok: true, message: "Coupon deleted." };
@@ -123,9 +123,9 @@ export async function deleteCouponAction(id: string): Promise<ActionResult> {
 // Newsletter subscribers
 // ---------------------------------------------------------------------------
 export async function unsubscribeSubscriberAction(id: string): Promise<ActionResult> {
-  return runAdminAction("marketing.write", async ({ supabase }) => {
+  return runAdminAction("marketing.write", async ({ db }) => {
     z.uuid().parse(id);
-    check(await supabase.from("subscribers").update({ status: "unsubscribed", unsubscribed_at: new Date().toISOString() }).eq("id", id));
+    check(await db.from("subscribers").update({ status: "unsubscribed", unsubscribed_at: new Date().toISOString() }).eq("id", id));
     await logAdminAction({ action: "subscriber.unsubscribe", entityType: "subscriber", entityId: id, summary: "Unsubscribed a newsletter subscriber" });
     revalidatePath("/admin/marketing/subscribers");
     return { ok: true, message: "Unsubscribed." };
@@ -133,9 +133,9 @@ export async function unsubscribeSubscriberAction(id: string): Promise<ActionRes
 }
 
 export async function deleteSubscriberAction(id: string): Promise<ActionResult> {
-  return runAdminAction("marketing.write", async ({ supabase }) => {
+  return runAdminAction("marketing.write", async ({ db }) => {
     z.uuid().parse(id);
-    check(await supabase.from("subscribers").delete().eq("id", id));
+    check(await db.from("subscribers").delete().eq("id", id));
     await logAdminAction({ action: "subscriber.delete", entityType: "subscriber", entityId: id, summary: "Deleted a subscriber (data removal)" });
     revalidatePath("/admin/marketing/subscribers");
     return { ok: true, message: "Subscriber deleted." };
@@ -178,7 +178,7 @@ const zoneSchema = z
   .refine((z) => z.match_type !== "pincode_prefixes" || z.pincode_prefixes.length > 0, { path: ["pincode_prefixes"], message: "Enter at least one PIN prefix" });
 
 export async function saveZoneAction(formData: FormData): Promise<ActionResult> {
-  return runAdminAction("shipping.write", async ({ supabase }) => {
+  return runAdminAction("shipping.write", async ({ db }) => {
     const raw = Object.fromEntries(formData) as Record<string, string>;
     const zn = zoneSchema.parse({
       ...raw,
@@ -204,8 +204,8 @@ export async function saveZoneAction(formData: FormData): Promise<ActionResult> 
       delivery_estimate: zn.delivery_estimate || null,
       notes: zn.notes || null,
     };
-    if (zn.id) check(await supabase.from("shipping_zones").update(row).eq("id", zn.id));
-    else check(await supabase.from("shipping_zones").insert(row));
+    if (zn.id) check(await db.from("shipping_zones").update(row).eq("id", zn.id));
+    else check(await db.from("shipping_zones").insert(row));
     await logAdminAction({ action: "shipping.zone.save", entityType: "shipping_zone", entityId: zn.id ?? null, summary: `Saved shipping zone “${zn.name}”${zn.is_active ? "" : " (inactive)"}` });
     revalidateStorefront();
     revalidatePath("/admin/shipping");
@@ -214,9 +214,9 @@ export async function saveZoneAction(formData: FormData): Promise<ActionResult> 
 }
 
 export async function deleteZoneAction(id: string): Promise<ActionResult> {
-  return runAdminAction("shipping.write", async ({ supabase }) => {
+  return runAdminAction("shipping.write", async ({ db }) => {
     z.uuid().parse(id);
-    check(await supabase.from("shipping_zones").delete().eq("id", id));
+    check(await db.from("shipping_zones").delete().eq("id", id));
     await logAdminAction({ action: "shipping.zone.delete", entityType: "shipping_zone", entityId: id, summary: "Deleted a shipping zone" });
     revalidateStorefront();
     revalidatePath("/admin/shipping");

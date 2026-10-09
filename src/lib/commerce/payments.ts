@@ -1,6 +1,6 @@
 import "server-only";
 import type { Json } from "@/lib/db/database.types";
-import { getAdminSupabase } from "@/lib/supabase/admin";
+import { getServiceDb } from "@/lib/db/client";
 import {
   captureRazorpayPayment,
   fetchRazorpayOrderPayments,
@@ -40,7 +40,7 @@ export async function afterOrderPaid(orderId: string) {
 }
 
 async function findOrderIdForRazorpayOrder(razorpayOrderId: string): Promise<string | null> {
-  const admin = getAdminSupabase();
+  const admin = getServiceDb();
   if (!admin) return null;
   const { data } = await admin
     .from("payments")
@@ -63,7 +63,7 @@ export async function confirmRazorpayPayment(input: {
   razorpayPaymentId: string;
   payment?: RazorpayPayment;
 }): Promise<{ result: ConfirmResult; orderId: string | null }> {
-  const admin = getAdminSupabase();
+  const admin = getServiceDb();
   if (!admin) return { result: "invalid", orderId: null };
 
   const orderId = await findOrderIdForRazorpayOrder(input.razorpayOrderId);
@@ -124,7 +124,7 @@ export async function confirmRazorpayPayment(input: {
  * Used before expiring an unpaid order, and from the admin order page.
  */
 export async function reconcileOrderPayment(orderId: string): Promise<"paid" | "not_paid" | "unknown"> {
-  const admin = getAdminSupabase();
+  const admin = getServiceDb();
   if (!admin) return "unknown";
   const { data: rows } = await admin
     .from("payments")

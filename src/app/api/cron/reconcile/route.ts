@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getCronSecret } from "@/lib/env";
-import { getAdminSupabase } from "@/lib/supabase/admin";
+import { getServiceDb } from "@/lib/db/client";
 import { releaseExpiredReservations } from "@/lib/commerce/checkout";
 import { revalidateStorefront } from "@/lib/cache";
 import { safeEqual } from "@/lib/security/tokens";
@@ -10,11 +10,11 @@ export const dynamic = "force-dynamic";
 export const maxDuration = 60;
 
 /**
- * Scheduled job (see vercel.json). Vercel sends `Authorization: Bearer
- * <CRON_SECRET>` automatically when the CRON_SECRET variable is set.
+ * Scheduled job, called daily by a Hostinger cron job with the header
+ * `Authorization: Bearer <CRON_SECRET>` (see docs/SETUP_GUIDE.md, Part 5).
  * - Checks unpaid orders whose payment window expired with Razorpay, marks
  *   them paid if the payment actually succeeded, otherwise releases stock.
- * - Cleans up old rate-limit counters.
+ * - Cleans up old rate-limit counters and expired sign-in sessions.
  */
 export async function GET(request: Request) {
   const secret = getCronSecret();
@@ -23,7 +23,7 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   const result = await releaseExpiredReservations(50);
-  await getAdminSupabase()?.rpc("cleanup_rate_limits");
+  await getServiceDb()?.rpc("cleanup_rate_limits");
   if (result.released > 0 || result.paid > 0) revalidateStorefront();
   logInfo("cron.reconcile", "done", result);
   return NextResponse.json({ ok: true, ...result });

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useActionState, useState } from "react";
 import { Eye, EyeOff } from "lucide-react";
 import { forgotPasswordAction, registerAction, signInAction, updatePasswordAction } from "@/app/actions/auth";
+import { setupOwnerAction } from "@/app/actions/setup";
 import type { FormState } from "@/app/actions/engagement";
 import { Button, ButtonLink } from "@/components/ui/button";
 import { Checkbox, Field, FormMessage, Input } from "@/components/ui/field";
@@ -163,6 +164,33 @@ export function ResetPasswordForm() {
       </Field>
       <Button type="submit" size="lg" className="w-full" loading={pending}>
         Update password
+      </Button>
+    </form>
+  );
+}
+
+export function SetupOwnerForm() {
+  const [state, action, pending] = useActionState(setupOwnerAction, initial);
+  return (
+    <form action={action} className="space-y-5" noValidate>
+      {state.message ? <FormMessage tone="error">{state.message}</FormMessage> : null}
+      <Field label="Setup key" htmlFor="setup_key" error={state.errors?.setup_key} hint="The SETUP_KEY you saved in Hostinger">
+        <PasswordInput id="setup_key" name="setup_key" autoComplete="off" invalid={!!state.errors?.setup_key} />
+      </Field>
+      <Field label="Your name" htmlFor="full_name" error={state.errors?.full_name}>
+        <Input id="full_name" name="full_name" autoComplete="name" required aria-invalid={!!state.errors?.full_name} />
+      </Field>
+      <Field label="Email" htmlFor="email" error={state.errors?.email}>
+        <Input id="email" name="email" type="email" autoComplete="email" required aria-invalid={!!state.errors?.email} />
+      </Field>
+      <Field label="Password" htmlFor="password" error={state.errors?.password} hint="At least 8 characters, with a letter and a number">
+        <PasswordInput id="password" name="password" autoComplete="new-password" invalid={!!state.errors?.password} />
+      </Field>
+      <Field label="Confirm password" htmlFor="confirm" error={state.errors?.confirm}>
+        <PasswordInput id="confirm" name="confirm" autoComplete="new-password" invalid={!!state.errors?.confirm} />
+      </Field>
+      <Button type="submit" size="lg" className="w-full" loading={pending}>
+        Create owner account
       </Button>
     </form>
   );

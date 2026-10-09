@@ -1,16 +1,16 @@
 import Link from "next/link";
 import { requireUser } from "@/lib/auth/session";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { getUserDb } from "@/lib/db/client";
 import { OrderList, type OrderListItem } from "@/components/account/order-list";
 import { EmptyState } from "@/components/ui/misc";
 import { ButtonLink } from "@/components/ui/button";
 
 export default async function AccountOverviewPage() {
   const user = await requireUser("/account");
-  const supabase = await createSupabaseServerClient();
+  const db = await getUserDb();
   const [{ data: profile }, { data: orders }] = await Promise.all([
-    supabase!.from("profiles").select("full_name").eq("id", user.id).maybeSingle(),
-    supabase!
+    db!.from("profiles").select("full_name").eq("id", user.id).maybeSingle(),
+    db!
       .from("orders")
       .select("order_number, status, payment_status, fulfillment_status, payment_method, total_paise, created_at, order_items(quantity)")
       .eq("user_id", user.id)

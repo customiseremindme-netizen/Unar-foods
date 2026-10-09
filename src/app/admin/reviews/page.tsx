@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { requireStaffPage } from "@/lib/auth/session";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { getUserDb } from "@/lib/db/client";
 import { formatDateTime } from "@/lib/utils";
 import { PageHeader, Pagination } from "@/components/admin/ui";
 import { ReviewModeration } from "@/components/admin/moderation";
@@ -20,8 +20,8 @@ export default async function ReviewsPage({ searchParams }: { searchParams: Prom
   const params = await searchParams;
   const status = TABS.some(([v]) => v === params.status) ? params.status! : "pending";
   const page = Math.max(1, Number(params.page) || 1);
-  const supabase = (await createSupabaseServerClient())!;
-  const { data: reviews, count } = await supabase
+  const db = (await getUserDb())!;
+  const { data: reviews, count } = await db
     .from("reviews")
     .select("id, author_name, rating, title, body, status, is_verified_purchase, admin_reply, created_at, products(title, slug)", { count: "exact" })
     .eq("status", status)

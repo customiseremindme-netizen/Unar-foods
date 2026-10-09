@@ -11,8 +11,6 @@ import { AnnouncementBar, PreviewBanner, SiteHeader, type SearchItem } from "@/c
 import { SiteFooter } from "@/components/layout/site-footer";
 import { LeafSprig } from "@/components/brand/botanical";
 
-export const revalidate = 300;
-
 function themeCss(theme: Record<string, string>) {
   const defaults = defaultSettings().theme as Record<string, string>;
   const map: Record<string, string> = { forest: "forest", olive: "olive", cream: "cream", sage: "sage", accent: "banana" };

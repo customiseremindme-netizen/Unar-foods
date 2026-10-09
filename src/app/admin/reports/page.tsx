@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { Download } from "lucide-react";
 import { requireStaffPage } from "@/lib/auth/session";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { getUserDb } from "@/lib/db/client";
 import { resolveRange } from "@/lib/admin/date-range";
 import { REPORT_TABS, loadReport, type ReportType } from "@/lib/admin/reports";
 import { getSetting } from "@/lib/settings";
@@ -21,10 +21,10 @@ export default async function ReportsPage({ searchParams }: { searchParams: Prom
   const params = await searchParams;
   const range = resolveRange(params);
   const tab = (REPORT_TABS.find((t) => t.key === params.tab)?.key ?? "daily") as ReportType;
-  const supabase = (await createSupabaseServerClient())!;
+  const db = (await getUserDb())!;
   const [summaryRes, report, tax] = await Promise.all([
-    supabase.rpc("report_summary", { p_from: range.from.toISOString(), p_to: range.to.toISOString() }),
-    loadReport(supabase, tab, range),
+    db.rpc("report_summary", { p_from: range.from.toISOString(), p_to: range.to.toISOString() }),
+    loadReport(db, tab, range),
     getSetting("tax"),
   ]);
   const s = summaryRes.data as Summary | null;

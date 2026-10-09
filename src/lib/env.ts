@@ -50,20 +50,14 @@ export function getSiteUrl(): string {
   return "http://localhost:3000";
 }
 
-export type SupabaseEnv = { url: string; publishableKey: string };
-
-export function getSupabaseEnv(): SupabaseEnv | null {
-  const url = read("NEXT_PUBLIC_SUPABASE_URL");
-  // A half-filled value (e.g. "PASTE…") must not crash the site.
-  if (url && !/^https?:\/\/[^\s]+$/i.test(url)) return null;
-  const publishableKey =
-    read("NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY") ?? read("NEXT_PUBLIC_SUPABASE_ANON_KEY");
-  if (!url || !publishableKey) return null;
-  return { url, publishableKey };
-}
-
-export function getSupabaseSecretKey(): string | null {
-  return read("SUPABASE_SECRET_KEY") ?? read("SUPABASE_SERVICE_ROLE_KEY") ?? null;
+/**
+ * SETUP_KEY: a long secret phrase the owner chooses. It unlocks the one-time
+ * /setup page that creates the first owner account (only while no owner
+ * exists). Ignored if shorter than 12 characters.
+ */
+export function getSetupKey(): string | null {
+  const key = read("SETUP_KEY");
+  return key && key.length >= 12 ? key : null;
 }
 
 export type RazorpayEnv = {

@@ -18,14 +18,6 @@ import { Reveal } from "@/components/motion/motion";
 import { LeafSprig } from "@/components/brand/botanical";
 import { JsonLd, breadcrumbJsonLd, productJsonLd } from "@/lib/seo/jsonld";
 
-export const revalidate = 300;
-export const dynamicParams = true;
-
-export async function generateStaticParams() {
-  const products = await getPublishedProducts();
-  return products.map((p) => ({ slug: p.slug }));
-}
-
 type Params = Promise<{ slug: string }>;
 
 export async function generateMetadata({ params }: { params: Params }): Promise<Metadata> {

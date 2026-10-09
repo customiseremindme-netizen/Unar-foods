@@ -2,7 +2,7 @@ import "server-only";
 import { z } from "zod";
 import { AuthorizationError, assertPermission, type SessionUser, type StaffAccess } from "@/lib/auth/session";
 import type { Permission } from "@/lib/auth/permissions";
-import { createSupabaseServerClient, type ServerSupabase } from "@/lib/supabase/server";
+import { getUserDb, type Db } from "@/lib/db/client";
 import { toFieldErrors, type FieldErrors } from "@/lib/validation/common";
 import { logError } from "@/lib/monitoring";
 
@@ -15,7 +15,7 @@ export type ActionResult<T = undefined> = {
 
 export class UserFacingError extends Error {}
 
-type Context = { user: SessionUser; access: StaffAccess; supabase: ServerSupabase };
+type Context = { user: SessionUser; access: StaffAccess; db: Db };
 
 /**
  * Wraps every admin server action:
@@ -30,9 +30,9 @@ export async function runAdminAction<T>(
 ): Promise<ActionResult<T>> {
   try {
     const { user, access } = await assertAnyPermission(Array.isArray(permission) ? permission : [permission]);
-    const supabase = await createSupabaseServerClient();
-    if (!supabase) return { ok: false, message: "Database is not configured." };
-    return await fn({ user, access, supabase });
+    const db = await getUserDb();
+    if (!db) return { ok: false, message: "Database is not configured." };
+    return await fn({ user, access, db });
   } catch (error) {
     if (error instanceof AuthorizationError) return { ok: false, message: error.message };
     if (error instanceof UserFacingError) return { ok: false, message: error.message };
@@ -54,7 +54,7 @@ async function assertAnyPermission(permissions: Permission[]) {
   throw lastError ?? new AuthorizationError();
 }
 
-/** Throws a friendly error when a Supabase call failed. */
+/** Throws a friendly error when a database call failed. */
 export function check<T extends { error: { message: string; code?: string } | null }>(result: T, friendly = "Could not save changes."): T {
   if (result.error) {
     if (result.error.code === "23505") throw new UserFacingError("That value is already in use. Please choose another.");

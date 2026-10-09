@@ -22,8 +22,6 @@ import {
 } from "@/components/home/sections";
 import { JsonLd, organizationJsonLd, websiteJsonLd } from "@/lib/seo/jsonld";
 
-export const revalidate = 300;
-
 export async function generateMetadata(): Promise<Metadata> {
   const { seo } = await getPublicSettings();
   return {

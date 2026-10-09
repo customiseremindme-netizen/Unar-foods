@@ -1,5 +1,5 @@
 import "server-only";
-import { getAdminSupabase } from "@/lib/supabase/admin";
+import { getServiceDb } from "@/lib/db/client";
 import { getSessionUser, getStaffAccess } from "@/lib/auth/session";
 import { safeEqual, sha256Hex } from "@/lib/security/tokens";
 import type { TaxBreakdown } from "@/lib/commerce/types";
@@ -85,7 +85,7 @@ export async function getOrderForViewer(
   options: { allowStaff?: boolean } = {},
 ): Promise<OrderView | null> {
   if (!/^UNAR-\d{4,}$/.test(orderNumber)) return null;
-  const admin = getAdminSupabase();
+  const admin = getServiceDb();
   if (!admin) return null;
   const { data } = await admin.from("orders").select(ORDER_SELECT).eq("order_number", orderNumber).maybeSingle();
   if (!data) return null;

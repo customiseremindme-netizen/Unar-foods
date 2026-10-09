@@ -1,5 +1,5 @@
 import { getStaffAccess } from "@/lib/auth/session";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { getUserDb } from "@/lib/db/client";
 import { csvResponse, toCsv } from "@/lib/csv";
 
 export const dynamic = "force-dynamic";
@@ -8,8 +8,8 @@ export const dynamic = "force-dynamic";
 export async function GET() {
   const access = await getStaffAccess();
   if (!access?.permissions.has("inventory.read")) return new Response("Forbidden", { status: 403 });
-  const supabase = (await createSupabaseServerClient())!;
-  const { data, error } = await supabase
+  const db = (await getUserDb())!;
+  const { data, error } = await db
     .from("product_variants")
     .select("sku, title, barcode, stock, low_stock_threshold, is_active, is_demo_stock, products(title, status)")
     .order("sku");

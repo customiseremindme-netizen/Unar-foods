@@ -4,8 +4,6 @@ import { getCmsPage } from "@/lib/data/content";
 import { CmsPageView } from "@/components/content/cms-page";
 import { ButtonLink } from "@/components/ui/button";
 
-export const revalidate = 300;
-
 export async function generateMetadata(): Promise<Metadata> {
   const page = await getCmsPage("page", "about");
   return {

@@ -1,8 +1,7 @@
 import "server-only";
 import { cache } from "react";
 import { draftMode } from "next/headers";
-import { getPublicSupabase } from "@/lib/supabase/public";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { getPublicDb, getUserDb } from "@/lib/db/client";
 import { getStaffAccess } from "@/lib/auth/session";
 import { logError } from "@/lib/monitoring";
 import { isSectionType, parseSectionContent, type HomeSection } from "@/lib/cms/sections";
@@ -20,14 +19,14 @@ export const isPreview = cache(async (): Promise<boolean> => {
 });
 
 async function contentClient(preview: boolean) {
-  return preview ? await createSupabaseServerClient() : getPublicSupabase();
+  return preview ? await getUserDb() : getPublicDb();
 }
 
 export const getHomeSections = cache(async (): Promise<HomeSection[]> => {
   const preview = await isPreview();
-  const supabase = await contentClient(preview);
-  if (!supabase) return [];
-  let query = supabase
+  const db = await contentClient(preview);
+  if (!db) return [];
+  let query = db
     .from("cms_sections")
     .select("id, key, type, sort_order, is_visible, content")
     .eq("page", "home")
@@ -77,9 +76,9 @@ const PAGE_SELECT =
 
 export const getCmsPage = cache(async (kind: CmsPage["kind"], slug: string): Promise<CmsPage | null> => {
   const preview = await isPreview();
-  const supabase = await contentClient(preview);
-  if (!supabase) return null;
-  const { data, error } = await supabase
+  const db = await contentClient(preview);
+  if (!db) return null;
+  const { data, error } = await db
     .from("cms_pages")
     .select(PAGE_SELECT)
     .eq("kind", kind)
@@ -91,9 +90,9 @@ export const getCmsPage = cache(async (kind: CmsPage["kind"], slug: string): Pro
 });
 
 export const listCmsPages = cache(async (kind: CmsPage["kind"]): Promise<CmsPage[]> => {
-  const supabase = getPublicSupabase();
-  if (!supabase) return [];
-  const { data, error } = await supabase
+  const db = getPublicDb();
+  if (!db) return [];
+  const { data, error } = await db
     .from("cms_pages")
     .select(PAGE_SELECT)
     .eq("kind", kind)
@@ -109,9 +108,9 @@ export const listCmsPages = cache(async (kind: CmsPage["kind"]): Promise<CmsPage
 export type Faq = { id: string; question: string; answer_md: string; category: string; show_on_home: boolean };
 
 export const getFaqs = cache(async (): Promise<Faq[]> => {
-  const supabase = getPublicSupabase();
-  if (!supabase) return [];
-  const { data, error } = await supabase
+  const db = getPublicDb();
+  if (!db) return [];
+  const { data, error } = await db
     .from("faqs")
     .select("id, question, answer_md, category, show_on_home")
     .eq("is_published", true)
@@ -136,9 +135,9 @@ export type Banner = {
 
 /** Active banners. Scheduling (start/end dates) is enforced by RLS. */
 export const getBanners = cache(async (placement: "announcement" | "home_promo" | "shop_top"): Promise<Banner[]> => {
-  const supabase = getPublicSupabase();
-  if (!supabase) return [];
-  const { data, error } = await supabase
+  const db = getPublicDb();
+  if (!db) return [];
+  const { data, error } = await db
     .from("banners")
     .select("id, placement, title, body, cta_label, cta_url, image_url, image_alt")
     .eq("placement", placement)
@@ -153,9 +152,9 @@ export const getBanners = cache(async (placement: "announcement" | "home_promo" 
 export type InstagramPost = { id: string; image_url: string; image_alt: string; permalink: string; caption: string | null };
 
 export const getInstagramPosts = cache(async (): Promise<InstagramPost[]> => {
-  const supabase = getPublicSupabase();
-  if (!supabase) return [];
-  const { data, error } = await supabase
+  const db = getPublicDb();
+  if (!db) return [];
+  const { data, error } = await db
     .from("instagram_posts")
     .select("id, image_url, image_alt, permalink, caption")
     .eq("is_published", true)

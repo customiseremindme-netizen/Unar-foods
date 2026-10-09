@@ -27,7 +27,7 @@ const sectionInput = z.object({
 });
 
 export async function saveHomeDraftAction(input: unknown): Promise<ActionResult> {
-  return runAdminAction("content.write", async ({ supabase, user }) => {
+  return runAdminAction("content.write", async ({ db, user }) => {
     const sections = z.array(sectionInput).max(30).parse(input);
     const keys = sections.map((s) => s.key);
     if (new Set(keys).size !== keys.length) throw new UserFacingError("Two sections have the same key.");
@@ -37,8 +37,8 @@ export async function saveHomeDraftAction(input: unknown): Promise<ActionResult>
       if (!parsed.success) throw new UserFacingError(`Please check the “${def.label}” section.`);
       return { page: "home", key: s.key, type: s.type, state: "draft", sort_order: (i + 1) * 10, is_visible: s.is_visible, content: parsed.data as never, updated_by: user.id };
     });
-    check(await supabase.from("cms_sections").delete().eq("page", "home").eq("state", "draft"));
-    if (rows.length) check(await supabase.from("cms_sections").insert(rows));
+    check(await db.from("cms_sections").delete().eq("page", "home").eq("state", "draft"));
+    if (rows.length) check(await db.from("cms_sections").insert(rows));
     await logAdminAction({ action: "content.home.save_draft", entityType: "cms_sections", entityId: "home", summary: "Saved homepage draft" });
     revalidatePath("/admin/content");
     return { ok: true, message: "Draft saved. Use Preview to check it, then Publish." };
@@ -46,8 +46,8 @@ export async function saveHomeDraftAction(input: unknown): Promise<ActionResult>
 }
 
 export async function publishHomeAction(): Promise<ActionResult> {
-  return runAdminAction("content.write", async ({ supabase }) => {
-    check(await supabase.rpc("publish_sections", { p_page: "home" }), "Could not publish.");
+  return runAdminAction("content.write", async ({ db }) => {
+    check(await db.rpc("publish_sections", { p_page: "home" }), "Could not publish.");
     await logAdminAction({ action: "content.home.publish", entityType: "cms_sections", entityId: "home", summary: "Published the homepage" });
     revalidateStorefront();
     revalidatePath("/admin/content");
@@ -56,8 +56,8 @@ export async function publishHomeAction(): Promise<ActionResult> {
 }
 
 export async function discardHomeDraftAction(): Promise<ActionResult> {
-  return runAdminAction("content.write", async ({ supabase }) => {
-    check(await supabase.rpc("discard_section_drafts", { p_page: "home" }));
+  return runAdminAction("content.write", async ({ db }) => {
+    check(await db.rpc("discard_section_drafts", { p_page: "home" }));
     await logAdminAction({ action: "content.home.discard", entityType: "cms_sections", entityId: "home", summary: "Discarded homepage draft" });
     revalidatePath("/admin/content");
     return { ok: true, message: "Draft discarded — back to the live version." };
@@ -86,14 +86,14 @@ const pageSchema = z.object({
 export type PagePayload = z.input<typeof pageSchema>;
 
 export async function savePageAction(input: PagePayload): Promise<ActionResult<string>> {
-  return runAdminAction("content.write", async ({ supabase, access, user }) => {
+  return runAdminAction("content.write", async ({ db, access, user }) => {
     const { publish, group_id, ...p } = pageSchema.parse(input);
     if (p.cover_image_url && !p.cover_image_alt) throw new UserFacingError("Describe the cover image (alt text).");
 
     let groupId = group_id;
     let wasUnderReview = true;
     if (groupId) {
-      const { data: existing } = check(await supabase.from("cms_pages").select("requires_owner_review, kind").eq("group_id", groupId).eq("state", "draft").maybeSingle());
+      const { data: existing } = check(await db.from("cms_pages").select("requires_owner_review, kind").eq("group_id", groupId).eq("state", "draft").maybeSingle());
       if (!existing) throw new UserFacingError("This page no longer exists.");
       wasUnderReview = existing.requires_owner_review;
     }
@@ -104,17 +104,17 @@ export async function savePageAction(input: PagePayload): Promise<ActionResult<s
 
     const row = { ...p, updated_by: user.id };
     if (groupId) {
-      check(await supabase.from("cms_pages").update(row).eq("group_id", groupId).eq("state", "draft"), "Could not save. Is the web address already used?");
+      check(await db.from("cms_pages").update(row).eq("group_id", groupId).eq("state", "draft"), "Could not save. Is the web address already used?");
     } else {
       const { data } = check(
-        await supabase.from("cms_pages").insert({ ...row, state: "draft" }).select("group_id").single(),
+        await db.from("cms_pages").insert({ ...row, state: "draft" }).select("group_id").single(),
         "Could not create the page. Is the web address already used?",
       );
       groupId = data!.group_id;
     }
 
     if (publish) {
-      const { error } = await supabase.rpc("publish_cms_page", { p_group_id: groupId });
+      const { error } = await db.rpc("publish_cms_page", { p_group_id: groupId });
       if (error) throw new UserFacingError(error.code === "23505" ? "Another live page already uses this web address." : "Saved, but could not publish.");
     }
     await logAdminAction({
@@ -131,9 +131,9 @@ export async function savePageAction(input: PagePayload): Promise<ActionResult<s
 }
 
 export async function unpublishPageAction(groupId: string): Promise<ActionResult> {
-  return runAdminAction("content.write", async ({ supabase }) => {
+  return runAdminAction("content.write", async ({ db }) => {
     z.uuid().parse(groupId);
-    check(await supabase.rpc("unpublish_cms_page", { p_group_id: groupId }));
+    check(await db.rpc("unpublish_cms_page", { p_group_id: groupId }));
     await logAdminAction({ action: "content.page.unpublish", entityType: "cms_page", entityId: groupId, summary: "Unpublished a page" });
     revalidateStorefront();
     revalidatePath("/admin/content/pages");
@@ -143,11 +143,11 @@ export async function unpublishPageAction(groupId: string): Promise<ActionResult
 }
 
 export async function deletePageAction(groupId: string): Promise<ActionResult> {
-  return runAdminAction("content.write", async ({ supabase }) => {
+  return runAdminAction("content.write", async ({ db }) => {
     z.uuid().parse(groupId);
-    const { data } = check(await supabase.from("cms_pages").select("kind, title").eq("group_id", groupId).limit(1).single());
+    const { data } = check(await db.from("cms_pages").select("kind, title").eq("group_id", groupId).limit(1).single());
     if (data!.kind === "policy") throw new UserFacingError("Policies can’t be deleted (checkout links to them). Unpublish it instead.");
-    check(await supabase.from("cms_pages").delete().eq("group_id", groupId));
+    check(await db.from("cms_pages").delete().eq("group_id", groupId));
     await logAdminAction({ action: "content.page.delete", entityType: "cms_page", entityId: groupId, summary: `Deleted “${data!.title}”` });
     revalidateStorefront();
     revalidatePath("/admin/content/pages");
@@ -170,7 +170,7 @@ const faqSchema = z.object({
 });
 
 export async function saveFaqAction(formData: FormData): Promise<ActionResult> {
-  return runAdminAction("content.write", async ({ supabase }) => {
+  return runAdminAction("content.write", async ({ db }) => {
     const { id, ...f } = faqSchema.parse({
       id: formData.get("id") ?? "",
       question: formData.get("question"),
@@ -180,8 +180,8 @@ export async function saveFaqAction(formData: FormData): Promise<ActionResult> {
       is_published: formData.get("is_published") === "on",
       show_on_home: formData.get("show_on_home") === "on",
     });
-    if (id) check(await supabase.from("faqs").update(f).eq("id", id));
-    else check(await supabase.from("faqs").insert(f));
+    if (id) check(await db.from("faqs").update(f).eq("id", id));
+    else check(await db.from("faqs").insert(f));
     await logAdminAction({ action: "content.faq.save", entityType: "faq", entityId: id ?? null, summary: `Saved FAQ “${f.question.slice(0, 60)}”` });
     revalidateStorefront();
     revalidatePath("/admin/content/faqs");
@@ -190,9 +190,9 @@ export async function saveFaqAction(formData: FormData): Promise<ActionResult> {
 }
 
 export async function deleteFaqAction(id: string): Promise<ActionResult> {
-  return runAdminAction("content.write", async ({ supabase }) => {
+  return runAdminAction("content.write", async ({ db }) => {
     z.uuid().parse(id);
-    check(await supabase.from("faqs").delete().eq("id", id));
+    check(await db.from("faqs").delete().eq("id", id));
     await logAdminAction({ action: "content.faq.delete", entityType: "faq", entityId: id, summary: "Deleted an FAQ" });
     revalidateStorefront();
     revalidatePath("/admin/content/faqs");
@@ -236,7 +236,7 @@ const bannerSchema = z
   .refine((b) => !b.image_url || !!b.image_alt, { path: ["image_alt"], message: "Describe the image" });
 
 export async function saveBannerAction(formData: FormData): Promise<ActionResult> {
-  return runAdminAction("content.write", async ({ supabase }) => {
+  return runAdminAction("content.write", async ({ db }) => {
     const { id, ...b } = bannerSchema.parse({
       id: formData.get("id") ?? "",
       placement: formData.get("placement"),
@@ -251,8 +251,8 @@ export async function saveBannerAction(formData: FormData): Promise<ActionResult
       is_active: formData.get("is_active") === "on",
       sort_order: formData.get("sort_order") ?? 0,
     });
-    if (id) check(await supabase.from("banners").update(b).eq("id", id));
-    else check(await supabase.from("banners").insert(b));
+    if (id) check(await db.from("banners").update(b).eq("id", id));
+    else check(await db.from("banners").insert(b));
     await logAdminAction({ action: "content.banner.save", entityType: "banner", entityId: id ?? null, summary: `Saved banner “${b.title.slice(0, 60)}”` });
     revalidateStorefront();
     revalidatePath("/admin/content/banners");
@@ -261,9 +261,9 @@ export async function saveBannerAction(formData: FormData): Promise<ActionResult
 }
 
 export async function deleteBannerAction(id: string): Promise<ActionResult> {
-  return runAdminAction("content.write", async ({ supabase }) => {
+  return runAdminAction("content.write", async ({ db }) => {
     z.uuid().parse(id);
-    check(await supabase.from("banners").delete().eq("id", id));
+    check(await db.from("banners").delete().eq("id", id));
     await logAdminAction({ action: "content.banner.delete", entityType: "banner", entityId: id, summary: "Deleted a banner" });
     revalidateStorefront();
     revalidatePath("/admin/content/banners");
@@ -288,7 +288,7 @@ const instagramSchema = z.object({
 });
 
 export async function saveInstagramAction(formData: FormData): Promise<ActionResult> {
-  return runAdminAction("content.write", async ({ supabase }) => {
+  return runAdminAction("content.write", async ({ db }) => {
     const { id, ...post } = instagramSchema.parse({
       id: formData.get("id") ?? "",
       image_url: formData.get("image_url") ?? "",
@@ -298,8 +298,8 @@ export async function saveInstagramAction(formData: FormData): Promise<ActionRes
       is_published: formData.get("is_published") === "on",
       sort_order: formData.get("sort_order") ?? 0,
     });
-    if (id) check(await supabase.from("instagram_posts").update(post).eq("id", id));
-    else check(await supabase.from("instagram_posts").insert(post));
+    if (id) check(await db.from("instagram_posts").update(post).eq("id", id));
+    else check(await db.from("instagram_posts").insert(post));
     await logAdminAction({ action: "content.instagram.save", entityType: "instagram_post", entityId: id ?? null, summary: "Saved an Instagram post" });
     revalidateStorefront();
     revalidatePath("/admin/content/instagram");
@@ -308,9 +308,9 @@ export async function saveInstagramAction(formData: FormData): Promise<ActionRes
 }
 
 export async function deleteInstagramAction(id: string): Promise<ActionResult> {
-  return runAdminAction("content.write", async ({ supabase }) => {
+  return runAdminAction("content.write", async ({ db }) => {
     z.uuid().parse(id);
-    check(await supabase.from("instagram_posts").delete().eq("id", id));
+    check(await db.from("instagram_posts").delete().eq("id", id));
     await logAdminAction({ action: "content.instagram.delete", entityType: "instagram_post", entityId: id, summary: "Deleted an Instagram post" });
     revalidateStorefront();
     revalidatePath("/admin/content/instagram");

@@ -8,7 +8,8 @@ import { revalidateStorefront } from "@/lib/cache";
 import { PUBLIC_SETTINGS, settingsSchemas, type SettingsKey } from "@/lib/settings/schema";
 import { STAFF_ROLES, ROLE_LABELS } from "@/lib/auth/permissions";
 import { emailSchema } from "@/lib/validation/common";
-import { requireAdminSupabase } from "@/lib/supabase/admin";
+import { requireServiceDb } from "@/lib/db/client";
+import { findUserById } from "@/lib/auth/accounts";
 import { sendEmail } from "@/lib/email/send";
 import { testShiprocketConnection } from "@/lib/shipping/shiprocket";
 import { getSetting } from "@/lib/settings";
@@ -22,7 +23,7 @@ const TEMPLATE_KEYS = ["order_placed", "payment_confirmed", "order_shipped", "or
  */
 export async function saveSettingAction(key: SettingsKey, value: unknown): Promise<ActionResult> {
   const permission = key === "shipping" ? "shipping.write" : "settings.write";
-  return runAdminAction(permission, async ({ supabase, user }) => {
+  return runAdminAction(permission, async ({ db, user }) => {
     z.enum(SETTING_KEYS).parse(key);
     const schema = settingsSchemas[key] as unknown as z.ZodType;
     const parsed = schema.parse(value) as Record<string, unknown>;
@@ -34,7 +35,7 @@ export async function saveSettingAction(key: SettingsKey, value: unknown): Promi
       throw new UserFacingError("Keep at least one payment method switched on, or turn on maintenance mode instead.");
     }
     check(
-      await supabase
+      await db
         .from("settings")
         .upsert({ key, value: parsed as never, is_public: PUBLIC_SETTINGS.includes(key), updated_by: user.id, updated_at: new Date().toISOString() }),
     );
@@ -51,16 +52,16 @@ export async function saveSettingAction(key: SettingsKey, value: unknown): Promi
 const roleSchema = z.enum(STAFF_ROLES);
 
 export async function addStaffAction(formData: FormData): Promise<ActionResult> {
-  return runAdminAction("staff.manage", async ({ supabase, user }) => {
+  return runAdminAction("staff.manage", async ({ db, user }) => {
     const { email, role } = z.object({ email: emailSchema, role: roleSchema }).parse({ email: formData.get("email"), role: formData.get("role") });
-    const admin = requireAdminSupabase();
+    const admin = requireServiceDb();
     const { data: profile } = await admin.from("profiles").select("id").eq("email", email).maybeSingle();
     if (!profile) throw new UserFacingError("No account uses that email. Ask the person to create an account on the website first (Sign in → Create an account) and confirm their email.");
-    const { data: authUser } = await admin.auth.admin.getUserById(profile.id);
-    if (!authUser?.user?.email_confirmed_at) throw new UserFacingError("That person hasn't confirmed their email yet. Ask them to click the link in their confirmation email.");
-    const { data: existing } = await supabase.from("staff_members").select("role").eq("user_id", profile.id).maybeSingle();
+    const account = await findUserById(profile.id);
+    if (!account?.email_confirmed_at) throw new UserFacingError("That person hasn't confirmed their email yet. Ask them to click the link in their confirmation email.");
+    const { data: existing } = await db.from("staff_members").select("role").eq("user_id", profile.id).maybeSingle();
     if (existing) throw new UserFacingError(`That person is already staff (${ROLE_LABELS[existing.role as keyof typeof ROLE_LABELS]}). Change their role in the list instead.`);
-    check(await supabase.from("staff_members").insert({ user_id: profile.id, role, created_by: user.id }));
+    check(await db.from("staff_members").insert({ user_id: profile.id, role, created_by: user.id }));
     await logAdminAction({ action: "staff.add", entityType: "staff", entityId: profile.id, summary: `Gave ${email} ${ROLE_LABELS[role]} access` });
     revalidatePath("/admin/staff");
     return { ok: true, message: `${email} now has ${ROLE_LABELS[role]} access. They will see the dashboard next time they sign in.` };
@@ -68,11 +69,11 @@ export async function addStaffAction(formData: FormData): Promise<ActionResult> 
 }
 
 export async function changeStaffRoleAction(userId: string, role: string): Promise<ActionResult> {
-  return runAdminAction("staff.manage", async ({ supabase, user }) => {
+  return runAdminAction("staff.manage", async ({ db, user }) => {
     z.uuid().parse(userId);
     const newRole = roleSchema.parse(role);
     if (userId === user.id) throw new UserFacingError("You can't change your own role. Ask another owner.");
-    const { error } = await supabase.from("staff_members").update({ role: newRole }).eq("user_id", userId);
+    const { error } = await db.from("staff_members").update({ role: newRole }).eq("user_id", userId);
     if (error) throw new UserFacingError(error.message.includes("LAST_OWNER") ? "The store must keep at least one owner." : "Could not change the role.");
     await logAdminAction({ action: "staff.role", entityType: "staff", entityId: userId, summary: `Changed a staff role to ${ROLE_LABELS[newRole]}` });
     revalidatePath("/admin/staff");
@@ -81,10 +82,10 @@ export async function changeStaffRoleAction(userId: string, role: string): Promi
 }
 
 export async function removeStaffAction(userId: string): Promise<ActionResult> {
-  return runAdminAction("staff.manage", async ({ supabase, user }) => {
+  return runAdminAction("staff.manage", async ({ db, user }) => {
     z.uuid().parse(userId);
     if (userId === user.id) throw new UserFacingError("You can't remove yourself. Ask another owner.");
-    const { error } = await supabase.from("staff_members").delete().eq("user_id", userId);
+    const { error } = await db.from("staff_members").delete().eq("user_id", userId);
     if (error) throw new UserFacingError(error.message.includes("LAST_OWNER") ? "The store must keep at least one owner." : "Could not remove access.");
     await logAdminAction({ action: "staff.remove", entityType: "staff", entityId: userId, summary: "Removed a staff member's dashboard access" });
     revalidatePath("/admin/staff");

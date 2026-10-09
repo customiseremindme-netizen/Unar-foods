@@ -1,5 +1,5 @@
 import { requireStaffPage } from "@/lib/auth/session";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { getUserDb } from "@/lib/db/client";
 import { formatINR } from "@/lib/money";
 import { formatDateTime } from "@/lib/utils";
 import { Notice, PageHeader, Table, Td, Th } from "@/components/admin/ui";
@@ -13,9 +13,9 @@ function oneHourAgo() {
 
 export default async function AbandonedCartsPage() {
   await requireStaffPage("marketing.write");
-  const supabase = (await createSupabaseServerClient())!;
+  const db = (await getUserDb())!;
   const cutoff = oneHourAgo();
-  const { data: carts } = await supabase
+  const { data: carts } = await db
     .from("carts")
     .select("id, email, updated_at, recovery_consent, user_id, cart_items(quantity, product_variants(sku, title, price_paise, products(title)))")
     .eq("status", "active")

@@ -2,7 +2,7 @@
  * Error monitoring hook.
  *
  * Errors are written as structured JSON to the server log (visible in
- * Vercel → Project → Logs). To forward errors to a monitoring service such as
+ * hPanel → your Node.js app → logs). To forward errors to a monitoring service such as
  * Sentry later, add the call inside `reportToProvider` — every error in the
  * app already flows through `logError`.
  */

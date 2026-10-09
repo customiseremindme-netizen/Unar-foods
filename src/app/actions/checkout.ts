@@ -1,8 +1,7 @@
 "use server";
 
 import type { Json } from "@/lib/db/database.types";
-import { getAdminSupabase } from "@/lib/supabase/admin";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { getServiceDb, getUserDb } from "@/lib/db/client";
 import { getSessionUser } from "@/lib/auth/session";
 import { getAllSettings } from "@/lib/settings";
 import { getRazorpayEnv } from "@/lib/env";
@@ -112,7 +111,7 @@ export async function placeOrderAction(payload: unknown): Promise<PlaceOrderResu
     return { ok: false, message: "Too many attempts. Please wait a few minutes and try again." };
   }
 
-  const admin = getAdminSupabase();
+  const admin = getServiceDb();
   if (!admin) return { ok: false, message: "The shop isn't connected to its database yet. Please try again later." };
 
   const [user, settings] = await Promise.all([getSessionUser(), getAllSettings()]);
@@ -241,18 +240,18 @@ export async function placeOrderAction(payload: unknown): Promise<PlaceOrderResu
 
 async function saveCustomerDetails(userId: string | null, input: ReturnType<typeof checkoutSchema.parse>) {
   if (!userId) return;
-  const supabase = await createSupabaseServerClient();
-  if (!supabase) return;
-  const { data: profile } = await supabase.from("profiles").select("full_name, phone").eq("id", userId).maybeSingle();
+  const db = await getUserDb();
+  if (!db) return;
+  const { data: profile } = await db.from("profiles").select("full_name, phone").eq("id", userId).maybeSingle();
   if (profile && (!profile.full_name || !profile.phone)) {
-    await supabase
+    await db
       .from("profiles")
       .update({ full_name: profile.full_name || input.shipping.full_name, phone: profile.phone || input.phone })
       .eq("id", userId);
   }
   if (!input.save_address) return;
   const a = input.shipping;
-  const { data: existing } = await supabase
+  const { data: existing } = await db
     .from("addresses")
     .select("id")
     .eq("user_id", userId)
@@ -260,8 +259,8 @@ async function saveCustomerDetails(userId: string | null, input: ReturnType<type
     .eq("pincode", a.pincode)
     .limit(1);
   if ((existing ?? []).length > 0) return;
-  const { count } = await supabase.from("addresses").select("id", { count: "exact", head: true }).eq("user_id", userId);
-  await supabase.from("addresses").insert({
+  const { count } = await db.from("addresses").select("id", { count: "exact", head: true }).eq("user_id", userId);
+  await db.from("addresses").insert({
     user_id: userId,
     full_name: a.full_name,
     phone: a.phone,
@@ -276,7 +275,7 @@ async function saveCustomerDetails(userId: string | null, input: ReturnType<type
 }
 
 async function subscribeFromCheckout(email: string, consentText: string) {
-  const admin = getAdminSupabase();
+  const admin = getServiceDb();
   if (!admin) return;
   const { data: existing } = await admin.from("subscribers").select("id, status").eq("email", email).maybeSingle();
   if (existing?.status === "subscribed") return;
@@ -287,7 +286,7 @@ async function subscribeFromCheckout(email: string, consentText: string) {
 
 /** Loads an order the visitor is allowed to act on (owner or holder of the private link token). */
 async function authorizedPendingOrder(orderNumber: string, token: string | null) {
-  const admin = getAdminSupabase();
+  const admin = getServiceDb();
   if (!admin || !/^UNAR-\d{4,}$/.test(orderNumber)) return null;
   const { data: order } = await admin
     .from("orders")
@@ -311,7 +310,7 @@ export async function resumePaymentAction(orderNumber: string, token: string | n
     return { ok: false, message: "The payment window for this order has closed. Please place a new order." };
   }
   const env = getRazorpayEnv();
-  const admin = getAdminSupabase();
+  const admin = getServiceDb();
   if (!env || !admin) return { ok: false, message: "Online payment is not available right now." };
   const { data: payment } = await admin
     .from("payments")
@@ -350,7 +349,7 @@ export async function cancelPendingOrderAction(orderNumber: string, token: strin
   const { reconcileOrderPayment } = await import("@/lib/commerce/payments");
   const outcome = await reconcileOrderPayment(order.id);
   if (outcome === "paid") return { ok: false, message: "Good news — your payment went through, so your order is confirmed." };
-  const admin = getAdminSupabase();
+  const admin = getServiceDb();
   if (!admin) return { ok: false, message: "Please try again." };
   await admin.rpc("release_order", { p_order_id: order.id, p_new_status: "cancelled", p_reason: "Cancelled by customer before payment" });
   revalidateStorefront();

@@ -1,5 +1,5 @@
 import "server-only";
-import { getAdminSupabase } from "@/lib/supabase/admin";
+import { getServiceDb } from "@/lib/db/client";
 import { getAllSettings } from "@/lib/settings";
 import { getRequestSiteUrl } from "@/lib/site-url";
 import { sendEmail } from "@/lib/email/send";
@@ -38,7 +38,7 @@ export async function notifyOrder(
   extra?: { html?: string; text?: string },
 ): Promise<void> {
   try {
-    const admin = getAdminSupabase();
+    const admin = getServiceDb();
     if (!admin) return;
     const settings = await getAllSettings();
     const notifications = settings.notifications;

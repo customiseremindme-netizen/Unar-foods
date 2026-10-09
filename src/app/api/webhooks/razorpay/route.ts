@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import type { Json } from "@/lib/db/database.types";
 import { getRazorpayEnv } from "@/lib/env";
-import { getAdminSupabase } from "@/lib/supabase/admin";
+import { getServiceDb } from "@/lib/db/client";
 import { verifyWebhookSignature, type RazorpayPayment } from "@/lib/payments/razorpay";
 import { confirmRazorpayPayment } from "@/lib/commerce/payments";
 import { sha256Hex } from "@/lib/security/tokens";
@@ -27,7 +27,7 @@ type WebhookBody = {
  */
 export async function POST(request: Request) {
   const env = getRazorpayEnv();
-  const admin = getAdminSupabase();
+  const admin = getServiceDb();
   if (!env?.webhookSecret || !admin) return NextResponse.json({ error: "Not configured" }, { status: 503 });
 
   const rawBody = await request.text();
@@ -71,7 +71,7 @@ export async function POST(request: Request) {
 }
 
 async function process(eventType: string, body: WebhookBody, rowId: string) {
-  const admin = getAdminSupabase()!;
+  const admin = getServiceDb()!;
   const finish = async (status: "processed" | "ignored" | "failed", error?: string) => {
     await admin
       .from("webhook_events")

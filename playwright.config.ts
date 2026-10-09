@@ -2,8 +2,8 @@ import { defineConfig, devices } from "@playwright/test";
 
 /**
  * End-to-end tests. They run against a site that is ALREADY running
- * (default http://localhost:3000) with the local Supabase database and the
- * mock Razorpay server. See tests/README.md for the one-time setup.
+ * (default http://localhost:3000) with a local MySQL/MariaDB test database,
+ * a local mail catcher and the mock Razorpay server. See tests/README.md.
  *
  * Never point these tests at the live shop: they place orders.
  */

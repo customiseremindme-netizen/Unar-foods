@@ -1,6 +1,6 @@
 import "server-only";
 import { z } from "zod";
-import { getAdminSupabase } from "@/lib/supabase/admin";
+import { getServiceDb } from "@/lib/db/client";
 import { getPublicSettings } from "@/lib/settings";
 import { logError } from "@/lib/monitoring";
 import { addressSchema, emailSchema, phoneSchema } from "@/lib/validation/common";
@@ -42,7 +42,7 @@ const COUPON_COLUMNS =
 
 export async function loadCoupon(code: string | null | undefined): Promise<CouponRow | null> {
   if (!code) return null;
-  const admin = getAdminSupabase();
+  const admin = getServiceDb();
   if (!admin) return null;
   const { data, error } = await admin.from("coupons").select(COUPON_COLUMNS).eq("code", normalizeCouponCode(code)).maybeSingle();
   if (error) logError("coupon.load", error);
@@ -54,7 +54,7 @@ export async function couponBlockReason(
   coupon: CouponRow,
   customer: { email?: string | null; userId?: string | null },
 ): Promise<string | null> {
-  const admin = getAdminSupabase();
+  const admin = getServiceDb();
   if (!admin) return null;
   if (coupon.usage_limit !== null) {
     const { count } = await admin
@@ -84,7 +84,7 @@ export async function couponBlockReason(
 }
 
 export async function loadActiveZones(): Promise<ShippingZone[]> {
-  const admin = getAdminSupabase();
+  const admin = getServiceDb();
   if (!admin) return [];
   const { data, error } = await admin
     .from("shipping_zones")
@@ -150,7 +150,7 @@ export function describeOrderError(message: string): string {
  * payments never block other customers for long.
  */
 export async function releaseExpiredReservations(limit = 25): Promise<{ released: number; paid: number }> {
-  const admin = getAdminSupabase();
+  const admin = getServiceDb();
   if (!admin) return { released: 0, paid: 0 };
   const { data: expired } = await admin
     .from("orders")

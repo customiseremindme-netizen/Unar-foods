@@ -1,8 +1,10 @@
 import type { ReactNode } from "react";
 import { requireStaffPage } from "@/lib/auth/session";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { getUserDb } from "@/lib/db/client";
 import { getRequestSiteUrl } from "@/lib/site-url";
-import { getCronSecret, getEmailEnv, getRazorpayEnv, getConfiguredSiteUrl, getShiprocketEnv, getSupabaseEnv, getSupabaseSecretKey, maskSecret } from "@/lib/env";
+import { getCronSecret, getEmailEnv, getRazorpayEnv, getConfiguredSiteUrl, getShiprocketEnv, maskSecret } from "@/lib/env";
+import { checkDatabase } from "@/lib/db/health";
+import { getDbConfig } from "@/lib/db/pool";
 import { formatDateTime } from "@/lib/utils";
 import { Card, Notice, PageHeader } from "@/components/admin/ui";
 import { IntegrationTests } from "@/components/admin/integration-tests";
@@ -25,23 +27,23 @@ function Status({ ok, okText = "Connected", noText = "Not set up" }: { ok: boole
 
 export default async function IntegrationsPage() {
   await requireStaffPage("settings.write");
-  const supabase = (await createSupabaseServerClient())!;
+  const db = (await getUserDb())!;
   const razorpay = getRazorpayEnv();
   const email = getEmailEnv();
   const shiprocket = getShiprocketEnv();
-  const supabaseEnv = getSupabaseEnv();
+  const [dbHealth, dbConfig] = [await checkDatabase(), getDbConfig()];
   const site = await getRequestSiteUrl();
   const siteConfigured = !!getConfiguredSiteUrl();
   const [{ data: webhooks }, { data: notifications }] = await Promise.all([
-    supabase.from("webhook_events").select("id, provider, event_type, status, error, received_at").order("received_at", { ascending: false }).limit(15),
-    supabase.from("notification_log").select("id, template, recipient, channel, status, error, created_at").order("created_at", { ascending: false }).limit(15),
+    db.from("webhook_events").select("id, provider, event_type, status, error, received_at").order("received_at", { ascending: false }).limit(15),
+    db.from("notification_log").select("id, template, recipient, channel, status, error, created_at").order("created_at", { ascending: false }).limit(15),
   ]);
 
   return (
     <div className="space-y-6">
       <PageHeader
         title="Integrations"
-        description="Connections to payment, email and shipping services. Secret keys are stored in your hosting settings (Hostinger or Vercel environment variables) — never here and never in the code. Only the last 4 characters are shown."
+        description="Connections to payment, email and shipping services. Secret keys are stored in Hostinger's environment variables for this website — never here and never in the code. Only the last 4 characters are shown."
       />
       {!siteConfigured ? (
         <Notice tone="warning">
@@ -74,9 +76,9 @@ export default async function IntegrationsPage() {
           <p className="mt-3 text-[0.78rem] text-muted">Use a separate Shiprocket API user (Shiprocket → Settings → API), not your main login.</p>
         </Card>
 
-        <Card title="Database & scheduled jobs" actions={<Status ok={!!supabaseEnv && !!getSupabaseSecretKey()} />}>
-          <Row label="Supabase project" value={supabaseEnv ? new URL(supabaseEnv.url).host : "not set"} />
-          <Row label="Server key" value={maskSecret(getSupabaseSecretKey())} />
+        <Card title="Database & scheduled jobs" actions={<Status ok={dbHealth.ok} />}>
+          <Row label="MySQL database" value={dbConfig ? `${dbConfig.database} on ${dbConfig.host}:${dbConfig.port}` : "not set"} />
+          <Row label="Status" value={dbHealth.database} />
           <Row label="Cron secret (payment check job)" value={getCronSecret() ? maskSecret(getCronSecret()) : <span className="text-danger">not set</span>} />
         </Card>
       </div>

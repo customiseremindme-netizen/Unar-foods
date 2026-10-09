@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { getUserDb } from "@/lib/db/client";
 import { getSessionUser } from "@/lib/auth/session";
 import { addressSchema, nameSchema, phoneSchema, toFieldErrors } from "@/lib/validation/common";
 import { logError } from "@/lib/monitoring";
@@ -10,9 +10,9 @@ import type { FormState } from "./engagement";
 
 async function requireSession() {
   const user = await getSessionUser();
-  const supabase = await createSupabaseServerClient();
-  if (!user || !supabase) return null;
-  return { user, supabase };
+  const db = await getUserDb();
+  if (!user || !db) return null;
+  return { user, db };
 }
 
 const profileSchema = z.object({
@@ -30,7 +30,7 @@ export async function updateProfileAction(_prev: FormState, formData: FormData):
     marketing_consent: formData.get("marketing_consent") === "on",
   });
   if (!parsed.success) return { ok: false, message: null, errors: toFieldErrors(parsed.error) };
-  const { error } = await session.supabase
+  const { error } = await session.db
     .from("profiles")
     .update({ full_name: parsed.data.full_name, phone: parsed.data.phone || null, marketing_consent: parsed.data.marketing_consent })
     .eq("id", session.user.id);
@@ -64,7 +64,7 @@ export async function saveAddressAction(_prev: FormState, formData: FormData): P
     is_default: formData.get("is_default") === "on",
   });
   if (!parsed.success) return { ok: false, message: null, errors: toFieldErrors(parsed.error) };
-  const { supabase, user } = session;
+  const { db, user } = session;
   const record = {
     label: parsed.data.label ?? null,
     full_name: parsed.data.full_name,
@@ -78,12 +78,12 @@ export async function saveAddressAction(_prev: FormState, formData: FormData): P
     is_default: parsed.data.is_default,
   };
   if (parsed.data.is_default) {
-    await supabase.from("addresses").update({ is_default: false }).eq("user_id", user.id);
+    await db.from("addresses").update({ is_default: false }).eq("user_id", user.id);
   }
   // Row level security guarantees a customer can only touch their own addresses.
   const { error } = /^[0-9a-f-]{36}$/.test(id)
-    ? await supabase.from("addresses").update(record).eq("id", id).eq("user_id", user.id)
-    : await supabase.from("addresses").insert({ ...record, user_id: user.id });
+    ? await db.from("addresses").update(record).eq("id", id).eq("user_id", user.id)
+    : await db.from("addresses").insert({ ...record, user_id: user.id });
   if (error) {
     logError("account.address", error);
     return { ok: false, message: "We couldn't save this address. Please try again." };
@@ -97,7 +97,7 @@ export async function deleteAddressAction(formData: FormData) {
   if (!session) return;
   const id = String(formData.get("id") ?? "");
   if (!/^[0-9a-f-]{36}$/.test(id)) return;
-  await session.supabase.from("addresses").delete().eq("id", id).eq("user_id", session.user.id);
+  await session.db.from("addresses").delete().eq("id", id).eq("user_id", session.user.id);
   revalidatePath("/account/addresses");
 }
 
@@ -106,7 +106,7 @@ export async function setDefaultAddressAction(formData: FormData) {
   if (!session) return;
   const id = String(formData.get("id") ?? "");
   if (!/^[0-9a-f-]{36}$/.test(id)) return;
-  await session.supabase.from("addresses").update({ is_default: false }).eq("user_id", session.user.id);
-  await session.supabase.from("addresses").update({ is_default: true }).eq("id", id).eq("user_id", session.user.id);
+  await session.db.from("addresses").update({ is_default: false }).eq("user_id", session.user.id);
+  await session.db.from("addresses").update({ is_default: true }).eq("id", id).eq("user_id", session.user.id);
   revalidatePath("/account/addresses");
 }
