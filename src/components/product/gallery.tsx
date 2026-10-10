@@ -40,9 +40,9 @@ export function ProductGallery({ images, productName }: { images: GalleryImage[]
 
   const swipeHandlers = {
     onPointerDown: (e: PointerEvent<HTMLElement>) => {
+      suppressClick.current = false;
       if (e.pointerType !== "touch" || zoomed) return;
       touchStart.current = { x: e.clientX, y: e.clientY, id: e.pointerId };
-      suppressClick.current = false;
       e.currentTarget.setPointerCapture(e.pointerId);
     },
     onPointerUp: (e: PointerEvent<HTMLElement>) => {

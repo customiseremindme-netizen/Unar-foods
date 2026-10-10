@@ -1,6 +1,6 @@
 # UNAR repair delivery — incomplete pending integration access
 
-Date: 10 October 2026. Source: customiseremindme-netizen/Unar-foods, branch claude/gifted-dirac-rkndzu, commit 57e12120abb8fa672daa31ee15deaf638d95779c.
+Date: 10 October 2026. Draft PR: https://github.com/customiseremindme-netizen/Unar-foods/pull/1. Source: customiseremindme-netizen/Unar-foods, branch claude/gifted-dirac-rkndzu, commit 57e12120abb8fa672daa31ee15deaf638d95779c.
 
 ## Audit and scope
 
@@ -27,27 +27,26 @@ Both public-site fetches failed from this environment and from the web connector
 
 | System | Status |
 | --- | --- |
-| Authentication | Recovery/security code changed. Real registration, delivery, reset, account addresses and order history journeys NOT verified in this session. SMTP/Resend and database access required. |
+| Authentication | Recovery/security code changed. Registration, confirmation, password reset and login passed browser tests against disposable MySQL and Mailpit. Live SMTP/Resend/database settings remain unverified; Profile updates, saved-address edits/persistence, registered-user order history, restored sessions and cross-session logout also passed in CI. |
 | Product visibility | Seed and conservative migration changed. Verified seed data and migration decision logic locally. Production records NOT inspected or changed. |
-| Galleries | Ten actual supplied WebP files verified; five-photo ordering, swipe/navigation/lightbox improvements implemented. Browser/touch validation pending. |
+| Galleries | Ten actual supplied WebP files verified; five-photo ordering, swipe/navigation/lightbox improvements implemented. All five photos for each product passed browser loading/navigation checks. Actual touch swipe and reduced-motion checks passed; the test found the next mouse click could be swallowed after a swipe. Gesture reset was corrected and final rerun is pending. |
 | Animations | Headline/pouch entrances and reduced-motion handling improved. Visual/performance validation pending. |
-| Checkout/orders | Existing cart, checkout, stock reservation, coupon, shipping, COD, Razorpay and order management retained; payment retry/capture safety repaired. No real or provider-sandbox payment performed. |
-| Admin | Existing overview, products/gallery uploads/reordering, orders/refunds/invoices, inventory, customers, CMS, marketing, reviews, settings and staff modules retained. No new claim that they passed tests here. |
-| Reviews | Existing real moderated text/star reviews and purchase verification retained. Customer photos (up to five) and one MP4 video implemented with private staging, ownership checks, moderation gates, bounded requests, image/video re-encoding and range streaming. Video processing requires FFmpeg/FFprobe on the host; integration validation pending. |
+| Checkout/orders | Existing cart, checkout, stock reservation, coupon, shipping, COD, Razorpay and order management retained; payment retry/capture safety repaired. Guest COD and mocked online-payment success/failure, webhook/signature/amount safety passed browser tests. No real or provider-sandbox payment performed. |
+| Admin | Existing overview, products/gallery uploads/reordering, orders/refunds/invoices, inventory, customers, CMS, marketing, reviews, settings and staff modules retained. Browser tests passed for price edits, stock adjustments, coupons, CMS draft/publish and order shipping/tracking; customer-to-admin access was denied. |
+| Reviews | Existing real moderated text/star reviews and purchase verification retained. Customer photos (up to five) and one MP4 video implemented with private staging, ownership checks, moderation gates, bounded requests, image/video re-encoding and range streaming. Video processing requires FFmpeg/FFprobe on the host; Image/video re-encoding unit tests and customer-upload/moderation browser journey passed in CI. |
 | Performance/SEO/security | Existing image optimization, SEO/schema/sitemap/robots and security headers retained; targeted auth/payment fixes added. No Lighthouse, browser or live security score measured. |
 | Deployment | No staging or production deployment; no production data changes. Existing live URL remains https://seashell-donkey-270999.hostingersite.com/. |
 
 ## Checks actually executed
 
-- npm run test:repair: 24 passed, zero failed. Directly tests the actual password, payment-validation, swipe and conservative migration modules, prices, photo sequence and all ten WebP files.
-- node --check scripts/rollback-catalog-repair.mjs: passed (syntax only, no database write).
-- git diff --check: passed.
-- npm ci --offline --ignore-scripts --no-audit --no-fund: failed ENOTCACHED; dependencies unavailable.
-- npm run build: blocked, next not installed.
-- npm run check: blocked, eslint not installed. Typecheck and Vitest did not run after lint stopped.
-- GitHub CI: dependency installation, lint, type checking and all 64 unit tests passed on commit 86830df. Database tests found a backup-size error; backup storage now uses a dedicated additive TEXT table. Full database/build/browser validation remains in progress.
-- Actual FFmpeg command: generated and transcoded a real MP4 successfully; private title metadata was removed.
-- Database/browser tests: additional coverage written but NOT executed locally. A GitHub workflow prepares an isolated disposable MySQL store and local mail catcher, runs unit/database/build/browser checks, and uses mocked Razorpay only. Workflow results must be checked before merging.
+- Local native regression suite: 24 passed; checks passwords, payment values, migration decision rules, prices, all ten supplied WebP images, gallery swipes and media limits.
+- GitHub Actions run 38052820409 on commit 963e121: dependency install, lint, TypeScript, 64 unit tests, 19 MySQL integration tests, production build and 35 Playwright browser tests ALL passed. Evidence: https://github.com/customiseremindme-netizen/Unar-foods/actions/runs/38052820409.
+- The browser suite covered real account creation/confirmation/reset against MySQL+Mailpit; admin price/stock/CMS/coupon/shipping updates; COD and mocked payment success/failure/signature/amount/webhooks; upload privacy/approval/hiding; both five-image galleries; mobile menu/cart; and serious accessibility checks on five pages.
+- A subsequent run also passed all checks including execution of the real catalog rollback script against disposable MySQL. The extended customer addresses/order/logout journey passed in run 38067398547; the gallery test detected a swallowed click after a successful touch swipe. This was corrected. Final gallery and added admin image-upload/reorder/removal tests are running.
+- Actual FFmpeg command generated/transcoded an MP4 and removed private title metadata. Image/video encoding unit tests also passed in CI.
+- Rollback script syntax and git diff --check passed. Local npm installation/build/check are unavailable because dependencies are not cached and shell networking was interrupted; the CI results above are the executed full validation.
+
+Tests use a disposable database, local mail catcher and mocked Razorpay, never the live shop. No official Razorpay sandbox transaction, live email delivery, Lighthouse score or production smoke test has been performed.
 
 The historical claims in docs/STATUS.md predate this repair and are not validation evidence for these changes.
 
@@ -69,7 +68,7 @@ To roll back code, redeploy the previous commit above. The repair adds review_me
 
 Connect Hostinger/staging and a copied database, an approved SMTP/Resend service, and Razorpay test credentials through secure environment settings. Do not paste passwords into chat. Shell network permission is needed for local dependency installation and browser/service access; GitHub file access already works.
 
-Still required: passing full automated checks, live/staging audit and comparison, full customer/admin browser testing, review-media validation and video-processor availability, any further UX/layout/performance corrections found by browser QA, approved commercial/legal settings, real payment sandbox verification, production deployment and post-deploy smoke tests. This delivery is a repair PR, not a completed production store.
+Still required: final extended-check results, live/staging audit and visual comparison, remaining customer/admin/provider validation and production video-processor availability, any further UX/layout/performance corrections found by browser QA, approved commercial/legal settings, real payment sandbox verification, production deployment and post-deploy smoke tests. This delivery is a repair PR, not a completed production store.
 
 ## Exact changed files
 
@@ -83,6 +82,7 @@ Still required: passing full automated checks, live/staging audit and comparison
 - src/app/(store)/resend-verification/page.tsx
 - src/app/actions/auth.ts
 - src/app/actions/engagement.ts
+- src/app/admin/integrations/page.tsx
 - src/app/admin/reviews/page.tsx
 - src/app/api/payments/razorpay/verify/route.ts
 - src/app/api/review-media/route.ts
@@ -112,6 +112,7 @@ Still required: passing full automated checks, live/staging audit and comparison
 - src/lib/reviews/media.ts
 - src/lib/security/rate-limit.ts
 - tests/e2e/accounts.spec.ts
+- tests/e2e/admin.spec.ts
 - tests/e2e/storefront.spec.ts
 - tests/integration/data-access.test.ts
 - tests/integration/mysql-schema.test.ts
