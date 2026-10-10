@@ -62,6 +62,24 @@ export function getSetupKey(): string | null {
   return key && key.length >= 12 ? key : null;
 }
 
+/**
+ * For the setup check (/api/health): says whether a setting is filled in,
+ * WITHOUT ever revealing its value.
+ */
+export function describeSetting(name: string): "set" | "missing" | "none" | "still the PASTE_ template text" {
+  const raw = process.env[name]?.trim().replace(/^(["'])(.*)\1$/, "$2").trim();
+  if (!raw) return "missing";
+  if (/^PASTE_/i.test(raw)) return "still the PASTE_ template text";
+  if (PLACEHOLDERS.has(raw.toLowerCase())) return "none";
+  return "set";
+}
+
+export function describeSetupKey(): string {
+  const status = describeSetting("SETUP_KEY");
+  if (status !== "set") return `${status} (only needed to create the owner account)`;
+  return getSetupKey() ? "set" : "too short — use at least 12 characters";
+}
+
 export type RazorpayEnv = {
   keyId: string;
   keySecret: string;

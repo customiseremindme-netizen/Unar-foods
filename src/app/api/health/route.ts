@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { checkDatabase } from "@/lib/db/health";
-import { getConfiguredSiteUrl, getEmailEnv, getRazorpayEnv, getSetupKey } from "@/lib/env";
+import { describeSetupKey, getConfiguredSiteUrl, getEmailEnv, getRazorpayEnv } from "@/lib/env";
 import { getRequestSiteUrl } from "@/lib/site-url";
 
 export const dynamic = "force-dynamic";
@@ -16,7 +16,7 @@ export async function GET() {
     ...db,
     site_url: await getRequestSiteUrl(),
     site_url_setting: getConfiguredSiteUrl() ? "set" : "automatic (set NEXT_PUBLIC_SITE_URL once your domain is connected)",
-    setup_key: getSetupKey() ? "set" : "not set (only needed to create the owner account)",
+    setup_key: describeSetupKey(),
     payments: getRazorpayEnv()?.mode ?? "not set up",
     email: getEmailEnv()?.provider ?? "not set up",
   };

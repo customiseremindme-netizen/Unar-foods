@@ -176,6 +176,19 @@ describe("hosting panel placeholders", () => {
     // A template value left in place must never work as a secret.
     process.env.SETUP_KEY = "PASTE_A_LONG_SECRET_PHRASE";
     expect(getSetupKey()).toBeNull();
+    // The setup check reports status words only, never the value.
+    const { describeSetting, describeSetupKey } = await import("@/lib/env");
+    expect(describeSetupKey()).toMatch(/^still the PASTE_ template text/);
+    process.env.SETUP_KEY = "a-long-enough-setup-phrase";
+    expect(describeSetupKey()).toBe("set");
+    process.env.SETUP_KEY = "tooshort";
+    expect(describeSetupKey()).toMatch(/^too short/);
+    process.env.DB_USER = "none";
+    expect(describeSetting("DB_USER")).toBe("none");
+    delete process.env.DB_PASSWORD;
+    expect(describeSetting("DB_PASSWORD")).toBe("missing");
+    process.env.DB_NAME = '"u1_unar"';
+    expect(describeSetting("DB_NAME")).toBe("set");
     process.env.SETUP_KEY = "a-long-enough-setup-phrase";
     expect(getSetupKey()).toBe("a-long-enough-setup-phrase");
     process.env = saved;
