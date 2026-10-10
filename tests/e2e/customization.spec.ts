@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { loginAsAdmin } from "./support/helpers";
+import { ADMIN_EMAIL, ADMIN_PASSWORD, loginAsAdmin } from "./support/helpers";
 
 test("appearance settings persist and customize the real storefront", async ({ browser, page: storefront }) => {
   const admin = await loginAsAdmin(browser);
@@ -44,6 +44,21 @@ test("appearance settings persist and customize the real storefront", async ({ b
     }
     await admin.close();
   }
+});
+
+test("@mobile customization tools and forms fit the phone screen", async ({ page }) => {
+  await page.goto("/login?next=/admin/customize");
+  await page.fill("#email", ADMIN_EMAIL);
+  await page.fill("#password", ADMIN_PASSWORD);
+  await page.getByRole("button", { name: /^sign in$/i }).click();
+  await page.waitForURL(/\/admin\/customize/);
+  await expect(page.getByRole("heading", { name: "Customize website", exact: true })).toBeVisible();
+  await page.getByLabel("Find a customization tool").fill("Menus");
+  await expect(page.getByRole("region", { name: "Customization tools" }).getByRole("link")).toHaveCount(1);
+  await expect(page.getByRole("link", { name: /Menus & footer/ })).toBeVisible();
+  await page.locator("#appearance-shop_heading").scrollIntoViewIfNeeded();
+  await expect(page.locator("#appearance-shop_heading")).toBeVisible();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
 });
 
 test("section duplication and presentation save as a draft and publish safely", async ({ browser, page: storefront }) => {
