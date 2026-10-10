@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { ReviewMedia } from "@/components/product/review-media";
 import { ShareProduct } from "@/components/product/share-product";
 import { notFound } from "next/navigation";
 import { BadgeCheck, Leaf, PackageCheck, ShieldCheck, Truck } from "lucide-react";
@@ -272,6 +273,7 @@ export default async function ProductPage({ params }: { params: Params }) {
                     {r.title ? <p className="font-semibold text-forest">{r.title}</p> : null}
                   </div>
                   <p className="mt-3 whitespace-pre-line leading-relaxed">{r.body}</p>
+                  <ReviewMedia items={r.review_media ?? []} />
                   <p className="mt-3 text-[0.8rem] text-muted">
                     {r.author_name} · {formatDate(r.created_at)}
                     {r.is_verified_purchase ? (

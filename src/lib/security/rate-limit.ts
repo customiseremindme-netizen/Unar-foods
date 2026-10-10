@@ -14,6 +14,7 @@ export const RATE_LIMITS = {
   contact: { limit: 5, windowSeconds: 3600 },
   newsletter: { limit: 5, windowSeconds: 3600 },
   review: { limit: 5, windowSeconds: 3600 },
+  reviewUpload: { limit: 6, windowSeconds: 3600 },
   checkout: { limit: 15, windowSeconds: 600 },
   paymentVerify: { limit: 30, windowSeconds: 600 },
   trackOrder: { limit: 15, windowSeconds: 600 },
@@ -37,7 +38,7 @@ export async function checkRateLimit(bucket: keyof typeof RATE_LIMITS, identifie
   });
   if (error) {
     logError("rate-limit", error);
-    return !["login", "signup", "setup", "passwordReset", "verification"].includes(bucket);
+    return !["login", "signup", "setup", "passwordReset", "verification", "reviewUpload"].includes(bucket);
   }
   return data === true;
 }

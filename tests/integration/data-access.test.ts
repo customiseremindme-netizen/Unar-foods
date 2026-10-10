@@ -105,6 +105,26 @@ describe.skipIf(!url)("data access rules", () => {
     expect(data!.every((p) => p.status === "published")).toBe(true);
   });
 
+  it("review attachments stay private until approval and cannot be claimed by another customer", async () => {
+    const reviewId = randomUUID(), mediaId = randomUUID();
+    const [products] = await pool.query<mysql.RowDataPacket[]>("SELECT id FROM products WHERE status = 'published' LIMIT 1");
+    await pool.query("INSERT INTO reviews (id, product_id, user_id, author_name, rating, body, status) VALUES (?, ?, ?, 'Test customer', 4, 'A genuine test review for the isolated test store', 'pending')", [reviewId, products[0].id, customerId]);
+    await pool.query("INSERT INTO review_media (id, review_id, owner_id, mime_type, size_bytes, data) VALUES (?, ?, ?, 'image/webp', 1, ?)", [mediaId, reviewId, customerId, Buffer.from([0])]);
+    const query = (ctx: DbContext) => clientFor(pool, ctx).from("review_media").select("id").eq("id", mediaId);
+    expect((await query(ANON)).data).toEqual([]);
+    expect((await query(user(otherId))).data).toEqual([]);
+    expect((await query(user(customerId))).data?.length).toBe(1);
+    expect((await query(user(ownerId, "owner"))).data?.length).toBe(1);
+    const patch = await clientFor(pool, user(otherId)).from("review_media").update({ owner_id: otherId }).eq("id", mediaId);
+    expect(patch.error).toBeTruthy();
+    await pool.query("UPDATE reviews SET status = 'approved' WHERE id = ?", [reviewId]);
+    expect((await query(ANON)).data?.length).toBe(1);
+    await pool.query("UPDATE reviews SET status = 'rejected' WHERE id = ?", [reviewId]);
+    expect((await query(ANON)).data).toEqual([]);
+    await pool.query("DELETE FROM review_media WHERE id = ?", [mediaId]);
+    await pool.query("DELETE FROM reviews WHERE id = ?", [reviewId]);
+  });
+
   it("visitors cannot read private data", async () => {
     const anon = clientFor(pool, ANON);
     for (const table of ["orders", "profiles", "addresses", "carts", "payments", "audit_logs", "webhook_events", "staff_members", "subscribers", "contact_messages", "auth_users"] as const) {

@@ -1,5 +1,9 @@
 "use server";
 
+import { randomUUID } from "node:crypto";
+import type { RowDataPacket } from "mysql2/promise";
+import { getReadyPool } from "@/lib/db/install";
+import { withTransaction } from "@/lib/db/pool";
 import { z } from "zod";
 import { getServiceDb } from "@/lib/db/client";
 import { getSessionUser } from "@/lib/auth/session";
@@ -151,6 +155,7 @@ export async function submitContactAction(_prev: FormState, formData: FormData):
 // Product reviews (moderated before they appear)
 // ---------------------------------------------------------------------------
 const reviewSchema = z.object({
+  media_ids: z.array(z.uuid()).max(6).refine((ids) => new Set(ids).size === ids.length, "Choose each file once"),
   product_id: z.uuid(),
   rating: z.coerce.number().int().min(1, "Choose a rating").max(5),
   title: z
@@ -168,7 +173,10 @@ export async function submitReviewAction(_prev: FormState, formData: FormData): 
   const user = await getSessionUser();
   if (!user) return { ok: false, message: "Please sign in to write a review." };
 
+  let mediaIds: unknown = [];
+  try { mediaIds = JSON.parse(String(formData.get("media_ids") || "[]")); } catch { return { ok: false, message: "Please upload your review files again." }; }
   const parsed = reviewSchema.safeParse({
+    media_ids: mediaIds,
     product_id: formData.get("product_id"),
     rating: formData.get("rating"),
     title: formData.get("title") ?? "",
@@ -205,18 +213,21 @@ export async function submitReviewAction(_prev: FormState, formData: FormData): 
     return { ok: false, message: "Only customers who have bought this product can review it." };
   }
 
-  const { error } = await admin.from("reviews").insert({
-    product_id: product.id,
-    user_id: user.id,
-    rating: parsed.data.rating,
-    title: parsed.data.title ?? null,
-    body: parsed.data.body,
-    author_name: parsed.data.author_name,
-    is_verified_purchase: verified,
-    status: "pending",
-  });
-  if (error) {
-    if (error.code === "23505") return { ok: false, message: "You have already reviewed this product. Thank you!" };
+  try {
+    await withTransaction(await getReadyPool(), async (conn) => {
+      await conn.query("SELECT id FROM auth_users WHERE id = ? FOR UPDATE", [user.id]);
+      const ids = parsed.data.media_ids;
+      if (ids.length) {
+        const [files] = await conn.query<RowDataPacket[]>(`SELECT id, mime_type FROM review_media WHERE owner_id = ? AND review_id IS NULL AND id IN (${ids.map(() => "?").join(",")}) FOR UPDATE`, [user.id, ...ids]);
+        if (files.length !== ids.length || files.filter((f) => f.mime_type === "image/webp").length > 5 || files.filter((f) => f.mime_type === "video/mp4").length > 1) throw new Error("INVALID_REVIEW_MEDIA");
+      }
+      const id = randomUUID();
+      await conn.query("INSERT INTO reviews (id, product_id, user_id, rating, title, body, author_name, is_verified_purchase, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'pending')", [id, product.id, user.id, parsed.data.rating, parsed.data.title ?? null, parsed.data.body, parsed.data.author_name, verified ? 1 : 0]);
+      if (ids.length) await conn.query(`UPDATE review_media SET review_id = ? WHERE owner_id = ? AND id IN (${ids.map(() => "?").join(",")})`, [id, user.id, ...ids]);
+    });
+  } catch (error) {
+    if ((error as { errno?: number }).errno === 1062) return { ok: false, message: "You have already reviewed this product. Thank you!" };
+    if (error instanceof Error && error.message === "INVALID_REVIEW_MEDIA") return { ok: false, message: "Some uploaded files are unavailable or already used. Please upload them again." };
     logError("review.insert", error);
     return { ok: false, message: "We couldn't save your review. Please try again." };
   }

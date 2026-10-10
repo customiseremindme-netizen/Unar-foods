@@ -1,3 +1,5 @@
+import path from "node:path";
+import { loginAsAdmin, PRODUCT_PATH } from "./support/helpers";
 import { expect, test, type Page } from "@playwright/test";
 
 /**
@@ -32,7 +34,7 @@ async function signIn(page: Page, email: string, password: string) {
 test.describe("accounts", () => {
   test.skip(!mailpit, "Set E2E_MAILPIT_URL to run the email tests");
 
-  test("sign up, confirm by email, reset the password", async ({ page }) => {
+  test("sign up, confirm by email, reset the password", async ({ page, browser, request }) => {
     const email = `account+${Date.now()}@example.com`;
     await page.goto("/register");
     await page.fill("#full_name", "Asha Customer");
@@ -82,6 +84,37 @@ test.describe("accounts", () => {
     await expect(page.getByText("Incorrect email or password.")).toBeVisible();
     await signIn(page, email, "SecondPass456");
     await page.waitForURL((u) => u.pathname.startsWith("/account"));
+
+    // Uploaded review media stays private until a moderator approves the review.
+    await page.goto(PRODUCT_PATH);
+    await page.getByRole("button", { name: "5 stars", exact: true }).click();
+    await page.fill("#review-name", "Asha Customer");
+    const reviewTitle = `Media privacy ${Date.now()}`;
+    await page.fill("#review-title", reviewTitle);
+    await page.fill("#review-body", "An isolated test review used to verify moderation and upload privacy.");
+    await page.locator("#review-files").setInputFiles(path.resolve("public/images/products/dry-fruits-seeds/01-main-hero-pouch.webp"));
+    const uploaded = page.waitForResponse((r) => r.url().endsWith("/api/review-media") && r.request().method() === "POST");
+    await page.getByRole("button", { name: "Upload files" }).click();
+    const response = await uploaded;
+    expect(response.status()).toBe(201);
+    const { media } = await response.json();
+    const mediaPath = `/review-media/${media[0].id}`;
+    expect((await page.request.get(mediaPath)).status()).toBe(200);
+    expect((await request.get(mediaPath)).status()).toBe(404);
+    await page.getByRole("button", { name: "Submit review", exact: true }).click();
+    await expect(page.getByText(/review.*(approval|checked|moderation)|thank you/i).last()).toBeVisible();
+    expect((await request.get(mediaPath)).status()).toBe(404);
+    const adminContext = await loginAsAdmin(browser);
+    try {
+      const admin = await adminContext.newPage();
+      await admin.goto("/admin/reviews");
+      const row = admin.locator("li").filter({ hasText: reviewTitle }).first();
+      await row.getByRole("button", { name: "Approve", exact: true }).click();
+      await expect.poll(async () => (await request.get(mediaPath)).status()).toBe(200);
+      await admin.reload();
+      await admin.locator("li").filter({ hasText: reviewTitle }).first().getByRole("button", { name: "Hide", exact: true }).click();
+      await expect.poll(async () => (await request.get(mediaPath)).status()).toBe(404);
+    } finally { await adminContext.close(); }
   });
 
   test("the setup page is closed once the owner exists", async ({ page }) => {

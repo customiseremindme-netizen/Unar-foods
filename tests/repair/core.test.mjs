@@ -4,6 +4,7 @@ import { readFileSync } from "node:fs";
 import { hashPassword, verifyPassword } from "../../src/lib/auth/password.ts";
 import { paymentMatchesOrder, browserPaymentStatus } from "../../src/lib/commerce/payment-validation.ts";
 import { starterPublicationPlan } from "../../src/lib/db/starter-catalog.ts";
+import { validateReviewFiles } from "../../src/lib/reviews/media-policy.ts";
 import { swipeDirection } from "../../src/lib/gallery/swipe.ts";
 
 const data = JSON.parse(readFileSync(new URL("../../src/lib/db/data/initial-data.json", import.meta.url), "utf8"));
@@ -96,4 +97,11 @@ test("checkout never reports a mismatched payment as paid", () => {
   assert.equal(browserPaymentStatus("already_paid"), "paid");
   assert.equal(browserPaymentStatus("pending"), "pending");
   assert.equal(browserPaymentStatus("failed"), "failed");
+});
+
+test("review uploads accept five photos and one bounded MP4", () => {
+  assert.equal(validateReviewFiles([...Array.from({length:5},()=>({type:"image/webp",size:100000})),{type:"video/mp4",size:1000000}]),null);
+});
+test("review uploads reject excessive, unsupported and oversized files", () => {
+  for (const files of [[],Array.from({length:6},()=>({type:"image/png",size:100})),[{type:"image/svg+xml",size:100}],[{type:"image/png",size:3*1024*1024}],[{type:"video/mp4",size:9*1024*1024}],[{type:"video/mp4",size:10},{type:"video/mp4",size:10}],[{type:"image/png",size:0}]]) assert.ok(validateReviewFiles(files));
 });
