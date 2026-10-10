@@ -652,7 +652,7 @@ export const TABLES: Record<string, Table> = {
     columns: {
       id: pk(),
       review_id: ref("reviews", "set null"),
-      owner_id: ref("auth_users"),
+      owner_id: { ...ref("auth_users"), hidden: true },
       mime_type: str(60),
       size_bytes: int(),
       width: int({ nullable: true }),

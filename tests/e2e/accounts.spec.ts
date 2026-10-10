@@ -111,7 +111,7 @@ test.describe("accounts", () => {
       const row = admin.locator("li").filter({ hasText: reviewTitle }).first();
       await row.getByRole("button", { name: "Approve", exact: true }).click();
       await expect.poll(async () => (await request.get(mediaPath)).status()).toBe(200);
-      await admin.reload();
+      await admin.goto("/admin/reviews?status=approved");
       await admin.locator("li").filter({ hasText: reviewTitle }).first().getByRole("button", { name: "Hide", exact: true }).click();
       await expect.poll(async () => (await request.get(mediaPath)).status()).toBe(404);
     } finally { await adminContext.close(); }

@@ -278,10 +278,10 @@ export type Database = {
         ]
       }
       "review_media": {
-        Row: { "created_at": string; "height": number | null; "id": string; "mime_type": string; "owner_id": string; "review_id": string | null; "size_bytes": number; "width": number | null }
+        Row: { "created_at": string; "height": number | null; "id": string; "mime_type": string; "review_id": string | null; "size_bytes": number; "width": number | null }
         ComputedFields: never
-        Insert: { "created_at"?: string; "height"?: number | null; "id"?: string; "mime_type": string; "owner_id": string; "review_id"?: string | null; "size_bytes": number; "width"?: number | null }
-        Update: { "created_at"?: string; "height"?: number | null; "id"?: string; "mime_type"?: string; "owner_id"?: string; "review_id"?: string | null; "size_bytes"?: number; "width"?: number | null }
+        Insert: { "created_at"?: string; "height"?: number | null; "id"?: string; "mime_type": string; "review_id"?: string | null; "size_bytes": number; "width"?: number | null }
+        Update: { "created_at"?: string; "height"?: number | null; "id"?: string; "mime_type"?: string; "review_id"?: string | null; "size_bytes"?: number; "width"?: number | null }
         Relationships: [
           { foreignKeyName: "review_media_review_id_fkey"; columns: ["review_id"]; isOneToOne: false; referencedRelation: "reviews"; referencedColumns: ["id"] },
           { foreignKeyName: "review_media_owner_id_fkey"; columns: ["owner_id"]; isOneToOne: false; referencedRelation: "auth_users"; referencedColumns: ["id"] },

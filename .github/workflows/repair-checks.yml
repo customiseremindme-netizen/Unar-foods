@@ -58,6 +58,8 @@ jobs:
         env:
           UNAR_ALLOW_TEST_OVERRIDES: "0"
       - run: npm run test:db
+        env:
+          UNAR_ALLOW_TEST_OVERRIDES: "0"
       - run: npm run build
       - run: npx playwright install --with-deps chromium
       - name: Generate disposable test account password

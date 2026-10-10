@@ -115,7 +115,7 @@ describe.skipIf(!url)("data access rules", () => {
     expect((await query(user(otherId))).data).toEqual([]);
     expect((await query(user(customerId))).data?.length).toBe(1);
     expect((await query(user(ownerId, "owner"))).data?.length).toBe(1);
-    const patch = await clientFor(pool, user(otherId)).from("review_media").update({ owner_id: otherId }).eq("id", mediaId);
+    const patch = await clientFor(pool, user(otherId)).from("review_media").update({ review_id: randomUUID() }).eq("id", mediaId);
     expect(patch.error).toBeTruthy();
     await pool.query("UPDATE reviews SET status = 'approved' WHERE id = ?", [reviewId]);
     expect((await query(ANON)).data?.length).toBe(1);
