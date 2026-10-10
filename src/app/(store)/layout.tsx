@@ -21,15 +21,18 @@ function themeCss(theme: Record<string, string>) {
 }
 
 export default async function StoreLayout({ children }: { children: React.ReactNode }) {
-  let catalogUnavailable = false;
-  const [settings, announcements, products, policies, preview] = await Promise.all([
+  const [settings, announcements, catalog, policies, preview] = await Promise.all([
     getPublicSettings(),
     getBanners("announcement"),
-    getPublishedProducts().catch(() => { catalogUnavailable = true; return []; }),
+    getPublishedProducts().then(
+      (products) => ({ products, unavailable: false }),
+      () => ({ products: [], unavailable: true }),
+    ),
     listCmsPages("policy"),
     isPreview(),
   ]);
 
+  const { products, unavailable: catalogUnavailable } = catalog;
   const logo = {
     url: settings.brand.logo_svg_url || settings.brand.logo_url,
     width: settings.brand.logo_width,

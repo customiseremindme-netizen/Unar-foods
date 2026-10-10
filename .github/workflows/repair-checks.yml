@@ -1,7 +1,5 @@
 name: UNAR repair checks
 on:
-  push:
-    branches: [codex/unar-production-repair]
   pull_request:
 permissions:
   contents: read
