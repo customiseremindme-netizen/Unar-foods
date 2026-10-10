@@ -1,5 +1,5 @@
 import path from "node:path";
-import { loginAsAdmin, PRODUCT_PATH } from "./support/helpers";
+import { loginAsAdmin, PRODUCT_PATH, addProductToCart, fillCheckout } from "./support/helpers";
 import { expect, test, type Page } from "@playwright/test";
 
 /**
@@ -115,6 +115,44 @@ test.describe("accounts", () => {
       await admin.locator("li").filter({ hasText: reviewTitle }).first().getByRole("button", { name: "Hide", exact: true }).click();
       await expect.poll(async () => (await request.get(mediaPath)).status()).toBe(404);
     } finally { await adminContext.close(); }
+
+    await page.goto("/account/profile");
+    await page.fill("#full_name", "Asha Updated");
+    await page.fill("#phone", "9876543210");
+    await page.getByRole("button", { name: "Save details" }).click();
+    await expect(page.getByText("Your details have been saved.")).toBeVisible();
+    await page.reload();
+    await expect(page.locator("#full_name")).toHaveValue("Asha Updated");
+    await page.goto("/account/orders");
+    await expect(page.getByText("No orders yet")).toBeVisible();
+    await addProductToCart(page);
+    await fillCheckout(page, { method: "cod", email });
+    await page.getByRole("button", { name: /Place order/i }).click();
+    await page.waitForURL(/\/orders\/UNAR-\d+/);
+    const orderNumber = /UNAR-\d+/.exec(page.url())![0];
+    await page.goto("/account/orders");
+    await page.getByRole("link", { name: new RegExp(orderNumber) }).click();
+    await expect(page.locator("main")).toContainText(orderNumber);
+    await page.goto("/account/addresses");
+    await expect(page.getByText("12 Main Road", { exact: false })).toBeVisible();
+    await page.getByRole("button", { name: "Edit", exact: true }).first().click();
+    await page.fill("#line1", "14 Updated Road");
+    await page.getByRole("button", { name: "Save address", exact: true }).click();
+    await expect(page.getByText("14 Updated Road", { exact: false })).toBeVisible();
+    await page.reload();
+    await expect(page.getByText("14 Updated Road", { exact: false })).toBeVisible();
+    const restoredContext = await browser.newContext({ storageState: await page.context().storageState() });
+    try {
+      const restored = await restoredContext.newPage();
+      await restored.goto("/account");
+      await expect(restored.getByRole("heading", { name: "Hello, Asha" })).toBeVisible();
+      await page.getByRole("button", { name: "Sign out", exact: true }).click();
+      await page.goto("/account");
+      await page.waitForURL((u) => u.pathname === "/login");
+      // Logout revokes the stored token on the server, including another browser context.
+      await restored.goto("/account");
+      await restored.waitForURL((u) => u.pathname === "/login");
+    } finally { await restoredContext.close(); }
   });
 
   test("the setup page is closed once the owner exists", async ({ page }) => {

@@ -89,3 +89,25 @@ test.describe("product photography", () => {
     });
   }
 });
+
+
+test("gallery supports actual touch swipes and reduced motion @mobile", async ({ page, context }) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.goto("/products/banana-chewy-dry-fruits-seeds");
+  const hero = page.getByRole("button", { name: /^Open image viewer:/ });
+  await hero.scrollIntoViewIfNeeded();
+  const bounds = (await hero.boundingBox())!;
+  const client = await context.newCDPSession(page);
+  const y = bounds.y + bounds.height * 0.4;
+  await client.send("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: [{ x: bounds.x + bounds.width * 0.75, y }] });
+  await client.send("Input.dispatchTouchEvent", { type: "touchMove", touchPoints: [{ x: bounds.x + bounds.width * 0.25, y }] });
+  await client.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
+  await expect(page.getByRole("button", { name: /^Show image 2 of 5:/ })).toHaveAttribute("aria-current", "true");
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+  await hero.hover();
+  await expect(hero.locator("img")).toHaveCSS("transform", "matrix(1, 0, 0, 1, 0, 0)");
+  await hero.click();
+  await expect(page.getByRole("dialog")).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+});
