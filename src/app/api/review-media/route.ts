@@ -5,7 +5,7 @@ import { getReadyPool } from "@/lib/db/install";
 import { withTransaction } from "@/lib/db/pool";
 import { isSameOrigin, getClientIp } from "@/lib/security/request";
 import { checkRateLimit } from "@/lib/security/rate-limit";
-import { encodeReviewMedia } from "@/lib/reviews/media";
+import { encodeReviewMedia, type EncodedReviewMedia } from "@/lib/reviews/media";
 import { MAX_REVIEW_UPLOAD_BYTES, validateReviewFiles } from "@/lib/reviews/media-policy";
 import { getAllSettings } from "@/lib/settings";
 import { logError } from "@/lib/monitoring";
@@ -38,7 +38,7 @@ export async function POST(request: Request) {
     const files = form.getAll("files").filter((v): v is File => v instanceof File && v.size > 0);
     const validation = validateReviewFiles(files);
     if (validation) return reply({ error: validation }, 400);
-    const encoded = [];
+    const encoded: EncodedReviewMedia[] = [];
     for (const file of files) encoded.push(await encodeReviewMedia(file));
     const pool = await getReadyPool();
     const media = await withTransaction(pool, async (conn) => {
