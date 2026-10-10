@@ -127,7 +127,7 @@ describe.skipIf(!url)("data access rules", () => {
 
   it("visitors cannot read private data", async () => {
     const anon = clientFor(pool, ANON);
-    for (const table of ["orders", "profiles", "addresses", "carts", "payments", "audit_logs", "webhook_events", "staff_members", "subscribers", "contact_messages", "auth_users"] as const) {
+    for (const table of ["orders", "profiles", "addresses", "carts", "payments", "audit_logs", "webhook_events", "staff_members", "subscribers", "contact_messages", "auth_users", "migration_backups"] as const) {
       const { data } = await anon.from(table as "orders").select("*").limit(1);
       expect(data ?? [], table).toEqual([]);
     }

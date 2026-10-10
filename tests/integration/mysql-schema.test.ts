@@ -4,6 +4,8 @@
  *
  *   TEST_DATABASE_URL=mysql://unar:unarpw@127.0.0.1:3306/unar npm run test:db
  */
+import { execFile } from "node:child_process";
+import { promisify } from "node:util";
 import mysql, { type Pool, type RowDataPacket } from "mysql2/promise";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { installSchema } from "@/lib/db/install";
@@ -56,6 +58,12 @@ describe.skipIf(!url)("automatic database setup", () => {
     await installSchema(pool);
     const [after] = await pool.query<RowDataPacket[]>("SELECT status FROM products ORDER BY sort_order");
     expect(after.map((p) => p.status)).toEqual(["published", "draft"]);
+    const { stdout } = await promisify(execFile)(process.execPath, ["scripts/rollback-catalog-repair.mjs", "--apply"], { env: { ...process.env, DATABASE_URL: url! }, timeout: 15000 });
+    expect(stdout).toContain("Restored 1 untouched product(s)");
+    await installSchema(pool);
+    const [rolledBack] = await pool.query<RowDataPacket[]>("SELECT status, short_description FROM products ORDER BY sort_order");
+    expect(rolledBack.map((p) => p.status)).toEqual(["draft", "draft"]);
+    expect(rolledBack[1].short_description).toBe("Owner edited this product");
   });
 
   it("can run from several servers at the same time", async () => {
