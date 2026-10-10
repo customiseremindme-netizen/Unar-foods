@@ -61,12 +61,12 @@ export default async function IntegrationsPage() {
           <p className="mt-3 text-[0.78rem] text-muted">Webhook events to tick: payment.authorized, payment.captured, payment.failed, order.paid, refund.processed, refund.failed.</p>
         </Card>
 
-        <Card title="Email (order emails)" actions={<Status ok={!!email} />}>
+        <Card title="Email (accounts and orders)" actions={<Status ok={!!email} />}>
           <Row label="Sent through" value={email ? (email.provider === "resend" ? "Resend" : `SMTP · ${email.smtp.host}:${email.smtp.port}`) : "not set"} />
           <Row label="Sender address" value={email?.from ?? "not set"} />
           <Row label={email?.provider === "smtp" ? "Mailbox password" : "API key"} value={maskSecret(email ? (email.provider === "resend" ? email.resendApiKey : email.smtp.password) : null)} />
           <p className="mt-3 text-[0.78rem] text-muted">
-            Use Resend, or your Hostinger email (SMTP). Without email, orders still work — customers see their order on screen, but no emails are sent.
+            Use Resend or your Hostinger email (SMTP). Email is required for account confirmation and password reset links. Guest orders can still be placed without email, but customers will not receive order notifications.
           </p>
         </Card>
 

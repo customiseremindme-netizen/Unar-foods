@@ -1,3 +1,4 @@
+import path from "node:path";
 import { expect, test } from "@playwright/test";
 import { addProductToCart, fillCheckout, loginAsAdmin, PRODUCT_PATH, stubRazorpayCheckout } from "./support/helpers";
 
@@ -102,4 +103,33 @@ test.describe("admin dashboard", () => {
     await expect(page.locator("main")).toContainText(/Shipped/i);
     await admin.close();
   });
+});
+
+
+test("admin photo upload, reordering and removal update the storefront", async ({ browser, page: storefront }) => {
+  const admin = await loginAsAdmin(browser);
+  const editor = await admin.newPage();
+  try {
+    await editor.goto("/admin/products");
+    await editor.getByRole("link", { name: /Dry Fruits/i }).first().click();
+    await editor.waitForURL(/\/admin\/products\/[0-9a-f-]{36}/);
+    await expect(editor.locator("#section-images")).toBeVisible();
+    const rows = editor.locator("#section-images ol > li");
+    const originalCount = await rows.count();
+    await editor.getByLabel("Upload product images").setInputFiles(path.resolve("public/images/products/dry-fruits-seeds/01-main-hero-pouch.webp"));
+    await expect(rows).toHaveCount(originalCount + 1);
+    await editor.locator(`#img-alt-${originalCount}`).fill("Gallery upload QA");
+    for (let n = originalCount + 1; n > 1; n--) await editor.getByRole("button", { name: `Move image ${n} up`, exact: true }).click();
+    await editor.getByRole("button", { name: /^Save$/ }).click();
+    await expect(editor.getByText(/Saved/).first()).toBeVisible();
+    await storefront.goto(PRODUCT_PATH);
+    const photo = storefront.getByRole("button", { name: "Open image viewer: Gallery upload QA", exact: true }).locator("img");
+    await expect.poll(() => photo.evaluate((img: HTMLImageElement) => img.complete && img.naturalWidth > 0)).toBe(true);
+    await editor.getByRole("button", { name: "Remove image 1", exact: true }).click();
+    await editor.getByRole("button", { name: /^Save$/ }).click();
+    await expect(editor.getByText(/Saved/).first()).toBeVisible();
+    await storefront.reload();
+    await expect(storefront.getByRole("button", { name: "Open image viewer: Gallery upload QA", exact: true })).toHaveCount(0);
+    await expect(storefront.getByRole("list", { name: "Product images" }).getByRole("button")).toHaveCount(5);
+  } finally { await admin.close(); }
 });

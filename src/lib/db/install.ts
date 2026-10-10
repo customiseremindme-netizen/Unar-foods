@@ -5,6 +5,7 @@ import { addForeignKeySql, allColumns, columnSql, createTableSql, foreignKeys, k
 import { getPool } from "./pool";
 import { prepareInsertRow } from "./rows";
 import { TABLES } from "./schema";
+import { starterPublicationPlan } from "./starter-catalog";
 
 /**
  * Creates and updates the database tables automatically.
@@ -94,14 +95,36 @@ async function migrate(conn: PoolConnection) {
   }
 }
 
-/** Loads the starter content (brand settings, the two products as drafts, pages, FAQs) once. */
+/** Loads the starter content (brand settings, the two confirmed products (sold out until stock is entered), pages, FAQs) once. */
 async function loadInitialData(conn: PoolConnection) {
   await conn.beginTransaction();
   try {
+    const canonicalIds = new Map<string, string>();
     for (const [tableName, rows] of Object.entries(initialData as Record<string, Record<string, unknown>[]>)) {
       const table = TABLES[tableName];
-      for (const input of rows) {
-        const row = prepareInsertRow(tableName, table, input);
+      for (const original of rows) {
+        const input = { ...original };
+        for (const column of ["product_id", "category_id"]) {
+          if (typeof input[column] === "string") input[column] = canonicalIds.get(input[column] as string) ?? input[column];
+        }
+        // Existing products/collections may have different IDs. Match natural
+        // keys before seeding children, never create duplicates or overwrite edits.
+        if (tableName === "products" || tableName === "categories" || tableName === "product_variants") {
+          const column = tableName === "product_variants" ? "sku" : "slug";
+          const [existing] = await conn.query<Rows>(`SELECT id FROM ${q(tableName)} WHERE ${q(column)} = ?`, [input[column]]);
+          if (existing[0]) {
+            if (typeof original.id === "string") canonicalIds.set(original.id, String(existing[0].id));
+            continue;
+          }
+        }
+        if (tableName === "product_images") {
+          const [existing] = await conn.query<Rows>("SELECT id FROM product_images WHERE product_id = ? AND url = ? LIMIT 1", [input.product_id, input.url]);
+          if (existing.length) continue;
+        }
+        const seedInput = tableName === "products" && input.status === "published"
+          ? { ...input, published_at: new Date().toISOString() }
+          : input;
+        const row = prepareInsertRow(tableName, table, seedInput);
         const cols = Object.keys(row);
         await conn.query(
           `INSERT IGNORE INTO ${q(tableName)} (${cols.map(q).join(", ")}) VALUES (${cols.map(() => "?").join(", ")})`,
@@ -110,6 +133,43 @@ async function loadInitialData(conn: PoolConnection) {
       }
     }
     await setMeta(conn, "initial_data", new Date().toISOString());
+    await conn.commit();
+  } catch (error) {
+    await conn.rollback();
+    throw error;
+  }
+}
+
+/** Repair only untouched starter drafts; never republish an owner's edited/unpublished product. */
+async function repairStarterCatalog(conn: PoolConnection) {
+  await conn.beginTransaction();
+  try {
+    const backup: Record<string, unknown>[] = [];
+    const repairedAt = new Date().toISOString().replace("T", " ").replace("Z", "");
+    for (const seed of initialData.products) {
+      const [rows] = await conn.query<Rows>(
+        "SELECT p.*, EXISTS (SELECT 1 FROM audit_logs a WHERE a.entity_type = 'product' AND a.entity_id = p.id) AS owner_edited FROM products p WHERE p.id = ? FOR UPDATE",
+        [seed.id],
+      );
+      const row = rows[0];
+      if (!row) continue;
+      const [variants] = await conn.query<Rows>("SELECT is_active, price_paise, mrp_paise FROM product_variants WHERE product_id = ?", [seed.id]);
+      const [images] = await conn.query<Rows>("SELECT id, url, alt, sort_order FROM product_images WHERE product_id = ?", [seed.id]);
+      const expectedImages = initialData.product_images.filter((i) => i.product_id === seed.id && i.sort_order <= 5);
+      if (!starterPublicationPlan(row, seed, variants, images, expectedImages.map((i) => i.url))) continue;
+      backup.push({ id: row.id, status: row.status, published_at: row.published_at, updated_at: row.updated_at, repaired_at: repairedAt,
+        images: images.filter((i) => expectedImages.some((seedImage) => seedImage.url === i.url)).map((i) => ({ id: i.id, sort_order: i.sort_order, new_sort_order: expectedImages.find((seedImage) => seedImage.url === i.url)!.sort_order })),
+      });
+    }
+    // Backup and changes commit together. A failing query rolls back the entire repair.
+    await conn.query("INSERT INTO migration_backups (`key`, `value`) VALUES (?, ?) ON DUPLICATE KEY UPDATE `value` = VALUES(`value`)", ["catalog_launch_v1_backup", JSON.stringify(backup)]);
+    for (const product of backup) {
+      await conn.query("UPDATE products SET status = 'published', published_at = ?, updated_at = ? WHERE id = ? AND status = 'draft' AND published_at IS NULL", [repairedAt, repairedAt, product.id]);
+      for (const image of product.images as { id: string; new_sort_order: number }[]) {
+        await conn.query("UPDATE product_images SET sort_order = ? WHERE id = ? AND product_id = ?", [image.new_sort_order, image.id, product.id]);
+      }
+    }
+    await setMeta(conn, "catalog_launch_v1", new Date().toISOString());
     await conn.commit();
   } catch (error) {
     await conn.rollback();
@@ -137,6 +197,7 @@ export async function installSchema(pool: Pool): Promise<{ migrated: boolean; se
         await loadInitialData(conn);
         seeded = true;
       }
+      if (!meta.has("catalog_launch_v1")) await repairStarterCatalog(conn);
       return { migrated, seeded };
     } finally {
       await conn.query("SELECT RELEASE_LOCK(?)", [LOCK]).catch(() => undefined);

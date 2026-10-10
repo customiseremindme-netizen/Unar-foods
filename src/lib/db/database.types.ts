@@ -164,6 +164,13 @@ export type Database = {
           { foreignKeyName: "media_assets_uploaded_by_fkey"; columns: ["uploaded_by"]; isOneToOne: false; referencedRelation: "auth_users"; referencedColumns: ["id"] },
         ]
       }
+      "migration_backups": {
+        Row: { "created_at": string; "key": string; "value": string }
+        ComputedFields: never
+        Insert: { "created_at"?: string; "key": string; "value": string }
+        Update: { "created_at"?: string; "key"?: string; "value"?: string }
+        Relationships: []
+      }
       "notification_log": {
         Row: { "channel": string; "created_at": string; "error": string | null; "id": number; "order_id": string | null; "provider_message_id": string | null; "recipient": string; "status": string; "template": string }
         ComputedFields: never
@@ -275,6 +282,16 @@ export type Database = {
           { foreignKeyName: "refunds_order_id_fkey"; columns: ["order_id"]; isOneToOne: false; referencedRelation: "orders"; referencedColumns: ["id"] },
           { foreignKeyName: "refunds_payment_id_fkey"; columns: ["payment_id"]; isOneToOne: false; referencedRelation: "payments"; referencedColumns: ["id"] },
           { foreignKeyName: "refunds_created_by_fkey"; columns: ["created_by"]; isOneToOne: false; referencedRelation: "auth_users"; referencedColumns: ["id"] },
+        ]
+      }
+      "review_media": {
+        Row: { "created_at": string; "height": number | null; "id": string; "mime_type": string; "review_id": string | null; "size_bytes": number; "width": number | null }
+        ComputedFields: never
+        Insert: { "created_at"?: string; "height"?: number | null; "id"?: string; "mime_type": string; "review_id"?: string | null; "size_bytes": number; "width"?: number | null }
+        Update: { "created_at"?: string; "height"?: number | null; "id"?: string; "mime_type"?: string; "review_id"?: string | null; "size_bytes"?: number; "width"?: number | null }
+        Relationships: [
+          { foreignKeyName: "review_media_review_id_fkey"; columns: ["review_id"]; isOneToOne: false; referencedRelation: "reviews"; referencedColumns: ["id"] },
+          { foreignKeyName: "review_media_owner_id_fkey"; columns: ["owner_id"]; isOneToOne: false; referencedRelation: "auth_users"; referencedColumns: ["id"] },
         ]
       }
       "reviews": {

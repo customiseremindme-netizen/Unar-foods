@@ -36,7 +36,7 @@ export function ProductCard({
     <article className={cn("group relative flex flex-col", className)}>
       <Link
         href={`/products/${product.slug}`}
-        className="relative block aspect-square overflow-hidden rounded-[2rem] bg-cream-deep shadow-soft transition-shadow duration-500 group-hover:shadow-lift"
+        className="relative block aspect-square overflow-hidden rounded-[var(--store-image-radius,2rem)] bg-cream-deep shadow-soft transition-shadow duration-500 group-hover:shadow-lift"
         aria-label={name}
       >
         {image ? (
@@ -47,7 +47,8 @@ export function ProductCard({
               fill
               priority={priority}
               sizes="(min-width: 1024px) 40vw, (min-width: 640px) 50vw, 100vw"
-              className="object-cover transition-transform duration-[1.2s] ease-[var(--ease-out-soft)] group-hover:scale-[1.045]"
+              data-product-photo
+              className="object-contain transition-transform duration-[1.2s] ease-[var(--ease-out-soft)] group-hover:scale-[1.045]"
             />
             {hoverImage ? (
               <Image
@@ -56,7 +57,8 @@ export function ProductCard({
                 aria-hidden="true"
                 fill
                 sizes="(min-width: 1024px) 40vw, (min-width: 640px) 50vw, 100vw"
-                className="object-cover opacity-0 transition-opacity duration-700 group-hover:opacity-100"
+                data-product-photo
+              className="object-contain opacity-0 transition-opacity duration-700 group-hover:opacity-100"
               />
             ) : null}
           </>

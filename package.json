@@ -2,7 +2,7 @@
   "name": "unar-foods",
   "version": "1.0.0",
   "private": true,
-  "description": "UNAR — One Healthy Habit a Day. Premium e-commerce storefront and admin dashboard.",
+  "description": "UNAR \u2014 One Healthy Habit a Day. Premium e-commerce storefront and admin dashboard.",
   "engines": {
     "node": ">=22.0.0"
   },
@@ -17,7 +17,8 @@
     "test:e2e": "playwright test",
     "check": "npm run lint && npm run typecheck && npm run test",
     "test:db": "VITEST_INTEGRATION=1 vitest run",
-    "db:types": "node --no-warnings scripts/generate-db-types.mts"
+    "db:types": "node --no-warnings scripts/generate-db-types.mts",
+    "test:repair": "node --experimental-strip-types tests/repair/core.test.mjs"
   },
   "dependencies": {
     "@supabase/postgrest-js": "2.117.3",

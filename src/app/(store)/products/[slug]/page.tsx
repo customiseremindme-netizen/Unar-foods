@@ -1,6 +1,9 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import Link from "next/link";
+import Image from "next/image";
+import { ReviewMedia } from "@/components/product/review-media";
+import { ShareProduct } from "@/components/product/share-product";
 import { notFound } from "next/navigation";
 import { BadgeCheck, Leaf, PackageCheck, ShieldCheck, Truck } from "lucide-react";
 import { getPreviewProductBySlug, getProductBySlug, getPublishedProducts, primaryImage, variantAvailability } from "@/lib/data/catalog";
@@ -86,7 +89,7 @@ export default async function ProductPage({ params }: { params: Params }) {
           <div className="lg:sticky lg:top-28">
             <ProductGallery
               productName={name}
-              images={product.images.map((i) => ({ id: i.id, url: i.url, alt: i.alt, kind: i.kind, width: i.width, height: i.height }))}
+              images={product.images.filter((i) => i.kind !== "front_label" && i.kind !== "back_label").map((i) => ({ id: i.id, url: i.url, alt: i.alt, kind: i.kind, width: i.width, height: i.height }))}
             />
           </div>
         </div>
@@ -152,6 +155,7 @@ export default async function ProductPage({ params }: { params: Params }) {
             </ul>
           </div>
 
+          <ShareProduct title={product.title} />
           <div className="mt-8 border-t border-line">
             {product.description_md ? (
               <DetailBlock title="Description">
@@ -206,6 +210,18 @@ export default async function ProductPage({ params }: { params: Params }) {
                 <p className="mt-1 text-[0.78rem] text-muted">Values as printed on the pack.</p>
               </DetailBlock>
             ) : null}
+            {product.images.some((i) => i.kind === "front_label" || i.kind === "back_label") ? (
+              <DetailBlock title="Approved packaging artwork">
+                <p className="mb-4 text-[0.8rem] text-muted">Original label artwork, separate from the product photography.</p>
+                <div className="grid gap-4">
+                  {product.images.filter((i) => i.kind === "front_label" || i.kind === "back_label").map((image) => (
+                    <a key={image.id} href={image.url} target="_blank" rel="noopener noreferrer" aria-label={`Open original ${image.kind === "front_label" ? "front" : "back"} label in a new tab`}>
+                      <Image src={image.url} alt={image.alt} width={image.width || 1200} height={image.height || 1200} sizes="(min-width: 1024px) 35vw, 90vw" className="h-auto w-full rounded-xl object-contain" />
+                    </a>
+                  ))}
+                </div>
+              </DetailBlock>
+            ) : null}
             {product.storage_instructions || product.shelf_life ? (
               <DetailBlock title="Storage & shelf life">
                 {product.storage_instructions ? <p>{product.storage_instructions}</p> : null}
@@ -257,6 +273,7 @@ export default async function ProductPage({ params }: { params: Params }) {
                     {r.title ? <p className="font-semibold text-forest">{r.title}</p> : null}
                   </div>
                   <p className="mt-3 whitespace-pre-line leading-relaxed">{r.body}</p>
+                  <ReviewMedia items={r.review_media ?? []} />
                   <p className="mt-3 text-[0.8rem] text-muted">
                     {r.author_name} · {formatDate(r.created_at)}
                     {r.is_verified_purchase ? (

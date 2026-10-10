@@ -140,7 +140,7 @@ export async function registerAction(_prev: FormState, formData: FormData): Prom
       marketingConsent: parsed.data.marketing,
     });
     const sent = await sendAccountLink({ userId, email: parsed.data.email, name: parsed.data.full_name, purpose: "verify_email", next });
-    if (!sent) return { ok: false, message: "Your account was created, but we couldn't send the confirmation email. Please try again in a few minutes." };
+    if (!sent) return { ok: false, message: "Your account was saved, but the confirmation email could not be sent. Use Resend confirmation to try again; you do not need to create another account." };
   } catch (error) {
     if (!(error instanceof EmailTakenError)) {
       logError("auth.signup", error);
@@ -154,6 +154,29 @@ export async function registerAction(_prev: FormState, formData: FormData): Prom
     }
   }
   return { ok: true, message: REGISTERED_MESSAGE };
+}
+
+/** Recovery path for saved but unconfirmed accounts. Always uses a neutral response. */
+export async function resendVerificationAction(_prev: FormState, formData: FormData): Promise<FormState> {
+  const parsed = emailSchema.safeParse(formData.get("email"));
+  if (!parsed.success) return { ok: false, message: null, errors: { email: "Enter a valid email address" } };
+  const ip = await getClientIp();
+  if (!(await checkRateLimit("verification", ip)) || !(await checkRateLimit("verification", `email:${parsed.data}`))) {
+    return { ok: false, message: "Too many requests. Please wait a few minutes and try again." };
+  }
+  if (!isDatabaseConfigured() || !getEmailEnv()) {
+    return { ok: false, message: "Confirmation emails are temporarily unavailable. Please contact us for help." };
+  }
+  try {
+    const user = await findUserByEmail(parsed.data);
+    if (user && !user.email_confirmed_at) {
+      await sendAccountLink({ userId: user.id, email: user.email, purpose: "verify_email" });
+    }
+  } catch (error) {
+    logError("auth.resend_verification", error);
+    return { ok: false, message: "Confirmation emails are temporarily unavailable. Please try again later." };
+  }
+  return { ok: true, message: "If this email belongs to an account awaiting confirmation, we have sent a new link. Check your inbox and spam folder." };
 }
 
 export async function forgotPasswordAction(_prev: FormState, formData: FormData): Promise<FormState> {

@@ -6,6 +6,9 @@ import { check, runAdminAction, UserFacingError, type ActionResult } from "@/lib
 import { logAdminAction } from "@/lib/audit";
 import { revalidateStorefront } from "@/lib/cache";
 import { isSectionType, SECTION_TYPES } from "@/lib/cms/sections";
+import { sectionLayoutSchema } from "@/lib/cms/layout";
+import { replaceHomeDraft } from "@/lib/cms/drafts";
+import { getReadyPool } from "@/lib/db/install";
 import { linkSchema, slugSchema } from "@/lib/validation/common";
 
 const optText = (max: number) =>
@@ -27,7 +30,7 @@ const sectionInput = z.object({
 });
 
 export async function saveHomeDraftAction(input: unknown): Promise<ActionResult> {
-  return runAdminAction("content.write", async ({ db, user }) => {
+  return runAdminAction("content.write", async ({ user }) => {
     const sections = z.array(sectionInput).max(30).parse(input);
     const keys = sections.map((s) => s.key);
     if (new Set(keys).size !== keys.length) throw new UserFacingError("Two sections have the same key.");
@@ -35,10 +38,10 @@ export async function saveHomeDraftAction(input: unknown): Promise<ActionResult>
       const def = SECTION_TYPES[s.type as keyof typeof SECTION_TYPES];
       const parsed = (def.schema as z.ZodType).safeParse(s.content);
       if (!parsed.success) throw new UserFacingError(`Please check the “${def.label}” section.`);
-      return { page: "home", key: s.key, type: s.type, state: "draft", sort_order: (i + 1) * 10, is_visible: s.is_visible, content: parsed.data as never, updated_by: user.id };
+      const layout = sectionLayoutSchema.parse(s.content._layout ?? {});
+      return { key: s.key, type: s.type, sort_order: (i + 1) * 10, is_visible: s.is_visible, content: { ...(parsed.data as Record<string, unknown>), _layout: layout }, updated_by: user.id };
     });
-    check(await db.from("cms_sections").delete().eq("page", "home").eq("state", "draft"));
-    if (rows.length) check(await db.from("cms_sections").insert(rows));
+    await replaceHomeDraft(await getReadyPool(), rows);
     await logAdminAction({ action: "content.home.save_draft", entityType: "cms_sections", entityId: "home", summary: "Saved homepage draft" });
     revalidatePath("/admin/content");
     return { ok: true, message: "Draft saved. Use Preview to check it, then Publish." };

@@ -3,6 +3,7 @@ import { getAllSettings } from "@/lib/settings";
 import { INDIAN_STATES } from "@/lib/validation/common";
 import { Notice, PageHeader } from "@/components/admin/ui";
 import { SettingsForm } from "@/components/admin/settings-form";
+import { ButtonLink } from "@/components/ui/button";
 
 export const metadata = { title: "Settings" };
 
@@ -29,7 +30,7 @@ export default async function SettingsPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Settings" description="Your business details and how the store works. Each box saves on its own." />
+      <PageHeader title="Settings" description="Your business details and how the store works. Each box saves on its own." actions={<ButtonLink href="/admin/customize" variant="secondary">Customize website</ButtonLink>} />
       <nav aria-label="Settings sections" className="flex flex-wrap gap-1.5 text-[0.78rem]">
         {SECTIONS.map(([id, label]) => (
           <a key={id} href={`#set-${id}`} className="rounded-full border border-line bg-paper px-3 py-1 hover:border-forest">

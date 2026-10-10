@@ -5,7 +5,7 @@ import { m } from "motion/react";
 import { Leaf } from "lucide-react";
 import { ButtonLink } from "@/components/ui/button";
 import { BananaLeaf, LeafSprig } from "@/components/brand/botanical";
-import { Parallax } from "@/components/motion/motion";
+import { Parallax, useStoreReducedMotion } from "@/components/motion/motion";
 import type { SectionContent } from "@/lib/cms/sections";
 
 const EASE = [0.22, 0.61, 0.36, 1] as const;
@@ -27,19 +27,23 @@ function splitHeadline(text: string): [string, string | null] {
 
 export function Hero({
   content,
+  headingId = "hero-heading",
   productCount,
   packLabel,
 }: {
   content: SectionContent<"hero">;
+  headingId?: string;
   productCount: number;
   packLabel: string | null;
 }) {
+  const reduceMotion = useStoreReducedMotion();
+  const entrance = (delay: number) => reduceMotion ? { initial: false as const } : rise(delay);
   const [lineOne, lineTwo] = splitHeadline(content.headline);
   const hasMain = !!content.image_url;
   const hasSecondary = !!content.secondary_image_url;
 
   return (
-    <section className="paper relative overflow-hidden" aria-labelledby="hero-heading">
+    <section className="paper relative overflow-hidden" aria-labelledby={headingId}>
       <div
         aria-hidden="true"
         className="pointer-events-none absolute -right-40 -top-40 size-[44rem] rounded-full bg-[radial-gradient(circle_at_center,var(--color-sage-soft)_0%,transparent_65%)]"
@@ -52,21 +56,21 @@ export function Hero({
         <div className="relative lg:col-span-6">
           <LeafSprig className="absolute -left-6 -top-10 hidden h-36 w-24 text-sage animate-leaf-sway lg:block" />
           {content.eyebrow ? (
-            <m.p className="eyebrow flex items-center gap-3" {...rise(0.05)}>
+            <m.p className="eyebrow flex items-center gap-3" {...entrance(0.05)}>
               <span aria-hidden="true" className="h-px w-10 bg-olive" />
               {content.eyebrow}
             </m.p>
           ) : null}
-          <h1 id="hero-heading" className="mt-6 text-[2.75rem] leading-[1.02] sm:text-[3.7rem] lg:text-[4.5rem]">
-            <span className="block">{lineOne}</span>
-            {lineTwo ? <span className="block italic text-olive-ink">{lineTwo}</span> : null}
+          <h1 id={headingId} className="mt-6 text-[2.75rem] leading-[1.02] sm:text-[3.7rem] lg:text-[4.5rem]">
+            <m.span className="block" {...entrance(0.1)}>{lineOne}</m.span>
+            {lineTwo ? <m.span className="block italic text-olive-ink" {...entrance(0.18)}>{lineTwo}</m.span> : null}
           </h1>
           {content.subheadline ? (
-            <m.p className="mt-7 max-w-lg text-[1.08rem] leading-relaxed text-muted" {...rise(0.2)}>
+            <m.p className="mt-7 max-w-lg text-[1.08rem] leading-relaxed text-muted" {...entrance(0.2)}>
               {content.subheadline}
             </m.p>
           ) : null}
-          <m.div className="mt-10 flex flex-wrap items-center gap-3" {...rise(0.32)}>
+          <m.div className="mt-10 flex flex-wrap items-center gap-3" {...entrance(0.32)}>
             {content.primary_cta.label && content.primary_cta.href ? (
               <ButtonLink href={content.primary_cta.href} size="lg">
                 {content.primary_cta.label}
@@ -89,8 +93,8 @@ export function Hero({
             <div className="relative mx-auto aspect-square w-full max-w-[34rem]">
               <m.div
                 className={hasSecondary ? "absolute right-0 top-0 w-[84%]" : "absolute inset-0"}
-                initial={{ scale: 1.05, y: 12 }}
-                animate={{ scale: 1, y: 0 }}
+                initial={reduceMotion ? false : { opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 1.4, ease: EASE }}
               >
                 <div className="relative aspect-square overflow-hidden rounded-[2.5rem] shadow-lift ring-1 ring-forest/5">
@@ -98,7 +102,7 @@ export function Hero({
                     src={content.image_url}
                     alt={content.image_alt}
                     fill
-                    priority
+                    preload
                     sizes="(min-width: 1024px) 40vw, 90vw"
                     className="object-cover"
                   />
@@ -107,7 +111,7 @@ export function Hero({
               {hasSecondary ? (
                 <Parallax distance={26} className="absolute bottom-0 left-0 w-[44%]">
                   <m.div
-                    initial={{ opacity: 0, y: 30, rotate: -1 }}
+                    initial={reduceMotion ? false : { opacity: 0, y: 24, rotate: -1 }}
                     animate={{ opacity: 1, y: 0, rotate: -4 }}
                     transition={{ duration: 1.1, ease: EASE, delay: 0.45 }}
                     className="relative aspect-square overflow-hidden rounded-[2rem] shadow-lift ring-[6px] ring-cream"
@@ -124,7 +128,7 @@ export function Hero({
               ) : null}
               {productCount > 0 ? (
                 <m.div
-                  initial={{ opacity: 0, y: 12 }}
+                  initial={reduceMotion ? false : { opacity: 0, y: 12 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.8, ease: EASE, delay: 0.8 }}
                   className="absolute -bottom-5 right-6 flex items-center gap-3 rounded-2xl bg-paper/95 px-4 py-3 shadow-soft ring-1 ring-line backdrop-blur sm:right-10"

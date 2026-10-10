@@ -4,10 +4,13 @@
  *
  *   TEST_DATABASE_URL=mysql://unar:unarpw@127.0.0.1:3306/unar npm run test:db
  */
+import { execFile } from "node:child_process";
+import { promisify } from "node:util";
 import mysql, { type Pool, type RowDataPacket } from "mysql2/promise";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { installSchema } from "@/lib/db/install";
 import { TABLES } from "@/lib/db/schema";
+import { replaceHomeDraft } from "@/lib/cms/drafts";
 
 const url = process.env.TEST_DATABASE_URL;
 
@@ -34,13 +37,42 @@ describe.skipIf(!url)("automatic database setup", () => {
     expect(tables.map((r) => r.t).sort()).toEqual(Object.keys(TABLES).sort());
     const [products] = await pool.query<RowDataPacket[]>("SELECT slug, status FROM products ORDER BY sort_order");
     expect(products.length).toBe(2);
-    expect(products.every((p) => p.status === "draft")).toBe(true);
+    expect(products.every((p) => p.status === "published")).toBe(true);
     const [variants] = await pool.query<RowDataPacket[]>("SELECT SUM(stock) AS s FROM product_variants");
     expect(Number(variants[0].s)).toBe(0);
   });
 
   it("does nothing on the next start", async () => {
     expect(await installSchema(pool)).toEqual({ migrated: false, seeded: false });
+  });
+
+  it("retains the complete existing homepage draft when replacement fails", async () => {
+    const snapshot = async () => (await pool.query<RowDataPacket[]>("SELECT `key`, content, sort_order FROM cms_sections WHERE page = 'home' AND state = 'draft' ORDER BY sort_order"))[0];
+    const before = await snapshot();
+    expect(before.length).toBeGreaterThan(0);
+    await expect(replaceHomeDraft(pool, [{ key: "atomic-probe", type: "hero", sort_order: 10, is_visible: true, content: { headline: "Should roll back" }, updated_by: "00000000-0000-4000-8000-000000000000" }])).rejects.toThrow();
+    expect(await snapshot()).toEqual(before);
+  });
+
+  it("repairs only untouched legacy drafts, once, with a rollback record", async () => {
+    await pool.query("DELETE FROM schema_meta WHERE `key` = 'catalog_launch_v1'");
+    await pool.query("DELETE FROM migration_backups WHERE `key` = 'catalog_launch_v1_backup'");
+    await pool.query("UPDATE products SET status = 'draft', published_at = NULL, updated_at = created_at");
+    await pool.query("UPDATE products SET short_description = 'Owner edited this product', updated_at = DATE_ADD(created_at, INTERVAL 1 SECOND) WHERE sort_order = 2");
+    await installSchema(pool);
+    const [products] = await pool.query<RowDataPacket[]>("SELECT id, status FROM products ORDER BY sort_order");
+    expect(products.map((p) => p.status)).toEqual(["published", "draft"]);
+    const [meta] = await pool.query<RowDataPacket[]>("SELECT `value` FROM migration_backups WHERE `key` = 'catalog_launch_v1_backup'");
+    expect(JSON.parse(meta[0].value).map((p: { id: string }) => p.id)).toEqual([products[0].id]);
+    await installSchema(pool);
+    const [after] = await pool.query<RowDataPacket[]>("SELECT status FROM products ORDER BY sort_order");
+    expect(after.map((p) => p.status)).toEqual(["published", "draft"]);
+    const { stdout } = await promisify(execFile)(process.execPath, ["scripts/rollback-catalog-repair.mjs", "--apply"], { env: { ...process.env, DATABASE_URL: url! }, timeout: 15000 });
+    expect(stdout).toContain("Restored 1 untouched product(s)");
+    await installSchema(pool);
+    const [rolledBack] = await pool.query<RowDataPacket[]>("SELECT status, short_description FROM products ORDER BY sort_order");
+    expect(rolledBack.map((p) => p.status)).toEqual(["draft", "draft"]);
+    expect(rolledBack[1].short_description).toBe("Owner edited this product");
   });
 
   it("can run from several servers at the same time", async () => {

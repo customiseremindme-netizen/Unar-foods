@@ -7,9 +7,10 @@ import type { SettingsKey } from "@/lib/settings/schema";
 import { paiseToRupeesInput, rupeesToPaise } from "@/lib/money";
 import { Button } from "@/components/ui/button";
 import { Checkbox, Input, Label, Select, Textarea } from "@/components/ui/field";
-import { useAdminAction } from "./forms";
+import { useAdminAction, useUnsavedWarning } from "./forms";
 import { ImageField } from "./image-field";
 import { Card } from "./ui";
+import { AppearancePreview } from "./appearance-preview";
 
 type Value = Record<string, unknown>;
 
@@ -43,6 +44,7 @@ export function SettingsForm({
   initial,
   fields,
   id,
+  defaults,
 }: {
   settingKey: SettingsKey;
   title: string;
@@ -50,6 +52,7 @@ export function SettingsForm({
   initial: Value;
   fields: SettingField[];
   id?: string;
+  defaults?: Value;
 }) {
   const [value, setValue] = useState<Value>(initial);
   const [saved, setSaved] = useState(() => JSON.stringify(initial));
@@ -57,6 +60,7 @@ export function SettingsForm({
   const [errors, setErrors] = useState<Record<string, string>>({});
   const { run, pending } = useAdminAction();
   const dirty = JSON.stringify(value) !== saved || Object.keys(rupeeDrafts).length > 0;
+  useUnsavedWarning(dirty);
   const set = (name: string, v: unknown) => setValue((prev) => ({ ...prev, [name]: v }));
 
   async function submit() {
@@ -92,6 +96,7 @@ export function SettingsForm({
         }}
         className="grid gap-5"
       >
+        {settingKey === "appearance" || settingKey === "theme" ? <AppearancePreview kind={settingKey} value={value} /> : null}
         {fields.map((f) => {
           const fid = `${settingKey}-${f.name}`;
           const v = value[f.name];
@@ -227,10 +232,11 @@ export function SettingsForm({
               return null;
           }
         })}
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
           <Button type="submit" size="sm" loading={pending} disabled={!dirty}>
             Save
           </Button>
+          {defaults ? <Button type="button" size="sm" variant="secondary" disabled={pending} onClick={() => { setValue(structuredClone(defaults)); setErrors({}); setRupeeDrafts({}); }}>Load brand defaults</Button> : null}
           {dirty ? <span className="text-[0.78rem] text-muted">Unsaved changes</span> : null}
         </div>
       </form>

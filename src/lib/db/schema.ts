@@ -648,6 +648,22 @@ export const TABLES: Record<string, Table> = {
     unique: [["product_id", "user_id"]],
     indexes: [["product_id", "status", "created_at"]],
   },
+  review_media: {
+    columns: {
+      id: pk(),
+      review_id: ref("reviews", "set null"),
+      owner_id: { ...ref("auth_users"), hidden: true },
+      mime_type: str(60),
+      size_bytes: int(),
+      width: int({ nullable: true }),
+      height: int({ nullable: true }),
+      data: { type: "blob", hidden: true },
+      created_at: createdAt(),
+    },
+    primaryKey: ["id"],
+    indexes: [["review_id"], ["owner_id", "created_at"]],
+    checks: ["`mime_type` IN ('image/webp','video/mp4')", "`size_bytes` > 0 AND `size_bytes` <= 8388608"],
+  },
   cms_sections: {
     columns: {
       id: pk(),
@@ -861,6 +877,10 @@ export const TABLES: Record<string, Table> = {
       count: int({ default: 0 }),
     },
     primaryKey: ["key", "window_start"],
+  },
+  migration_backups: {
+    columns: { key: str(60), value: text(), created_at: createdAt() },
+    primaryKey: ["key"],
   },
   schema_meta: {
     columns: { key: str(60), value: str(200), updated_at: updatedAt() },

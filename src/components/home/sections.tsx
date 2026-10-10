@@ -7,7 +7,7 @@ import type { Product } from "@/lib/data/catalog";
 import type { Banner, Faq, InstagramPost } from "@/lib/data/content";
 import type { PublicReview, ReviewStats } from "@/lib/data/reviews";
 import { formatINR } from "@/lib/money";
-import { formatDate } from "@/lib/utils";
+import { cn, formatDate } from "@/lib/utils";
 import { ButtonLink } from "@/components/ui/button";
 import { EmptyState, SectionHeading, Stars } from "@/components/ui/misc";
 import { Markdown } from "@/components/ui/markdown";
@@ -39,10 +39,14 @@ export function TrustStrip({ content }: { content: SectionContent<"trust_strip">
 }
 
 export function FeaturedProducts({
+  headingId = "shop-heading",
+  anchorId = "shop",
   content,
   products,
   stats,
 }: {
+  headingId?: string;
+  anchorId?: string;
   content: SectionContent<"featured_products">;
   products: Product[];
   stats: Record<string, ReviewStats | null>;
@@ -55,11 +59,11 @@ export function FeaturedProducts({
         : products;
 
   return (
-    <section id="shop" aria-labelledby="shop-heading" className="relative py-24 lg:py-32">
+    <section id={anchorId} aria-labelledby={headingId} className="relative py-24 lg:py-32">
       <div className="container-site">
         <div className="flex flex-wrap items-end justify-between gap-6">
           <Reveal>
-            <SectionHeading id="shop-heading" eyebrow={content.eyebrow} title={content.heading} description={content.description} />
+            <SectionHeading id={headingId} eyebrow={content.eyebrow} title={content.heading} description={content.description} />
           </Reveal>
           {content.cta_label && content.cta_href ? (
             <Reveal delay={0.1}>
@@ -89,9 +93,9 @@ export function FeaturedProducts({
   );
 }
 
-export function StorySplit({ content }: { content: SectionContent<"story_split"> }) {
+export function StorySplit({ headingId = "story-heading", content }: { headingId?: string; content: SectionContent<"story_split"> }) {
   return (
-    <section aria-labelledby="story-heading" className="paper relative overflow-hidden bg-paper py-24 lg:py-32">
+    <section aria-labelledby={headingId} className="paper relative overflow-hidden bg-paper py-24 lg:py-32">
       <LeafSprig className="absolute right-[6%] top-10 hidden h-44 w-28 text-sage lg:block" />
       <div className="container-site grid items-center gap-14 lg:grid-cols-12 lg:gap-20">
         <div className="relative lg:col-span-6">
@@ -113,7 +117,7 @@ export function StorySplit({ content }: { content: SectionContent<"story_split">
         <div className="lg:col-span-6">
           <Reveal>
             {content.eyebrow ? <p className="eyebrow mb-4">{content.eyebrow}</p> : null}
-            <h2 id="story-heading" className="text-[2.1rem] sm:text-[2.8rem]">
+            <h2 id={headingId} className="text-[2.1rem] sm:text-[2.8rem]">
               {content.heading}
             </h2>
             <LeafDivider className="my-7 h-5 w-44 text-sage" />
@@ -130,28 +134,28 @@ export function StorySplit({ content }: { content: SectionContent<"story_split">
   );
 }
 
-export function PromiseSection({ content }: { content: SectionContent<"promise"> }) {
+export function PromiseSection({ headingId = "promise-heading", anchorId = "why-unar", light = false, content }: { headingId?: string; anchorId?: string; light?: boolean; content: SectionContent<"promise"> }) {
   const items = content.items.filter((i) => i.title.trim());
   return (
-    <section id="why-unar" aria-labelledby="promise-heading" className="relative overflow-hidden bg-forest py-24 text-cream lg:py-32">
-      <BananaLeaf className="absolute -left-24 -top-10 h-[30rem] w-72 rotate-[-24deg] text-cream/[0.08]" />
-      <BananaLeaf className="absolute -bottom-24 -right-16 h-[28rem] w-64 rotate-[160deg] text-cream/[0.08]" />
+    <section id={anchorId} aria-labelledby={headingId} className={cn("relative overflow-hidden py-24 lg:py-32", light ? "bg-cream text-graphite" : "bg-forest text-cream")}>
+      <BananaLeaf className={cn("absolute -left-24 -top-10 h-[30rem] w-72 rotate-[-24deg]", light ? "text-forest/[0.08]" : "text-cream/[0.08]")} />
+      <BananaLeaf className={cn("absolute -bottom-24 -right-16 h-[28rem] w-64 rotate-[160deg]", light ? "text-forest/[0.08]" : "text-cream/[0.08]")} />
       <div className="container-site relative">
         <Reveal className="mx-auto max-w-2xl text-center">
-          {content.eyebrow ? <p className="eyebrow mb-4 !text-banana-soft">{content.eyebrow}</p> : null}
-          <h2 id="promise-heading" className="text-[2.2rem] !text-cream sm:text-[3rem]">
+          {content.eyebrow ? <p className={cn("eyebrow mb-4", light ? "!text-olive-ink" : "!text-banana-soft")}>{content.eyebrow}</p> : null}
+          <h2 id={headingId} className={cn("text-[2.2rem] sm:text-[3rem]", light ? "!text-forest" : "!text-cream")}>
             {content.heading}
           </h2>
         </Reveal>
         <Stagger className="mt-16 grid gap-5 md:grid-cols-3 lg:gap-8" gap={0.12}>
           {items.map((item) => (
             <StaggerItem key={item.title}>
-              <div className="h-full rounded-[2rem] bg-cream/[0.06] p-8 ring-1 ring-cream/10 transition-colors duration-500 hover:bg-cream/[0.1] lg:p-10">
-                <span className="grid size-12 place-items-center rounded-full bg-cream/10 text-banana-soft">
+              <div className={cn("h-full rounded-[2rem] p-8 ring-1 transition-colors duration-500 lg:p-10", light ? "bg-paper ring-forest/10 hover:bg-cream" : "bg-cream/[0.06] ring-cream/10 hover:bg-cream/[0.1]")}>
+                <span className={cn("grid size-12 place-items-center rounded-full", light ? "bg-sage-soft text-forest" : "bg-cream/10 text-banana-soft")}>
                   <CmsIcon name={item.icon} className="size-5" />
                 </span>
-                <h3 className="mt-6 text-[1.45rem] !text-cream">{item.title}</h3>
-                <p className="mt-3 text-[0.95rem] leading-relaxed text-cream/80">{item.body}</p>
+                <h3 className={cn("mt-6 text-[1.45rem]", light ? "!text-forest" : "!text-cream")}>{item.title}</h3>
+                <p className={cn("mt-3 text-[0.95rem] leading-relaxed", light ? "text-muted" : "text-cream/80")}>{item.body}</p>
               </div>
             </StaggerItem>
           ))}
@@ -165,7 +169,7 @@ function nutrientValue(product: Product, name: string) {
   return product.nutrition.find((n) => n.nutrient.toLowerCase() === name.toLowerCase())?.per_100g ?? "—";
 }
 
-export function Comparison({ content, products }: { content: SectionContent<"comparison">; products: Product[] }) {
+export function Comparison({ headingId = "compare-heading", anchorId = "compare", content, products }: { headingId?: string; anchorId?: string; content: SectionContent<"comparison">; products: Product[] }) {
   if (products.length < 2) return null;
   const shown = products.slice(0, 3);
   const nutrients = [...new Set(shown.flatMap((p) => p.nutrition.map((n) => n.nutrient)))];
@@ -178,10 +182,10 @@ export function Comparison({ content, products }: { content: SectionContent<"com
   ];
 
   return (
-    <section id="compare" aria-labelledby="compare-heading" className="py-24 lg:py-32">
+    <section id={anchorId} aria-labelledby={headingId} className="py-24 lg:py-32">
       <div className="container-site">
         <Reveal>
-          <SectionHeading id="compare-heading" align="center" eyebrow={content.eyebrow} title={content.heading} description={content.description} />
+          <SectionHeading id={headingId} align="center" eyebrow={content.eyebrow} title={content.heading} description={content.description} />
         </Reveal>
 
         {/* Desktop / tablet: side-by-side table */}
@@ -250,14 +254,14 @@ export function Comparison({ content, products }: { content: SectionContent<"com
   );
 }
 
-export function HowItsMade({ content }: { content: SectionContent<"how_its_made"> }) {
+export function HowItsMade({ headingId = "made-heading", content }: { headingId?: string; content: SectionContent<"how_its_made"> }) {
   const steps = content.steps.filter((s) => s.title.trim());
   if (steps.length === 0) return null;
   return (
-    <section aria-labelledby="made-heading" className="bg-paper py-24 lg:py-32">
+    <section aria-labelledby={headingId} className="bg-paper py-24 lg:py-32">
       <div className="container-site">
         <Reveal>
-          <SectionHeading id="made-heading" eyebrow={content.eyebrow} title={content.heading} description={content.description} />
+          <SectionHeading id={headingId} eyebrow={content.eyebrow} title={content.heading} description={content.description} />
         </Reveal>
         <Stagger className="mt-14 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
           {steps.map((step, i) => (
@@ -274,20 +278,22 @@ export function HowItsMade({ content }: { content: SectionContent<"how_its_made"
 }
 
 export function ReviewsSection({
+  headingId = "reviews-heading",
   content,
   reviews,
   productNames,
 }: {
+  headingId?: string;
   content: SectionContent<"reviews">;
   reviews: PublicReview[];
   productNames: Record<string, string>;
 }) {
   const shown = reviews.slice(0, 6);
   return (
-    <section aria-labelledby="reviews-heading" className="relative overflow-hidden py-24 lg:py-32">
+    <section aria-labelledby={headingId} className="relative overflow-hidden py-24 lg:py-32">
       <div className="container-site">
         <Reveal>
-          <SectionHeading id="reviews-heading" align="center" eyebrow={content.eyebrow} title={content.heading} description={content.description} />
+          <SectionHeading id={headingId} align="center" eyebrow={content.eyebrow} title={content.heading} description={content.description} />
         </Reveal>
         {shown.length === 0 ? (
           <Reveal className="mx-auto mt-12 max-w-xl">
@@ -345,14 +351,14 @@ export function FaqList({ faqs, headingLevel = 3 }: { faqs: Faq[]; headingLevel?
   );
 }
 
-export function FaqSection({ content, faqs }: { content: SectionContent<"faq">; faqs: Faq[] }) {
+export function FaqSection({ headingId = "faq-heading", content, faqs }: { headingId?: string; content: SectionContent<"faq">; faqs: Faq[] }) {
   const shown = faqs.filter((f) => f.show_on_home).slice(0, content.limit);
   if (shown.length === 0) return null;
   return (
-    <section aria-labelledby="faq-heading" className="paper bg-paper py-24 lg:py-32">
+    <section aria-labelledby={headingId} className="paper bg-paper py-24 lg:py-32">
       <div className="container-site grid gap-12 lg:grid-cols-12">
         <Reveal className="lg:col-span-4">
-          <SectionHeading id="faq-heading" eyebrow={content.eyebrow} title={content.heading} />
+          <SectionHeading id={headingId} eyebrow={content.eyebrow} title={content.heading} />
           {content.cta_label && content.cta_href ? (
             <ButtonLink href={content.cta_href} variant="secondary" className="mt-8">
               {content.cta_label}
@@ -368,20 +374,22 @@ export function FaqSection({ content, faqs }: { content: SectionContent<"faq">; 
 }
 
 export function NewsletterSection({
+  headingId = "newsletter-heading",
   content,
   consentText,
 }: {
+  headingId?: string;
   content: SectionContent<"newsletter">;
   consentText: string;
 }) {
   return (
-    <section aria-labelledby="newsletter-heading" className="py-24 lg:py-28">
+    <section aria-labelledby={headingId} className="py-24 lg:py-28">
       <div className="container-site">
         <Reveal className="relative overflow-hidden rounded-[2.5rem] bg-sage-soft px-6 py-14 sm:px-12 lg:px-20 lg:py-20">
           <LeafSprig className="absolute -right-4 -top-6 h-56 w-36 text-forest/20" />
           <div className="relative grid items-center gap-10 lg:grid-cols-2">
             <div>
-              <h2 id="newsletter-heading" className="text-[2rem] sm:text-[2.6rem]">
+              <h2 id={headingId} className="text-[2rem] sm:text-[2.6rem]">
                 {content.heading}
               </h2>
               {content.description ? <p className="mt-4 max-w-md text-muted">{content.description}</p> : null}
@@ -394,14 +402,14 @@ export function NewsletterSection({
   );
 }
 
-export function InstagramSection({ content, posts }: { content: SectionContent<"instagram">; posts: InstagramPost[] }) {
+export function InstagramSection({ headingId = "instagram-heading", content, posts }: { headingId?: string; content: SectionContent<"instagram">; posts: InstagramPost[] }) {
   if (posts.length === 0) return null;
   return (
-    <section aria-labelledby="instagram-heading" className="py-24">
+    <section aria-labelledby={headingId} className="py-24">
       <div className="container-site">
         <div className="flex flex-wrap items-end justify-between gap-4">
           <Reveal>
-            <h2 id="instagram-heading" className="text-[2rem] sm:text-[2.5rem]">
+            <h2 id={headingId} className="text-[2rem] sm:text-[2.5rem]">
               {content.heading}
             </h2>
           </Reveal>
@@ -436,14 +444,14 @@ export function InstagramSection({ content, posts }: { content: SectionContent<"
   );
 }
 
-export function ContactCta({ content }: { content: SectionContent<"contact_cta"> }) {
+export function ContactCta({ headingId = "contact-cta-heading", content }: { headingId?: string; content: SectionContent<"contact_cta"> }) {
   if (!content.heading) return null;
   return (
-    <section aria-labelledby="contact-cta-heading" className="pb-8 pt-12">
+    <section aria-labelledby={headingId} className="pb-8 pt-12">
       <div className="container-site">
         <Reveal className="relative overflow-hidden rounded-[2.5rem] border border-line bg-paper px-6 py-16 text-center sm:px-12">
           <LeafSprig className="absolute left-1/2 top-4 h-24 w-16 -translate-x-1/2 text-sage" />
-          <h2 id="contact-cta-heading" className="mx-auto mt-16 max-w-xl text-[2rem] sm:text-[2.5rem]">
+          <h2 id={headingId} className="mx-auto mt-16 max-w-xl text-[2rem] sm:text-[2.5rem]">
             {content.heading}
           </h2>
           {content.body ? <p className="mx-auto mt-4 max-w-lg text-muted">{content.body}</p> : null}
