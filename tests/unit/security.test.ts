@@ -173,6 +173,9 @@ describe("hosting panel placeholders", () => {
     expect(getDbConfig()).toEqual({ host: "localhost", port: 3306, database: "u1_unar", user: "u1_unar", password: "secret" });
     process.env.SETUP_KEY = "short";
     expect(getSetupKey()).toBeNull();
+    // A template value left in place must never work as a secret.
+    process.env.SETUP_KEY = "PASTE_A_LONG_SECRET_PHRASE";
+    expect(getSetupKey()).toBeNull();
     process.env.SETUP_KEY = "a-long-enough-setup-phrase";
     expect(getSetupKey()).toBe("a-long-enough-setup-phrase");
     process.env = saved;

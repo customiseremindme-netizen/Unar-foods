@@ -18,6 +18,8 @@ function read(name: string): string | undefined {
   // Some panels keep quotes from an imported .env file: "value" → value
   if (value.length >= 2 && (value[0] === '"' || value[0] === "'") && value.at(-1) === value[0]) value = value.slice(1, -1).trim();
   if (!value || PLACEHOLDERS.has(value.toLowerCase())) return undefined;
+  // Template values that were never replaced (e.g. PASTE_A_LONG_SECRET_PHRASE) are not real settings.
+  if (/^PASTE_/i.test(value)) return undefined;
   return value;
 }
 
