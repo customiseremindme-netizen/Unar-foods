@@ -1,5 +1,14 @@
-import { expect, test } from "@playwright/test";
+import { expect, test, type Page } from "@playwright/test";
 import { ADMIN_EMAIL, ADMIN_PASSWORD, loginAsAdmin } from "./support/helpers";
+
+async function publishHome(editor: Page) {
+  const notifications = editor.getByRole("button", { name: "Dismiss notification", exact: true });
+  while (await notifications.count()) await notifications.first().click();
+  const publish = editor.getByRole("button", { name: "Publish", exact: true });
+  await publish.click();
+  await expect(editor.getByText(/Homepage published/).last()).toBeVisible();
+  await expect(publish).toBeEnabled();
+}
 
 test("appearance settings persist and customize the real storefront", async ({ browser, page: storefront }) => {
   const admin = await loginAsAdmin(browser);
@@ -79,8 +88,7 @@ test("section duplication and presentation save as a draft and publish safely", 
     await editor.reload();
     await editor.getByRole("button", { name: /^1\. Hero banner/ }).click();
     await expect(editor.getByLabel("Background", { exact: true })).toHaveValue("sage");
-    await editor.getByRole("button", { name: "Publish", exact: true }).click();
-    await expect(editor.getByText(/Homepage published/)).toBeVisible();
+    await publishHome(editor);
     await storefront.reload();
     await expect(storefront.locator(".home-section").first()).toHaveAttribute("data-background", "sage");
     await expect(storefront.locator(".home-section").first()).toHaveAttribute("data-spacing", "compact");
@@ -90,23 +98,20 @@ test("section duplication and presentation save as a draft and publish safely", 
     await expect(editor.getByText(/Draft saved/)).toBeVisible();
     await storefront.reload();
     await expect(storefront.locator(".home-section > section[aria-labelledby] h1")).toHaveCount(1);
-    await editor.getByRole("button", { name: "Publish", exact: true }).click();
-    await expect(editor.getByText(/Homepage published/)).toBeVisible();
+    await publishHome(editor);
     await storefront.reload();
     const heroHeadings = storefront.locator(".home-section > section[aria-labelledby] h1");
     await expect(heroHeadings).toHaveCount(2);
     const ids = await heroHeadings.evaluateAll((els) => els.map((el) => el.id));
     expect(new Set(ids).size).toBe(2);
     await editor.getByRole("button", { name: "Remove Hero banner", exact: true }).last().click();
-    await editor.getByRole("button", { name: "Publish", exact: true }).click();
-    await expect(editor.getByText(/Homepage published/)).toBeVisible();
+    await publishHome(editor);
     await editor.getByRole("button", { name: "Discard draft", exact: true }).click();
     await expect(editor.getByRole("button", { name: "Duplicate Hero banner", exact: true })).toHaveCount(1);
     await editor.getByRole("button", { name: /^1\. Hero banner/ }).click();
     await editor.getByLabel("Background", { exact: true }).selectOption("original");
     await editor.getByLabel("Section spacing", { exact: true }).selectOption("standard");
-    await editor.getByRole("button", { name: "Publish", exact: true }).click();
-    await expect(editor.getByText(/Homepage published/)).toBeVisible();
+    await publishHome(editor);
     await storefront.reload();
     await expect(storefront.locator(".home-section").first()).toHaveAttribute("data-background", "original");
   } finally { await admin.close(); }
