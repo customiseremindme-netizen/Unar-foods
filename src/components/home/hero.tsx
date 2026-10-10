@@ -27,10 +27,12 @@ function splitHeadline(text: string): [string, string | null] {
 
 export function Hero({
   content,
+  headingId = "hero-heading",
   productCount,
   packLabel,
 }: {
   content: SectionContent<"hero">;
+  headingId?: string;
   productCount: number;
   packLabel: string | null;
 }) {
@@ -41,7 +43,7 @@ export function Hero({
   const hasSecondary = !!content.secondary_image_url;
 
   return (
-    <section className="paper relative overflow-hidden" aria-labelledby="hero-heading">
+    <section className="paper relative overflow-hidden" aria-labelledby={headingId}>
       <div
         aria-hidden="true"
         className="pointer-events-none absolute -right-40 -top-40 size-[44rem] rounded-full bg-[radial-gradient(circle_at_center,var(--color-sage-soft)_0%,transparent_65%)]"
@@ -59,7 +61,7 @@ export function Hero({
               {content.eyebrow}
             </m.p>
           ) : null}
-          <h1 id="hero-heading" className="mt-6 text-[2.75rem] leading-[1.02] sm:text-[3.7rem] lg:text-[4.5rem]">
+          <h1 id={headingId} className="mt-6 text-[2.75rem] leading-[1.02] sm:text-[3.7rem] lg:text-[4.5rem]">
             <m.span className="block" {...entrance(0.1)}>{lineOne}</m.span>
             {lineTwo ? <m.span className="block italic text-olive-ink" {...entrance(0.18)}>{lineTwo}</m.span> : null}
           </h1>

@@ -50,33 +50,35 @@ export default async function HomePage() {
   const packLabel = packTitles.length === 1 ? `${packTitles[0]} packs` : packTitles.length > 1 ? "Multiple pack sizes" : null;
 
   function render(section: HomeSection) {
+    const headingId = `section-${section.key}-heading`;
+    const first = sections.find((row) => row.type === section.type)?.key === section.key;
     switch (section.type) {
       case "hero":
-        return <Hero content={section.content} productCount={products.length} packLabel={packLabel} />;
+        return <Hero headingId={headingId} content={section.content} productCount={products.length} packLabel={packLabel} />;
       case "trust_strip":
         return <TrustStrip content={section.content} />;
       case "featured_products":
-        return <FeaturedProducts content={section.content} products={products} stats={stats} />;
+        return <FeaturedProducts anchorId={first ? "shop" : `section-${section.key}`} headingId={headingId} content={section.content} products={products} stats={stats} />;
       case "story_split":
-        return <StorySplit content={section.content} />;
+        return <StorySplit headingId={headingId} content={section.content} />;
       case "promise":
-        return <PromiseSection content={section.content} />;
+        return <PromiseSection anchorId={first ? "why-unar" : `section-${section.key}`} headingId={headingId} content={section.content} />;
       case "comparison":
-        return <Comparison content={section.content} products={products} />;
+        return <Comparison anchorId={first ? "compare" : `section-${section.key}`} headingId={headingId} content={section.content} products={products} />;
       case "how_its_made":
-        return <HowItsMade content={section.content} />;
+        return <HowItsMade headingId={headingId} content={section.content} />;
       case "reviews":
-        return <ReviewsSection content={section.content} reviews={reviews} productNames={productNames} />;
+        return <ReviewsSection headingId={headingId} content={section.content} reviews={reviews} productNames={productNames} />;
       case "faq":
-        return <FaqSection content={section.content} faqs={faqs} />;
+        return <FaqSection headingId={headingId} content={section.content} faqs={faqs} />;
       case "newsletter":
         return settings.newsletter.enabled ? (
-          <NewsletterSection content={section.content} consentText={settings.newsletter.consent_text} />
+          <NewsletterSection headingId={headingId} content={section.content} consentText={settings.newsletter.consent_text} />
         ) : null;
       case "instagram":
-        return <InstagramSection content={section.content} posts={instagram} />;
+        return <InstagramSection headingId={headingId} content={section.content} posts={instagram} />;
       case "contact_cta":
-        return <ContactCta content={section.content} />;
+        return <ContactCta headingId={headingId} content={section.content} />;
       default:
         return null;
     }
