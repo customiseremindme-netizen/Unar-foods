@@ -10,6 +10,7 @@ import mysql, { type Pool, type RowDataPacket } from "mysql2/promise";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { installSchema } from "@/lib/db/install";
 import { TABLES } from "@/lib/db/schema";
+import { replaceHomeDraft } from "@/lib/cms/drafts";
 
 const url = process.env.TEST_DATABASE_URL;
 
@@ -43,6 +44,14 @@ describe.skipIf(!url)("automatic database setup", () => {
 
   it("does nothing on the next start", async () => {
     expect(await installSchema(pool)).toEqual({ migrated: false, seeded: false });
+  });
+
+  it("retains the complete existing homepage draft when replacement fails", async () => {
+    const snapshot = async () => (await pool.query<RowDataPacket[]>("SELECT `key`, content, sort_order FROM cms_sections WHERE page = 'home' AND state = 'draft' ORDER BY sort_order"))[0];
+    const before = await snapshot();
+    expect(before.length).toBeGreaterThan(0);
+    await expect(replaceHomeDraft(pool, [{ key: "atomic-probe", type: "hero", sort_order: 10, is_visible: true, content: { headline: "Should roll back" }, updated_by: "00000000-0000-4000-8000-000000000000" }])).rejects.toThrow();
+    expect(await snapshot()).toEqual(before);
   });
 
   it("repairs only untouched legacy drafts, once, with a rollback record", async () => {

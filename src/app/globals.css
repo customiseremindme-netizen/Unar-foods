@@ -121,7 +121,7 @@
 @layer components {
   .container-site {
     width: 100%;
-    max-width: 80rem;
+    max-width: var(--site-max-width, 80rem);
     margin-inline: auto;
     padding-inline: 1rem;
   }
@@ -193,3 +193,11 @@
     .no-print { display: none !important; }
   }
 }
+
+.home-section[data-background="cream"] > section { background-color: var(--color-cream); }
+.home-section[data-background="paper"] > section { background-color: var(--color-paper); }
+.home-section[data-background="sage"] > section { background-color: var(--color-sage-soft); }
+.home-section[data-spacing="compact"] > section { padding-block: 2rem; }
+.home-section[data-spacing="airy"] > section { padding-block: 6rem; }
+.home-section[data-spacing="compact"] > section > .container-site { padding-block: 2rem; }
+.home-section[data-spacing="airy"] > section > .container-site { padding-block: 4rem; }

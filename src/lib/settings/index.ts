@@ -16,6 +16,7 @@ export type PublicSettings = Pick<
   | "store"
   | "brand"
   | "theme"
+  | "appearance"
   | "seo"
   | "social"
   | "navigation"

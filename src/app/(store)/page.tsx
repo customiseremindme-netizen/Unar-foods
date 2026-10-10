@@ -95,7 +95,7 @@ export default async function HomePage() {
       ) : (
         sections.map((section, i) => (
           <div key={section.id}>
-            {render(section)}
+            <div className="home-section" data-section-key={section.key} data-background={section.layout.background} data-spacing={section.layout.spacing}>{render(section)}</div>
             {i === 0 && promos[0] ? <HomePromo banner={promos[0]} /> : null}
           </div>
         ))

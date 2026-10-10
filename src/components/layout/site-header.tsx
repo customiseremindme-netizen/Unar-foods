@@ -25,7 +25,9 @@ export function SiteHeader({
   links,
   searchIndex,
   contact,
+  sticky = true,
 }: {
+  sticky?: boolean;
   logo: LogoConfig;
   links: NavLink[];
   searchIndex: SearchItem[];
@@ -60,7 +62,8 @@ export function SiteHeader({
     <>
       <header
         className={cn(
-          "sticky top-0 z-40 transition-[background-color,box-shadow,border-color] duration-500",
+          "z-40 transition-[background-color,box-shadow,border-color] duration-500",
+          sticky ? "sticky top-0" : "relative",
           scrolled
             ? "border-b border-line/70 bg-cream/90 shadow-[0_8px_30px_-24px_rgb(46_78_54/0.5)] backdrop-blur-md"
             : "border-b border-transparent bg-cream",

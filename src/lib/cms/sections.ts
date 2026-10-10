@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { linkSchema } from "@/lib/validation/common";
+import type { SectionLayout } from "./layout";
 
 /**
  * Homepage section registry.
@@ -311,7 +312,7 @@ export type SectionType = keyof typeof SECTION_TYPES;
 export type SectionContent<T extends SectionType> = z.output<(typeof SECTION_TYPES)[T]["schema"]>;
 
 export function isSectionType(type: string): type is SectionType {
-  return type in SECTION_TYPES;
+  return Object.hasOwn(SECTION_TYPES, type);
 }
 
 export function parseSectionContent<T extends SectionType>(type: T, raw: unknown): SectionContent<T> {
@@ -322,5 +323,5 @@ export function parseSectionContent<T extends SectionType>(type: T, raw: unknown
 }
 
 export type HomeSection = {
-  [T in SectionType]: { id: string; key: string; type: T; sortOrder: number; isVisible: boolean; content: SectionContent<T> };
+  [T in SectionType]: { id: string; key: string; type: T; sortOrder: number; isVisible: boolean; layout: SectionLayout; content: SectionContent<T> };
 }[SectionType];

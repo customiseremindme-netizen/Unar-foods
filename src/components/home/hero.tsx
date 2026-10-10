@@ -1,11 +1,11 @@
 "use client";
 
 import Image from "next/image";
-import { m, useReducedMotion } from "motion/react";
+import { m } from "motion/react";
 import { Leaf } from "lucide-react";
 import { ButtonLink } from "@/components/ui/button";
 import { BananaLeaf, LeafSprig } from "@/components/brand/botanical";
-import { Parallax } from "@/components/motion/motion";
+import { Parallax, useStoreReducedMotion } from "@/components/motion/motion";
 import type { SectionContent } from "@/lib/cms/sections";
 
 const EASE = [0.22, 0.61, 0.36, 1] as const;
@@ -34,7 +34,7 @@ export function Hero({
   productCount: number;
   packLabel: string | null;
 }) {
-  const reduceMotion = useReducedMotion();
+  const reduceMotion = useStoreReducedMotion();
   const entrance = (delay: number) => reduceMotion ? { initial: false as const } : rise(delay);
   const [lineOne, lineTwo] = splitHeadline(content.headline);
   const hasMain = !!content.image_url;

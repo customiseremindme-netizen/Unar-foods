@@ -3,7 +3,7 @@
 import Image from "next/image";
 import { useCallback, useEffect, useRef, useState, type PointerEvent } from "react";
 import { ChevronLeft, ChevronRight, Expand, ZoomIn, ZoomOut } from "lucide-react";
-import { useReducedMotion } from "motion/react";
+import { useStoreReducedMotion } from "@/components/motion/motion";
 import { swipeDirection } from "@/lib/gallery/swipe";
 import { Sheet } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
@@ -25,7 +25,7 @@ export function ProductGallery({ images, productName }: { images: GalleryImage[]
   const [hovering, setHovering] = useState(false);
   const selectedIndex = images.length ? index % images.length : 0;
   const current = images[selectedIndex];
-  const reduceMotion = useReducedMotion();
+  const reduceMotion = useStoreReducedMotion();
   const touchStart = useRef<{ x: number; y: number; id: number } | null>(null);
   const suppressClick = useRef(false);
 

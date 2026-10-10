@@ -85,6 +85,11 @@ test.describe("accounts", () => {
     await signIn(page, email, "SecondPass456");
     await page.waitForURL((u) => u.pathname.startsWith("/account"));
 
+    await page.goto("/admin/customize");
+    await expect(page).toHaveURL(/\/admin\/no-access/);
+    await expect(page.getByRole("heading", { name: "This area is for UNAR staff" })).toBeVisible();
+    await expect(page.locator("#set-appearance")).toHaveCount(0);
+
     // Uploaded review media stays private until a moderator approves the review.
     await page.goto(PRODUCT_PATH);
     await page.getByRole("button", { name: "5 stars", exact: true }).click();

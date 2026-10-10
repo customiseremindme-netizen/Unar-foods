@@ -159,6 +159,7 @@ describe.skipIf(!url)("data access rules", () => {
     expect(error?.code).toBe("42501");
     const [after] = await pool.query<mysql.RowDataPacket[]>("SELECT price_paise FROM product_variants WHERE id = ?", [variantId]);
     expect(after[0].price_paise).not.toBe(1);
+    expect((await customer.from("settings").upsert({ key: "appearance", is_public: true, value: { shop_heading: "Hacked" } })).error?.code).toBe("42501");
     expect((await customer.rpc("adjust_stock", { p_variant_id: variantId, p_delta: 100, p_reason: "restock", p_note: "" })).error?.code).toBe("42501");
     const { data: product } = await customer.from("products").select("id").limit(1).single();
     const fake = await customer.from("reviews").insert({ product_id: product!.id, author_name: "Fake", rating: 5, body: "Fake five star review", status: "approved" });
