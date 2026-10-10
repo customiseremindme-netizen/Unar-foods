@@ -48,14 +48,19 @@ export async function fillCheckout(page: Page, opts: { method: "online" | "cod";
   await expect(page.getByTestId("checkout-total")).toBeVisible();
 }
 
+// Reuse a genuine, server-issued session within this test worker. Repeatedly
+// signing into the same account would rightly hit the production login limit.
+let adminState: Awaited<ReturnType<BrowserContext["storageState"]>> | undefined;
 export async function loginAsAdmin(browser: Browser): Promise<BrowserContext> {
-  const context = await browser.newContext();
+  const context = await browser.newContext(adminState ? { storageState: adminState } : {});
+  if (adminState) return context;
   const page = await context.newPage();
   await page.goto("/login?next=/admin");
   await page.fill("#email", ADMIN_EMAIL);
   await page.fill("#password", ADMIN_PASSWORD);
   await page.getByRole("button", { name: /^sign in$/i }).click();
-  await page.waitForURL((u) => u.pathname.startsWith("/admin"));
+  await page.waitForURL((u) => u.pathname.startsWith("/admin"), { timeout: 15_000 });
+  adminState = await context.storageState();
   await page.close();
   return context;
 }
