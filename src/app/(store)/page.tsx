@@ -62,7 +62,7 @@ export default async function HomePage() {
       case "story_split":
         return <StorySplit headingId={headingId} content={section.content} />;
       case "promise":
-        return <PromiseSection anchorId={first ? "why-unar" : `section-${section.key}`} headingId={headingId} content={section.content} />;
+        return <PromiseSection light={section.layout.background !== "original"} anchorId={first ? "why-unar" : `section-${section.key}`} headingId={headingId} content={section.content} />;
       case "comparison":
         return <Comparison anchorId={first ? "compare" : `section-${section.key}`} headingId={headingId} content={section.content} products={products} />;
       case "how_its_made":

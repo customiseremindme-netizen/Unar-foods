@@ -7,7 +7,7 @@ import type { Product } from "@/lib/data/catalog";
 import type { Banner, Faq, InstagramPost } from "@/lib/data/content";
 import type { PublicReview, ReviewStats } from "@/lib/data/reviews";
 import { formatINR } from "@/lib/money";
-import { formatDate } from "@/lib/utils";
+import { cn, formatDate } from "@/lib/utils";
 import { ButtonLink } from "@/components/ui/button";
 import { EmptyState, SectionHeading, Stars } from "@/components/ui/misc";
 import { Markdown } from "@/components/ui/markdown";
@@ -134,28 +134,28 @@ export function StorySplit({ headingId = "story-heading", content }: { headingId
   );
 }
 
-export function PromiseSection({ headingId = "promise-heading", anchorId = "why-unar", content }: { headingId?: string; anchorId?: string; content: SectionContent<"promise"> }) {
+export function PromiseSection({ headingId = "promise-heading", anchorId = "why-unar", light = false, content }: { headingId?: string; anchorId?: string; light?: boolean; content: SectionContent<"promise"> }) {
   const items = content.items.filter((i) => i.title.trim());
   return (
-    <section id={anchorId} aria-labelledby={headingId} className="relative overflow-hidden bg-forest py-24 text-cream lg:py-32">
-      <BananaLeaf className="absolute -left-24 -top-10 h-[30rem] w-72 rotate-[-24deg] text-cream/[0.08]" />
-      <BananaLeaf className="absolute -bottom-24 -right-16 h-[28rem] w-64 rotate-[160deg] text-cream/[0.08]" />
+    <section id={anchorId} aria-labelledby={headingId} className={cn("relative overflow-hidden py-24 lg:py-32", light ? "bg-cream text-graphite" : "bg-forest text-cream")}>
+      <BananaLeaf className={cn("absolute -left-24 -top-10 h-[30rem] w-72 rotate-[-24deg]", light ? "text-forest/[0.08]" : "text-cream/[0.08]")} />
+      <BananaLeaf className={cn("absolute -bottom-24 -right-16 h-[28rem] w-64 rotate-[160deg]", light ? "text-forest/[0.08]" : "text-cream/[0.08]")} />
       <div className="container-site relative">
         <Reveal className="mx-auto max-w-2xl text-center">
-          {content.eyebrow ? <p className="eyebrow mb-4 !text-banana-soft">{content.eyebrow}</p> : null}
-          <h2 id={headingId} className="text-[2.2rem] !text-cream sm:text-[3rem]">
+          {content.eyebrow ? <p className={cn("eyebrow mb-4", light ? "!text-olive-ink" : "!text-banana-soft")}>{content.eyebrow}</p> : null}
+          <h2 id={headingId} className={cn("text-[2.2rem] sm:text-[3rem]", light ? "!text-forest" : "!text-cream")}>
             {content.heading}
           </h2>
         </Reveal>
         <Stagger className="mt-16 grid gap-5 md:grid-cols-3 lg:gap-8" gap={0.12}>
           {items.map((item) => (
             <StaggerItem key={item.title}>
-              <div className="h-full rounded-[2rem] bg-cream/[0.06] p-8 ring-1 ring-cream/10 transition-colors duration-500 hover:bg-cream/[0.1] lg:p-10">
-                <span className="grid size-12 place-items-center rounded-full bg-cream/10 text-banana-soft">
+              <div className={cn("h-full rounded-[2rem] p-8 ring-1 transition-colors duration-500 lg:p-10", light ? "bg-paper ring-forest/10 hover:bg-cream" : "bg-cream/[0.06] ring-cream/10 hover:bg-cream/[0.1]")}>
+                <span className={cn("grid size-12 place-items-center rounded-full", light ? "bg-sage-soft text-forest" : "bg-cream/10 text-banana-soft")}>
                   <CmsIcon name={item.icon} className="size-5" />
                 </span>
-                <h3 className="mt-6 text-[1.45rem] !text-cream">{item.title}</h3>
-                <p className="mt-3 text-[0.95rem] leading-relaxed text-cream/80">{item.body}</p>
+                <h3 className={cn("mt-6 text-[1.45rem]", light ? "!text-forest" : "!text-cream")}>{item.title}</h3>
+                <p className={cn("mt-3 text-[0.95rem] leading-relaxed", light ? "text-muted" : "text-cream/80")}>{item.body}</p>
               </div>
             </StaggerItem>
           ))}

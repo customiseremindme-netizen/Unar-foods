@@ -114,5 +114,15 @@ test("section duplication and presentation save as a draft and publish safely", 
     await publishHome(editor);
     await storefront.reload();
     await expect(storefront.locator(".home-section").first()).toHaveAttribute("data-background", "original");
+    await editor.getByRole("button", { name: /^\d+\. Promise \/ values/ }).click();
+    await editor.getByLabel("Background", { exact: true }).selectOption("paper");
+    await publishHome(editor);
+    await storefront.reload();
+    expect(await storefront.locator("#why-unar h2").evaluate((el) => getComputedStyle(el).color)).toBe("rgb(46, 78, 54)");
+    expect(await storefront.locator("#why-unar h3").first().evaluate((el) => getComputedStyle(el).color)).toBe("rgb(46, 78, 54)");
+    await editor.getByLabel("Background", { exact: true }).selectOption("original");
+    await publishHome(editor);
+    await storefront.reload();
+    expect(await storefront.locator("#why-unar h2").evaluate((el) => getComputedStyle(el).color)).toBe("rgb(242, 241, 230)");
   } finally { await admin.close(); }
 });
