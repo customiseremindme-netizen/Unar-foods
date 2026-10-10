@@ -61,7 +61,8 @@ describe.skipIf(!url)("data access rules", () => {
     }
     await pool.query("INSERT INTO staff_members (user_id, role) VALUES (?, 'owner'), (?, 'content_editor')", [ownerId, editorId]);
 
-    // One product published with 1 pack left, one left as a draft.
+    // One product published with 1 pack left, explicitly keep the other as a draft.
+    await pool.query("UPDATE products SET status = 'draft' WHERE slug = 'banana-chewy-fresh-raw-banana'");
     await pool.query("UPDATE products SET status = 'published' WHERE slug = 'banana-chewy-dry-fruits-seeds'");
     const [v] = await pool.query<mysql.RowDataPacket[]>(
       "SELECT pv.id FROM product_variants pv JOIN products p ON p.id = pv.product_id WHERE p.slug = 'banana-chewy-dry-fruits-seeds'",

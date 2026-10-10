@@ -303,7 +303,7 @@
    "subtitle": "With Dry Fruits & Seeds",
    "short_description": "Dehydrated banana with almonds, cashews, black dry grapes and seeds. 100 g pack.",
    "description_md": "A perfect blend of naturally dehydrated bananas and dry fruits & seeds.\n\nUNAR Banana Chewy with Dry Fruits & Seeds brings together dehydrated banana with almonds (badam), cashews, black dry grapes, and sesame (black & white), sunflower, melon and pumpkin seeds.\n\nEach 100 g pack holds about four 25 g servings.",
-   "status": "draft",
+   "status": "published",
    "ingredients": "Banana, Black & White Sesame Seed, Badam (Almonds), Cashew, Sunflower Seed, Black Dry Grapes, Melon Seed, Pumpkin Seed.",
    "allergens": "Contains Sesame Seeds and Tree Nuts (Almonds, Cashews).",
    "dietary_mark": "vegetarian",
@@ -405,7 +405,7 @@
    "subtitle": "Fresh Raw Banana",
    "short_description": "Dehydrated banana. Ingredient as printed on the pack: fresh raw banana. 100 g pack.",
    "description_md": "UNAR Banana Chewy — Fresh Raw Banana is dehydrated banana with a chewy bite. The ingredient list on the pack reads simply: fresh raw banana.\n\nEach 100 g pack holds about four 25 g servings.",
-   "status": "draft",
+   "status": "published",
    "ingredients": "FRESH RAW BANANA",
    "allergens": null,
    "dietary_mark": "vegetarian",
@@ -564,7 +564,7 @@
    "kind": "packshot",
    "width": 1254,
    "height": 1254,
-   "sort_order": 4
+   "sort_order": 2
   },
   {
    "id": "5124e0b5-ccd6-42fc-a8f0-0d2d7f7c16ab",
@@ -597,7 +597,7 @@
    "kind": "packshot",
    "width": 1254,
    "height": 1254,
-   "sort_order": 3
+   "sort_order": 2
   },
   {
    "id": "6bfdeaf0-61a7-45ac-9e2f-57b3faffd9eb",
@@ -608,7 +608,7 @@
    "kind": "lifestyle",
    "width": 1254,
    "height": 1254,
-   "sort_order": 3
+   "sort_order": 5
   },
   {
    "id": "8733a4ad-7bbf-4e0d-98ae-94c4329e9e47",
@@ -619,7 +619,7 @@
    "kind": "packshot",
    "width": 1254,
    "height": 1254,
-   "sort_order": 2
+   "sort_order": 3
   },
   {
    "id": "8b213345-0b15-4fb7-ae03-23cf8a42b19c",
@@ -641,7 +641,7 @@
    "kind": "packshot",
    "width": 1254,
    "height": 1254,
-   "sort_order": 5
+   "sort_order": 1
   },
   {
    "id": "d293d318-b62d-4a37-b997-486b14b1a910",
@@ -652,7 +652,7 @@
    "kind": "packshot",
    "width": 1254,
    "height": 1254,
-   "sort_order": 1
+   "sort_order": 4
   },
   {
    "id": "d78f3c3a-6068-4e40-a056-b269de2876c3",
@@ -663,7 +663,7 @@
    "kind": "packshot",
    "width": 1254,
    "height": 1254,
-   "sort_order": 2
+   "sort_order": 4
   },
   {
    "id": "edac76bc-f363-46c0-9ebe-d95ecfa694b2",
@@ -674,7 +674,7 @@
    "kind": "lifestyle",
    "width": 1254,
    "height": 1254,
-   "sort_order": 4
+   "sort_order": 3
   },
   {
    "id": "f81417bc-6d2a-4fb5-a914-f6a0237cffd7",

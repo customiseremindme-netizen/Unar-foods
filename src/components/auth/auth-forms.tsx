@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useActionState, useState } from "react";
 import { Eye, EyeOff } from "lucide-react";
-import { forgotPasswordAction, registerAction, signInAction, updatePasswordAction } from "@/app/actions/auth";
+import { forgotPasswordAction, resendVerificationAction, registerAction, signInAction, updatePasswordAction } from "@/app/actions/auth";
 import { setupOwnerAction } from "@/app/actions/setup";
 import type { FormState } from "@/app/actions/engagement";
 import { Button, ButtonLink } from "@/components/ui/button";
@@ -51,10 +51,11 @@ export function LoginForm({ next, linkError }: { next: string; linkError: boolea
       <Field label="Password" htmlFor="password" error={state.errors?.password}>
         <PasswordInput id="password" name="password" autoComplete="current-password" invalid={!!state.errors?.password} />
       </Field>
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <Link href="/forgot-password" className="text-[0.85rem] text-forest underline underline-offset-4">
           Forgot password?
         </Link>
+        <Link href="/resend-verification" className="text-[0.85rem] text-forest underline underline-offset-4">Resend confirmation</Link>
       </div>
       <Button type="submit" size="lg" className="w-full" loading={pending}>
         Sign in
@@ -75,6 +76,7 @@ export function RegisterForm({ next }: { next: string }) {
     return (
       <div className="space-y-5">
         <FormMessage tone="success">{state.message}</FormMessage>
+        <ButtonLink href="/resend-verification" variant="secondary" className="w-full">Resend confirmation</ButtonLink>
         <ButtonLink href="/login" variant="secondary" className="w-full">
           Back to sign in
         </ButtonLink>
@@ -87,7 +89,7 @@ export function RegisterForm({ next }: { next: string }) {
       <div aria-hidden="true" className="absolute -left-[9999px] h-0 overflow-hidden">
         <input name="website" tabIndex={-1} autoComplete="off" />
       </div>
-      {state.message ? <FormMessage tone="error">{state.message}</FormMessage> : null}
+      {state.message ? <FormMessage tone="error">{state.message} <Link href="/resend-verification" className="underline">Resend confirmation</Link></FormMessage> : null}
       <Field label="Full name" htmlFor="full_name" error={state.errors?.full_name}>
         <Input id="full_name" name="full_name" autoComplete="name" required aria-invalid={!!state.errors?.full_name} />
       </Field>
@@ -192,6 +194,19 @@ export function SetupOwnerForm() {
       <Button type="submit" size="lg" className="w-full" loading={pending}>
         Create owner account
       </Button>
+    </form>
+  );
+}
+
+export function ResendVerificationForm() {
+  const [state, action, pending] = useActionState(resendVerificationAction, initial);
+  return (
+    <form action={action} className="space-y-5" noValidate>
+      {state.message ? <FormMessage tone={state.ok ? "success" : "error"}>{state.message}</FormMessage> : null}
+      <Field label="Email" htmlFor="email" error={state.errors?.email}>
+        <Input id="email" name="email" type="email" autoComplete="email" required aria-invalid={!!state.errors?.email} />
+      </Field>
+      <Button type="submit" size="lg" className="w-full" loading={pending}>Resend confirmation</Button>
     </form>
   );
 }

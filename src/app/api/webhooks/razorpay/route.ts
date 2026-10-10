@@ -61,7 +61,10 @@ export async function POST(request: Request) {
         .eq("provider", "razorpay")
         .eq("event_id", eventId)
         .maybeSingle();
-      if (!previous || previous.status !== "failed") return NextResponse.json({ ok: true, duplicate: true });
+      if (!previous) return NextResponse.json({ error: "Event could not be loaded" }, { status: 503 });
+      if (previous.status === "processed" || previous.status === "ignored") return NextResponse.json({ ok: true, duplicate: true });
+      // Received events may have been interrupted by a process crash. The
+      // payment/refund operations themselves are idempotent, so retry safely.
       return process(eventType, body, previous.id);
     }
     logError("webhook.razorpay.store", insertError);
@@ -73,10 +76,11 @@ export async function POST(request: Request) {
 async function process(eventType: string, body: WebhookBody, rowId: string) {
   const admin = getServiceDb()!;
   const finish = async (status: "processed" | "ignored" | "failed", error?: string) => {
-    await admin
+    const { error: finishError } = await admin
       .from("webhook_events")
       .update({ status, error: error ?? null, processed_at: new Date().toISOString() })
       .eq("id", rowId);
+    if (finishError) throw new Error("Could not save webhook processing status");
   };
 
   try {
@@ -94,6 +98,7 @@ async function process(eventType: string, body: WebhookBody, rowId: string) {
           razorpayPaymentId: payment.id,
           payment: eventType === "payment.authorized" ? undefined : payment,
         });
+        if (result === "pending") throw new Error("Payment confirmation is pending; retry this event");
         logInfo("webhook.razorpay", "payment event handled", { eventType, result });
         await finish(result === "invalid" ? "ignored" : "processed", result === "invalid" ? "Order not found for this payment" : undefined);
         break;
@@ -103,14 +108,15 @@ async function process(eventType: string, body: WebhookBody, rowId: string) {
           await finish("ignored");
           break;
         }
-        const { data: row } = await admin
+        const { data: row, error: lookupError } = await admin
           .from("payments")
           .select("order_id")
           .eq("provider_order_id", payment.order_id)
           .limit(1)
           .maybeSingle();
+        if (lookupError) throw new Error("Could not load the order for this payment failure");
         if (row) {
-          await admin.rpc("record_payment_failure", {
+          const { error } = await admin.rpc("record_payment_failure", {
             p_order_id: row.order_id,
             p_provider_order_id: payment.order_id,
             p_provider_payment_id: payment.id,
@@ -118,6 +124,7 @@ async function process(eventType: string, body: WebhookBody, rowId: string) {
             p_error_description: payment.error_description ?? "Payment failed",
             p_raw: { id: payment.id, status: payment.status, method: payment.method } as Json,
           });
+          if (error) throw new Error("Could not record payment failure");
         }
         await finish(row ? "processed" : "ignored");
         break;
@@ -126,10 +133,11 @@ async function process(eventType: string, body: WebhookBody, rowId: string) {
       case "refund.failed": {
         const refund = body.payload?.refund?.entity;
         if (refund?.id) {
-          await admin.rpc("update_refund_status", {
+          const { error } = await admin.rpc("update_refund_status", {
             p_provider_refund_id: refund.id,
             p_status: eventType === "refund.processed" ? "processed" : "failed",
           });
+          if (error) throw new Error("Could not update refund status");
         }
         await finish("processed");
         break;
@@ -140,7 +148,7 @@ async function process(eventType: string, body: WebhookBody, rowId: string) {
     return NextResponse.json({ ok: true });
   } catch (error) {
     logError("webhook.razorpay.process", error, { eventType });
-    await finish("failed", error instanceof Error ? error.message : "Unknown error");
+    await finish("failed", error instanceof Error ? error.message : "Unknown error").catch((e) => logError("webhook.razorpay.finish", e));
     // 500 tells Razorpay to retry later.
     return NextResponse.json({ error: "Processing failed" }, { status: 500 });
   }

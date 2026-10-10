@@ -34,13 +34,27 @@ describe.skipIf(!url)("automatic database setup", () => {
     expect(tables.map((r) => r.t).sort()).toEqual(Object.keys(TABLES).sort());
     const [products] = await pool.query<RowDataPacket[]>("SELECT slug, status FROM products ORDER BY sort_order");
     expect(products.length).toBe(2);
-    expect(products.every((p) => p.status === "draft")).toBe(true);
+    expect(products.every((p) => p.status === "published")).toBe(true);
     const [variants] = await pool.query<RowDataPacket[]>("SELECT SUM(stock) AS s FROM product_variants");
     expect(Number(variants[0].s)).toBe(0);
   });
 
   it("does nothing on the next start", async () => {
     expect(await installSchema(pool)).toEqual({ migrated: false, seeded: false });
+  });
+
+  it("repairs only untouched legacy drafts, once, with a rollback record", async () => {
+    await pool.query("DELETE FROM schema_meta WHERE `key` IN ('catalog_launch_v1', 'catalog_launch_v1_backup')");
+    await pool.query("UPDATE products SET status = 'draft', published_at = NULL, updated_at = created_at");
+    await pool.query("UPDATE products SET short_description = 'Owner edited this product', updated_at = DATE_ADD(created_at, INTERVAL 1 SECOND) WHERE sort_order = 2");
+    await installSchema(pool);
+    const [products] = await pool.query<RowDataPacket[]>("SELECT id, status FROM products ORDER BY sort_order");
+    expect(products.map((p) => p.status)).toEqual(["published", "draft"]);
+    const [meta] = await pool.query<RowDataPacket[]>("SELECT `value` FROM schema_meta WHERE `key` = 'catalog_launch_v1_backup'");
+    expect(JSON.parse(meta[0].value).map((p: { id: string }) => p.id)).toEqual([products[0].id]);
+    await installSchema(pool);
+    const [after] = await pool.query<RowDataPacket[]>("SELECT status FROM products ORDER BY sort_order");
+    expect(after.map((p) => p.status)).toEqual(["published", "draft"]);
   });
 
   it("can run from several servers at the same time", async () => {

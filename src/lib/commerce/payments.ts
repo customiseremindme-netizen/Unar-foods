@@ -10,6 +10,7 @@ import {
 } from "@/lib/payments/razorpay";
 import { logError, logInfo } from "@/lib/monitoring";
 import { revalidateStorefront } from "@/lib/cache";
+import { paymentMatchesOrder } from "./payment-validation";
 import { notifyOrder } from "@/lib/notifications/order-notifications";
 
 export type ConfirmResult =
@@ -42,13 +43,14 @@ export async function afterOrderPaid(orderId: string) {
 async function findOrderIdForRazorpayOrder(razorpayOrderId: string): Promise<string | null> {
   const admin = getServiceDb();
   if (!admin) return null;
-  const { data } = await admin
+  const { data, error } = await admin
     .from("payments")
     .select("order_id")
     .eq("provider", "razorpay")
     .eq("provider_order_id", razorpayOrderId)
     .limit(1)
     .maybeSingle();
+  if (error) throw new Error("Could not load the order linked to this provider payment");
   return data?.order_id ?? null;
 }
 
@@ -69,17 +71,33 @@ export async function confirmRazorpayPayment(input: {
   const orderId = await findOrderIdForRazorpayOrder(input.razorpayOrderId);
   if (!orderId) return { result: "invalid", orderId: null };
 
+  const { data: order, error: orderError } = await admin.from("orders").select("total_paise").eq("id", orderId).maybeSingle();
+  if (orderError || !order) return { result: "pending", orderId };
+  const expected = { paymentId: input.razorpayPaymentId, providerOrderId: input.razorpayOrderId, totalPaise: order.total_paise };
   let payment = input.payment ?? (await fetchRazorpayPayment(input.razorpayPaymentId));
-  if (payment.order_id !== input.razorpayOrderId) {
-    logError("payments.confirm", new Error("Payment does not belong to this order"), {
+  const validation = paymentMatchesOrder(payment, expected);
+  if (validation !== "valid") {
+    logError("payments.confirm", new Error("Payment identity, amount or currency does not match the order"), {
       razorpayOrderId: input.razorpayOrderId,
       razorpayPaymentId: input.razorpayPaymentId,
     });
-    return { result: "invalid", orderId };
+    if (validation === "amount_mismatch") {
+      const { error } = await admin.from("order_events").insert({ order_id: orderId, type: "payment_mismatch", visibility: "internal", message: "Provider payment amount or currency did not match this order. Review the payment in Razorpay before fulfilment; no capture was attempted by this confirmation." });
+      if (error) return { result: "pending", orderId };
+    }
+    return { result: validation, orderId };
   }
 
   if (payment.status === "authorized") {
-    payment = await captureRazorpayPayment(payment.id, payment.amount);
+    try {
+      payment = await captureRazorpayPayment(payment.id, expected.totalPaise);
+    } catch (error) {
+      // A simultaneous webhook may have captured it. Re-fetch provider state.
+      logError("payments.capture", error, { orderId });
+      payment = await fetchRazorpayPayment(input.razorpayPaymentId);
+    }
+    const capturedValidation = paymentMatchesOrder(payment, expected);
+    if (capturedValidation !== "valid") return { result: capturedValidation, orderId };
   }
 
   if (payment.status === "captured" || payment.status === "refunded") {
@@ -105,7 +123,7 @@ export async function confirmRazorpayPayment(input: {
   }
 
   if (payment.status === "failed") {
-    await admin.rpc("record_payment_failure", {
+    const { error } = await admin.rpc("record_payment_failure", {
       p_order_id: orderId,
       p_provider_order_id: input.razorpayOrderId,
       p_provider_payment_id: payment.id,
@@ -113,6 +131,7 @@ export async function confirmRazorpayPayment(input: {
       p_error_description: payment.error_description ?? "Payment failed",
       p_raw: minimalRaw(payment),
     });
+    if (error) return { result: "pending", orderId };
     return { result: "failed", orderId };
   }
 
@@ -126,15 +145,16 @@ export async function confirmRazorpayPayment(input: {
 export async function reconcileOrderPayment(orderId: string): Promise<"paid" | "not_paid" | "unknown"> {
   const admin = getServiceDb();
   if (!admin) return "unknown";
-  const { data: rows } = await admin
+  const { data: rows, error } = await admin
     .from("payments")
     .select("provider_order_id")
     .eq("order_id", orderId)
     .eq("provider", "razorpay")
     .not("provider_order_id", "is", null);
+  if (error) return "unknown";
   const razorpayOrderIds = [...new Set((rows ?? []).map((r) => r.provider_order_id!))];
   if (razorpayOrderIds.length === 0) return "not_paid";
-  if (!isRazorpayConfigured()) return "not_paid";
+  if (!isRazorpayConfigured()) return "unknown";
   try {
     for (const razorpayOrderId of razorpayOrderIds) {
       const payments = await fetchRazorpayOrderPayments(razorpayOrderId);
@@ -145,7 +165,8 @@ export async function reconcileOrderPayment(orderId: string): Promise<"paid" | "
           razorpayPaymentId: success.id,
           payment: success,
         });
-        if (["paid", "already_paid", "paid_needs_attention", "amount_mismatch"].includes(result)) return "paid";
+        if (result === "amount_mismatch") return "unknown";
+        if (["paid", "already_paid", "paid_needs_attention"].includes(result)) return "paid";
       }
     }
     return "not_paid";

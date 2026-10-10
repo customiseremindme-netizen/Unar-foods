@@ -67,3 +67,25 @@ test.describe("mobile @mobile", () => {
     await expect(page.getByRole("dialog").getByText("Your cart")).toBeVisible();
   });
 });
+
+test.describe("product photography", () => {
+  for (const slug of ["banana-chewy-dry-fruits-seeds", "banana-chewy-fresh-raw-banana"]) {
+    test(`all five photos load for ${slug}`, async ({ page }) => {
+      await page.goto(`/products/${slug}`);
+      const thumbs = page.getByRole("list", { name: "Product images" }).getByRole("button");
+      await expect(thumbs).toHaveCount(5);
+      for (let i = 0; i < 5; i++) {
+        await thumbs.nth(i).click();
+        await expect(thumbs.nth(i)).toHaveAttribute("aria-current", "true");
+        const photo = page.getByRole("button", { name: /open image viewer/i }).locator("img");
+        await expect.poll(() => photo.evaluate((img: HTMLImageElement) => img.complete && img.naturalWidth > 0)).toBe(true);
+      }
+      await page.getByRole("button", { name: /open image viewer/i }).click();
+      await expect(page.getByRole("dialog")).toBeVisible();
+      await page.keyboard.press("ArrowRight");
+      await expect(page.getByRole("dialog")).toContainText("1 / 5");
+      await page.keyboard.press("Escape");
+      await expect(page.getByRole("dialog")).toBeHidden();
+    });
+  }
+});

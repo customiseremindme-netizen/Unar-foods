@@ -1,0 +1,74 @@
+name: UNAR repair checks
+on:
+  push:
+    branches: [codex/unar-production-repair]
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_DATABASE: unar_test
+          MYSQL_USER: unar_ci
+          MYSQL_PASSWORD: local-ci-only
+          MYSQL_ROOT_PASSWORD: local-ci-root-only
+        ports: [3306:3306]
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1"
+          --health-interval=10s --health-timeout=5s --health-retries=12
+      mailpit:
+        image: axllent/mailpit:latest
+        env:
+          MP_SMTP_AUTH_ACCEPT_ANY: "1"
+          MP_SMTP_AUTH_ALLOW_INSECURE: "1"
+        ports: [1025:1025, 8025:8025]
+    env:
+      DB_HOST: 127.0.0.1
+      DB_PORT: "3306"
+      DB_NAME: unar_test
+      DB_USER: unar_ci
+      DB_PASSWORD: local-ci-only
+      TEST_DATABASE_URL: mysql://unar_ci:local-ci-only@127.0.0.1:3306/unar_test
+      NEXT_PUBLIC_SITE_URL: http://localhost:3000
+      UNAR_ALLOW_TEST_OVERRIDES: "1"
+      RAZORPAY_KEY_ID: rzp_test_localmock01
+      RAZORPAY_KEY_SECRET: local_mock_secret_123
+      RAZORPAY_WEBHOOK_SECRET: local_mock_webhook_secret
+      RAZORPAY_API_BASE_URL: http://127.0.0.1:4010/v1
+      CRON_SECRET: local_cron_secret_for_tests_0123456789
+      SMTP_HOST: 127.0.0.1
+      SMTP_PORT: "1025"
+      SMTP_USER: orders@unar.local
+      SMTP_PASSWORD: ci-mail-catcher-only
+      EMAIL_FROM: UNAR <orders@unar.local>
+      E2E_MAILPIT_URL: http://127.0.0.1:8025
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - run: npm run test:repair
+      - run: npm run check
+      - run: npm run test:db
+      - run: npm run build
+      - run: npx playwright install --with-deps chromium
+      - name: Generate disposable test account password
+        run: echo "E2E_ADMIN_PASSWORD=$(openssl rand -hex 24)" >> "$GITHUB_ENV"
+      - name: Start isolated test store and seed test data
+        run: |
+          npm start > /tmp/unar-app.log 2>&1 &
+          node tests/e2e/support/seed-test-db.mjs
+      - run: npm run test:e2e
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: unar-test-results
+          path: test-results/
+          retention-days: 7

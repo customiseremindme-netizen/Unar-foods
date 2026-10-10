@@ -10,6 +10,7 @@ export const RATE_LIMITS = {
   setup: { limit: 10, windowSeconds: 3600 },
   signup: { limit: 5, windowSeconds: 3600 },
   passwordReset: { limit: 5, windowSeconds: 3600 },
+  verification: { limit: 3, windowSeconds: 600 },
   contact: { limit: 5, windowSeconds: 3600 },
   newsletter: { limit: 5, windowSeconds: 3600 },
   review: { limit: 5, windowSeconds: 3600 },
@@ -36,7 +37,7 @@ export async function checkRateLimit(bucket: keyof typeof RATE_LIMITS, identifie
   });
   if (error) {
     logError("rate-limit", error);
-    return true;
+    return !["login", "signup", "setup", "passwordReset", "verification"].includes(bucket);
   }
   return data === true;
 }
