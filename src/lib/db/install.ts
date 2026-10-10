@@ -162,7 +162,7 @@ async function repairStarterCatalog(conn: PoolConnection) {
       });
     }
     // Backup and changes commit together. A failing query rolls back the entire repair.
-    await setMeta(conn, "catalog_launch_v1_backup", JSON.stringify(backup));
+    await conn.query("INSERT INTO migration_backups (`key`, `value`) VALUES (?, ?) ON DUPLICATE KEY UPDATE `value` = VALUES(`value`)", ["catalog_launch_v1_backup", JSON.stringify(backup)]);
     for (const product of backup) {
       await conn.query("UPDATE products SET status = 'published', published_at = ?, updated_at = ? WHERE id = ? AND status = 'draft' AND published_at IS NULL", [repairedAt, repairedAt, product.id]);
       for (const image of product.images as { id: string; new_sort_order: number }[]) {

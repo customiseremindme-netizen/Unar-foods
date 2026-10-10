@@ -19,7 +19,7 @@ try {
   if (Number(lock.ok) !== 1) throw new Error("Another database operation is running; retry later.");
   await conn.beginTransaction();
   try {
-    const [rows] = await conn.query("SELECT `value` FROM schema_meta WHERE `key` = 'catalog_launch_v1_backup' FOR UPDATE");
+    const [rows] = await conn.query("SELECT `value` FROM migration_backups WHERE `key` = 'catalog_launch_v1_backup' FOR UPDATE");
     const backup = JSON.parse(rows[0]?.value || "[]");
     let restored = 0;
     for (const p of backup) {

@@ -878,6 +878,10 @@ export const TABLES: Record<string, Table> = {
     },
     primaryKey: ["key", "window_start"],
   },
+  migration_backups: {
+    columns: { key: str(60), value: text(), created_at: createdAt() },
+    primaryKey: ["key"],
+  },
   schema_meta: {
     columns: { key: str(60), value: str(200), updated_at: updatedAt() },
     primaryKey: ["key"],

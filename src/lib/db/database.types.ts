@@ -164,6 +164,13 @@ export type Database = {
           { foreignKeyName: "media_assets_uploaded_by_fkey"; columns: ["uploaded_by"]; isOneToOne: false; referencedRelation: "auth_users"; referencedColumns: ["id"] },
         ]
       }
+      "migration_backups": {
+        Row: { "created_at": string; "key": string; "value": string }
+        ComputedFields: never
+        Insert: { "created_at"?: string; "key": string; "value": string }
+        Update: { "created_at"?: string; "key"?: string; "value"?: string }
+        Relationships: []
+      }
       "notification_log": {
         Row: { "channel": string; "created_at": string; "error": string | null; "id": number; "order_id": string | null; "provider_message_id": string | null; "recipient": string; "status": string; "template": string }
         ComputedFields: never

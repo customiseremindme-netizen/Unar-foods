@@ -14,15 +14,14 @@ Both public-site fetches failed from this environment and from the web connector
 
 ## Bugs and code repairs
 
-1. Starter products were initialized as drafts. Fresh installations now publish the two confirmed products at existing prices (MRP/selling price ₹149 and ₹120, 100 g). Stock remains zero and displays sold out. Existing untouched original drafts receive a one-time conservative repair; edited, archived or previously published products are preserved. Original publication status, timestamps and image ordering are backed up in schema_meta in the same transaction. Natural-key lookups prevent starter products/collections/SKUs from duplicating existing records with different IDs.
+1. Starter products were initialized as drafts. Fresh installations now publish the two confirmed products at existing prices (MRP/selling price ₹149 and ₹120, 100 g). Stock remains zero and displays sold out. Existing untouched original drafts receive a one-time conservative repair; edited, archived or previously published products are preserved. Original publication status, timestamps and image ordering are backed up in migration_backups in the same transaction. Natural-key lookups prevent starter products/collections/SKUs from duplicating existing records with different IDs.
 2. Starter gallery ordering did not consistently put the hero first or follow the supplied five-photo sequence. Seed ordering now follows hero, front/back, ingredients, beauty, lifestyle. Eligible untouched legacy products receive the ordering repair. Original artwork remains separately available on the product page.
 3. Registration explicitly refuses to start without an email service. This configuration requirement is preserved; verification is not bypassed. Saved but unconfirmed accounts now have a dedicated, rate-limited resend page linked from login and registration, with neutral responses. Failed resend delivery no longer invalidates an earlier usable link. Consuming a link invalidates siblings atomically under an account lock. Malformed scrypt hashes fail authentication safely, and production cookies remain secure behind an internal HTTP proxy hop. Login-related rate-limit failures now fail closed.
 4. Razorpay webhooks could acknowledge pending database failures as processed, ignore interrupted received events forever, and ignore refund/failure RPC errors. These paths now return retryable failures and retry interrupted events through the existing idempotent database operations. Mismatched amounts no longer report paid to the browser; they produce an internal order warning. Payment identity, order, amount and INR currency are checked before capture and after capture. A capture race re-fetches provider state. Missing provider configuration produces unknown reconciliation status rather than treating the order as definitely unpaid.
 5. Gallery had no touch swipe support. Added deliberate horizontal swipe navigation while preserving native vertical scroll/pinch zoom, keyboard arrows, screen-reader image announcements, desktop previous/next, and reduced-motion hover behavior. Five photos occupy the gallery; legal source artwork appears separately.
 6. Hero headline now enters in staggered lines with reduced-motion-aware entrances. Pouch reveal uses a gentle fade/rise. Existing botanical and scroll animations remain in place. Added native product sharing with clipboard fallback.
-8. Customer review photos and MP4 uploads are private until approval. The server verifies ownership, rejects unsupported/oversized files, re-encodes photos to WebP and videos to H264 MP4, strips metadata, and binds attachments to the review in one transaction. Moderators see uploads in the existing review dashboard. Video processors are optional host binaries; absence produces an honest unavailable message.
-
-7. Catalog query failures now report an error instead of being presented as an empty successful catalog. The shared navigation catches this with an explicit unavailable notice so customer authentication remains reachable.
+7. Customer review photos and MP4 uploads are private until approval. The server verifies ownership, rejects unsupported/oversized files, re-encodes photos to WebP and videos to H264 MP4, strips metadata, and binds attachments to the review in one transaction. Moderators see uploads in the existing review dashboard. Video processors are optional host binaries; absence produces an honest unavailable message.
+8. Catalog query failures now report an error instead of being presented as an empty successful catalog. The shared navigation catches this with an explicit unavailable notice so customer authentication remains reachable.
 
 ## Status by requested system
 
@@ -46,6 +45,8 @@ Both public-site fetches failed from this environment and from the web connector
 - npm ci --offline --ignore-scripts --no-audit --no-fund: failed ENOTCACHED; dependencies unavailable.
 - npm run build: blocked, next not installed.
 - npm run check: blocked, eslint not installed. Typecheck and Vitest did not run after lint stopped.
+- GitHub CI: dependency installation, lint, type checking and all 64 unit tests passed on commit 86830df. Database tests found a backup-size error; backup storage now uses a dedicated additive TEXT table. Full database/build/browser validation remains in progress.
+- Actual FFmpeg command: generated and transcoded a real MP4 successfully; private title metadata was removed.
 - Database/browser tests: additional coverage written but NOT executed locally. A GitHub workflow prepares an isolated disposable MySQL store and local mail catcher, runs unit/database/build/browser checks, and uses mocked Razorpay only. Workflow results must be checked before merging.
 
 The historical claims in docs/STATUS.md predate this repair and are not validation evidence for these changes.
@@ -54,15 +55,15 @@ The historical claims in docs/STATUS.md predate this repair and are not validati
 
 Keep the PR as a draft until all quality/database/browser jobs pass and a staging store is available. In Hostinger, take a database backup before deploying. Confirm the current application really tracks this repository/branch, deploy to staging with a copy of the database, configure email and provider test credentials securely, and verify new-account, address, order, gallery, admin-permission and payment journeys. Approve actual stock, shipping rates, policies, claims and tax settings before live sales. Do not add fake stock to production.
 
-To roll back code, redeploy the previous commit above. The repair adds a review_media table and no columns to existing tables and does not delete data. If catalog publication must also be reverted, first back up the intended database, stop/revert the new app version, and run node scripts/rollback-catalog-repair.mjs --apply with its secure database environment. It restores only unchanged repaired rows and image positions from schema_meta, preserves later owner edits, and retains the migration marker to prevent automatic republishing. The rollback script has not been exercised on a real database here.
+To roll back code, redeploy the previous commit above. The repair adds review_media and migration_backups tables and no columns to existing tables and does not delete data. If catalog publication must also be reverted, first back up the intended database, stop/revert the new app version, and run node scripts/rollback-catalog-repair.mjs --apply with its secure database environment. It restores only unchanged repaired rows and image positions from migration_backups, preserves later owner edits, and retains the migration marker to prevent automatic republishing. The rollback script has not been exercised on a real database here.
 
 ## Owner/admin guide
 
 1. Open /admin and sign in. If no owner exists, /setup creates the first owner using the private SETUP_KEY from Hostinger; do not share that key.
-2. Products: edit a product, check ingredients/nutrition against approved artwork, upload or reorder images, set price and collection, then publish. Unpublish intentionally edited drafts manually when desired.
+2. Products: edit a product, check ingredients/nutrition against approved artwork, upload or reorder images, set price and collection, then publish. Publish intentionally edited drafts manually when desired.
 3. Inventory: enter real stock with a reason. Zero-stock products remain visible as sold out.
 4. Orders: inspect payment status, update fulfilment and carrier/tracking, print invoices, and handle cancellation/refunds under the approved policy.
-5. Content: edit homepage/FAQs/banners, preview drafts, then publish. Reviews: approve/reject genuine submissions. Marketing: manage coupons/subscribers. Integrations: check email/payment status and send a test email.
+5. Content: edit homepage/FAQs/banners, preview drafts, then publish. Reviews: view private submitted photos/videos, approve genuine submissions, or hide/reject them; hidden media is no longer public. Marketing: manage coupons/subscribers. Integrations: check email/payment status and send a test email.
 
 ## Access and remaining work
 
@@ -72,31 +73,47 @@ Still required: passing full automated checks, live/staging audit and comparison
 
 ## Exact changed files
 
+- .env.example
 - .github/workflows/repair-checks.yml
+- docs/REPAIR_DELIVERY.md
 - package.json
 - scripts/rollback-catalog-repair.mjs
 - src/app/(store)/layout.tsx
 - src/app/(store)/products/[slug]/page.tsx
 - src/app/(store)/resend-verification/page.tsx
 - src/app/actions/auth.ts
+- src/app/actions/engagement.ts
+- src/app/admin/reviews/page.tsx
+- src/app/api/payments/razorpay/verify/route.ts
+- src/app/api/review-media/route.ts
 - src/app/api/webhooks/razorpay/route.ts
+- src/app/review-media/[id]/route.ts
 - src/components/auth/auth-forms.tsx
 - src/components/home/hero.tsx
 - src/components/product/gallery.tsx
+- src/components/product/review-form.tsx
+- src/components/product/review-media.tsx
 - src/components/product/share-product.tsx
 - src/lib/auth/accounts.ts
 - src/lib/auth/password.ts
 - src/lib/commerce/payment-validation.ts
 - src/lib/commerce/payments.ts
 - src/lib/data/catalog.ts
+- src/lib/data/reviews.ts
 - src/lib/db/data/initial-data.json
+- src/lib/db/database.types.ts
 - src/lib/db/install.ts
+- src/lib/db/rest/policies.ts
+- src/lib/db/rpc/misc.ts
+- src/lib/db/schema.ts
 - src/lib/db/starter-catalog.ts
 - src/lib/gallery/swipe.ts
+- src/lib/reviews/media-policy.ts
+- src/lib/reviews/media.ts
 - src/lib/security/rate-limit.ts
+- tests/e2e/accounts.spec.ts
 - tests/e2e/storefront.spec.ts
 - tests/integration/data-access.test.ts
 - tests/integration/mysql-schema.test.ts
 - tests/repair/core.test.mjs
-- src/app/api/payments/razorpay/verify/route.ts
-- docs/REPAIR_DELIVERY.md
+- tests/unit/review-media.test.ts
