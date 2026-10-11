@@ -69,7 +69,7 @@ export default async function AdminOrderPage({ params }: { params: Promise<{ id:
             <Link href={`/admin/orders/${order.id}/packing-slip`} target="_blank" className="inline-flex h-10 items-center gap-2 rounded-full border border-line bg-paper px-4 text-[0.85rem] font-semibold text-forest hover:border-forest">
               <Printer className="size-4" aria-hidden="true" /> Packing slip
             </Link>
-            {paid || order.payment_status === "refunded" ? (
+            {paid || order.payment_status === "refunded" || (order.payment_method === "cod" && order.status === "placed") ? (
               <Link href={`/invoice/${order.order_number}`} target="_blank" className="inline-flex h-10 items-center gap-2 rounded-full border border-line bg-paper px-4 text-[0.85rem] font-semibold text-forest hover:border-forest">
                 <FileText className="size-4" aria-hidden="true" /> Invoice
               </Link>

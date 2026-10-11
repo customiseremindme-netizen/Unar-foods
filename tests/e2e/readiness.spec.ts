@@ -23,6 +23,15 @@ test("COD checkout works without online payments and produces a private unpaid i
     expect(invoice.status()).toBe(200);
     expect(await invoice.text()).toContain("Payment has not been collected");
     expect((await request.get(href!.split("?")[0])).status()).toBe(404);
+    const orderNumber = page.url().match(/UNAR-\d+/)![0];
+    const orders = await admin.newPage();
+    await orders.goto(`/admin/orders?q=${encodeURIComponent(orderNumber)}`);
+    await orders.getByRole("link", { name: orderNumber, exact: true }).click();
+    const staffInvoiceHref = await orders.getByRole("link", { name: "Invoice", exact: true }).getAttribute("href");
+    expect(staffInvoiceHref).toBe(href!.split("?")[0]);
+    const staffInvoice = await admin.request.get(staffInvoiceHref!);
+    expect(staffInvoice.status()).toBe(200);
+    expect(await staffInvoice.text()).toContain("Payment has not been collected");
   } finally {
     await online.setChecked(original);
     if (await card.getByRole("button", { name: "Save", exact: true }).isEnabled()) {
