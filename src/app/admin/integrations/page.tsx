@@ -73,8 +73,8 @@ export default async function IntegrationsPage() {
 
         <Card title="Google customer sign-in" actions={<Status ok={!!google} okText="Configured — test sign-in" />}>
           <Row label="Callback URL" value={`${site}/auth/google/callback`} />
-          <p className="mt-3 text-[0.85rem] text-muted">In Google Cloud, create a Web application OAuth client. Configure the consent screen and add this exact callback URL. Add GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET and NEXT_PUBLIC_SITE_URL privately to Hostinger, then redeploy. In Google's Testing mode, add your test users; publish the consent screen before opening sign-in to customers.</p>
-          <p className="mt-3 text-[0.8rem] text-muted">Google verifies new customers' email addresses. Email/password accounts still need sending email for confirmation and password resets. Staff use their existing secure password login.</p>
+          <p className="mt-3 text-[0.85rem] text-muted">In Google Cloud, create a Web application OAuth client. Configure the consent screen and add this exact callback URL. Add GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET and NEXT_PUBLIC_SITE_URL privately to Hostinger, then redeploy. In Google’s Testing mode, add your test users; publish the consent screen before opening sign-in to customers.</p>
+          <p className="mt-3 text-[0.8rem] text-muted">Google verifies new customers’ email addresses. Email/password accounts still need sending email for confirmation and password resets. Staff use their existing secure password login.</p>
         </Card>
         <Card title="Shiprocket (optional)" actions={<Status ok={!!shiprocket} noText="Not used" />}>
           <Row label="Login email" value={shiprocket ? shiprocket.email.replace(/^(.).*(@.*)$/, "$1•••$2") : "not set"} />

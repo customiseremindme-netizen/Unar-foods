@@ -366,3 +366,9 @@ Standard* → enter your charge → tick **Active** → Save.
 ### "Creating an account isn't available yet"
 Email isn't set up. Add the `SMTP_…` settings from Part 3 and redeploy.
 Guests can still order meanwhile.
+
+## Google customer sign-in (optional)
+
+The repaired website supports Google OAuth independently of Razorpay. In Google Cloud, create a Web application OAuth client, set up the consent screen, and add `https://YOUR-SITE/auth/google/callback` as its exact authorized redirect URI. Enter `GOOGLE_CLIENT_ID` and the secret `GOOGLE_CLIENT_SECRET` only in Hostinger environment variables. Set `NEXT_PUBLIC_SITE_URL` to the same HTTPS origin, then redeploy. Use Google's authorized test-user list while the consent screen is in Testing mode; publish it for public customer use.
+
+The button appears only when this configuration is complete. Staff continue to use password sign-in. Sending email still needs SMTP or Resend for normal registration, password reset and order notifications. See [the admin guide](ADMIN_CUSTOMIZATION.md) for COD-only setup, new products, size options, typography and tracking sharing.
