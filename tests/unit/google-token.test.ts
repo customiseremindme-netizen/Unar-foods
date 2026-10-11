@@ -22,6 +22,12 @@ describe("Google identity verification", () => {
   ])("rejects unsafe claims: %j", (patch) => {
     expect(() => verifyGoogleIdToken(token(patch), keys, expected)).toThrow();
   });
+  it("requires Gmail or a matching verified hosted domain for existing-account linking", () => {
+    expect(verifyGoogleIdToken(token(), keys, expected).authoritativeEmail).toBe(false);
+    expect(verifyGoogleIdToken(token({ email: "customer@gmail.com" }), keys, expected).authoritativeEmail).toBe(true);
+    expect(verifyGoogleIdToken(token({ hd: "example.com" }), keys, expected).authoritativeEmail).toBe(true);
+    expect(verifyGoogleIdToken(token({ hd: "another.example" }), keys, expected).authoritativeEmail).toBe(false);
+  });
   it("rejects signature tampering, unknown keys and algorithm confusion", () => {
     expect(() => verifyGoogleIdToken(token().replace(/.$/, "!"), keys, expected)).toThrow();
     expect(() => verifyGoogleIdToken(token({}, { kid: "unknown" }), keys, expected)).toThrow();

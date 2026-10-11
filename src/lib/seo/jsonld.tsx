@@ -95,7 +95,7 @@ export function productJsonLd(input: {
       ...(product.allergens ? [{ "@type": "PropertyValue", name: "Allergen advice", value: product.allergens }] : []),
       ...(product.storage_instructions ? [{ "@type": "PropertyValue", name: "Storage instructions", value: product.storage_instructions }] : []),
     ],
-    ...(variant?.barcode && /^\d{8,14}$/.test(variant.barcode) ? { gtin13: variant.barcode } : {}),
+    ...(variant?.barcode && /^\d+$/.test(variant.barcode) && [8, 12, 13, 14].includes(variant.barcode.length) ? { [`gtin${variant.barcode.length}`]: variant.barcode } : {}),
     brand: { "@type": "Brand", name: input.brand },
     image: product.images.map((i) => absolute(site, i.url)),
     url: `${site}/products/${product.slug}`,

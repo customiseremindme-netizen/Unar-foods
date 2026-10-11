@@ -78,7 +78,7 @@ Open **Integrations**, send a test email, then register a new customer, open the
 
 For Google, open Google Cloud → APIs & Services → Credentials. Create an OAuth client of type **Web application**, configure its consent screen, and enter the exact authorized redirect URI shown in **Integrations**, e.g. `https://seashell-donkey-270999.hostingersite.com/auth/google/callback`. Add `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` privately to Hostinger and redeploy. Google Testing mode allows only designated test users; publish the consent screen for public customer sign-in.
 
-Google verifies new customer identities and creates real database accounts and sessions. It uses single-login state, PKCE, nonce and signed ID-token validation. Existing unconfirmed email accounts and staff accounts must use the existing email/password route; Google never grants a customer an admin role. Real Google provider acceptance still needs your credentials and a live test.
+Google verifies new customer identities and creates real database accounts and sessions. It uses single-login state, PKCE, nonce and signed ID-token validation. Existing unconfirmed email accounts and staff accounts must use the existing email/password route. Linking an existing confirmed customer also requires a Gmail address or matching Google Workspace domain, so old third-party email verification cannot silently take over an account; Google never grants a customer an admin role. Real Google provider acceptance still needs your credentials and a live test.
 
 ## Invoices and sharing tracking
 

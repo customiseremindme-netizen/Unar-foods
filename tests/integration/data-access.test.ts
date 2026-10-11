@@ -242,7 +242,8 @@ describe.skipIf(!url)("data access rules", () => {
     expect(Boolean(profile[0].marketing_consent)).toBe(false);
     const [staff] = await pool.query<mysql.RowDataPacket[]>("SELECT user_id FROM staff_members WHERE user_id = ?", [id]);
     expect(staff).toHaveLength(0);
-    await expect(persistVerifiedGoogleCustomer(pool, { ...identity, sub: "staff-attempt", email: "owner@example.com" })).rejects.toThrow();
+    await expect(persistVerifiedGoogleCustomer(pool, { ...identity, sub: "staff-attempt", email: "owner@example.com", authoritativeEmail: true })).rejects.toThrow();
+    await expect(persistVerifiedGoogleCustomer(pool, { ...identity, sub: "external-email-attempt", email: "customer@example.com" })).rejects.toThrow();
     await pool.query("INSERT INTO auth_users (id, email, password_hash) VALUES (?, 'unconfirmed@example.com', 'x')", [randomUUID()]);
     await expect(persistVerifiedGoogleCustomer(pool, { ...identity, sub: "unconfirmed-attempt", email: "unconfirmed@example.com" })).rejects.toThrow();
     expect((await clientFor(pool, ANON).from("auth_identities").select("*")).data).toEqual([]);

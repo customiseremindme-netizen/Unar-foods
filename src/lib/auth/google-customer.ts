@@ -21,7 +21,7 @@ export async function persistVerifiedGoogleCustomer(pool: Pool, identity: Google
     if (existing[0]) {
       userId = String(existing[0].id);
       const [staff] = await conn.query<RowDataPacket[]>("SELECT user_id FROM staff_members WHERE user_id = ?", [userId]);
-      if (staff.length || !existing[0].email_confirmed_at) throw new Error("Use existing account sign-in and email confirmation");
+      if (staff.length || !existing[0].email_confirmed_at || !identity.authoritativeEmail) throw new Error("Use existing account sign-in and email confirmation");
     } else {
       userId = randomUUID();
       await conn.query("INSERT INTO auth_users (id, email, password_hash, email_confirmed_at) VALUES (?, ?, ?, UTC_TIMESTAMP(3))", [userId, identity.email, passwordHash]);
