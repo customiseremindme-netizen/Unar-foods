@@ -41,6 +41,8 @@ Use **Products → New product** to create a draft. Enter a name, unique web add
 
 In **Content → Homepage → Product showcase**, choose **All published products** to include newly added products automatically, **Featured products only**, or **Selected products only**. Set the maximum number shown. The default automatic mode respects hand-picked products when present; otherwise it includes all published products. A product must be published to appear. Save the draft and Publish.
 
+Under **Product comparison**, choose up to three published products to compare. An empty selection automatically uses products with ingredient or nutrition details, so a new jersey is not added to the food nutrition table. Missing allergen information is shown as **Not provided**; enter verified details in the product editor.
+
 Homepage standard section spacing is now tighter and empty reviews use a compact honest message. You can still choose Compact, Standard or Airy for each section, edit its headings/body text, change images, hide it, or reorder it. None of these choices fabricates reviews or product claims.
 
 Product photo uploads can be reordered and removed from the product editor. Save the product after editing its gallery. Keep the five supplied pouch photos in the intended sequence. Set stock from your actual inventory; zero-stock published products remain visible as sold out. Use the approved packaging artwork for legal, allergen and nutrition details.

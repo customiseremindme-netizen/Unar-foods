@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { writeFile } from "node:fs/promises";
 
 test("homepage rendering records real browser performance and layout stability", async ({ page }, testInfo) => {
   await page.addInitScript(() => {
@@ -34,7 +35,9 @@ test("homepage rendering records real browser performance and layout stability",
     const rendering = (window as Window & { unarPerformance?: { cls: number; lcpMs: number } }).unarPerformance;
     return { ...rendering, domContentLoadedMs: navigation.domContentLoadedEventEnd, transferredBytes: performance.getEntriesByType("resource").reduce((sum, entry) => sum + (entry as PerformanceResourceTiming).transferSize, 0) };
   });
-  await testInfo.attach("homepage-browser-performance.json", { body: JSON.stringify({ ...metrics, context: "Isolated CI Chrome at 1366 × 900, local test server after a full-page scroll; not a public Lighthouse or real-user score." }, null, 2), contentType: "application/json" });
+  const metricsPath = testInfo.outputPath("homepage-browser-performance.json");
+  await writeFile(metricsPath, JSON.stringify({ ...metrics, context: "Isolated CI Chrome at 1366 × 900, local test server after a full-page scroll; not a public Lighthouse or real-user score." }, null, 2));
+  await testInfo.attach("homepage-browser-performance.json", { path: metricsPath, contentType: "application/json" });
   console.log(`UNAR browser metrics: ${JSON.stringify(metrics)}`);
   expect(metrics.cls ?? 0).toBeLessThan(0.25);
   expect(consoleErrors).toEqual([]);

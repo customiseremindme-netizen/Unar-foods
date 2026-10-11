@@ -183,6 +183,9 @@ test("new products support sizes, stock-preserving edits, photos, publishing and
     expect(await home.text()).toContain(title);
     const shopper = await browser.newContext();
     const purchase = await shopper.newPage();
+    await purchase.goto("/");
+    await expect(purchase.locator("#compare")).toHaveCount(1);
+    await expect(purchase.locator("#compare")).not.toContainText(title);
     await purchase.goto("/shop");
     await purchase.getByRole("link", { name: `Choose options: ${title}`, exact: true }).click();
     await expect(purchase.getByRole("group", { name: "Choose a size / pack" })).toBeVisible();

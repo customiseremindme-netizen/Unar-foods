@@ -46,7 +46,7 @@ export type FieldDef =
   | { name: string; label: string; type: "icon"; help?: string }
   | { name: string; label: string; type: "number"; min: number; max: number; help?: string }
   | { name: string; label: string; type: "select"; options: { value: string; label: string }[]; help?: string }
-  | { name: string; label: string; type: "products"; help?: string }
+  | { name: string; label: string; type: "products"; max?: number; help?: string }
   | { name: string; label: string; type: "list"; itemLabel: string; max: number; fields: FieldDef[]; help?: string };
 
 const text = (max: number) => z.string().trim().max(max).catch("");
@@ -194,13 +194,15 @@ export const SECTION_TYPES = {
   },
   comparison: {
     label: "Product comparison",
-    description: "Compares ingredients, allergen advice and nutrition of your published products automatically.",
+    description: "Choose published products to compare. Automatic selection includes only products with ingredient or nutrition details.",
     fields: [
+      { name: "product_slugs", label: "Products to compare", type: "products", max: 3, help: "Choose up to three products. Leave empty to compare products with ingredient or nutrition details automatically." },
       { name: "eyebrow", label: "Small text above the heading", type: "text", max: 60 },
       { name: "heading", label: "Heading", type: "text", max: 120 },
       { name: "description", label: "Description", type: "textarea", max: 300 },
     ],
     schema: z.object({
+      product_slugs: z.array(z.string().max(120)).max(3).catch([]).default([]),
       eyebrow: text(60).default(""),
       heading: text(120).default(""),
       description: text(300).default(""),

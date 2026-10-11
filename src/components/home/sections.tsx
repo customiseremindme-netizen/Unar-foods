@@ -1,4 +1,4 @@
-import { selectShowcaseProducts } from "@/lib/cms/product-selection";
+import { selectComparisonProducts, selectShowcaseProducts } from "@/lib/cms/product-selection";
 import Image from "next/image";
 import type { ReactNode } from "react";
 import Link from "next/link";
@@ -166,12 +166,12 @@ function nutrientValue(product: Product, name: string) {
 }
 
 export function Comparison({ headingId = "compare-heading", anchorId = "compare", content, products }: { headingId?: string; anchorId?: string; content: SectionContent<"comparison">; products: Product[] }) {
-  if (products.length < 2) return null;
-  const shown = products.slice(0, 3);
+  const shown = selectComparisonProducts(products, content.product_slugs);
+  if (shown.length < 2) return null;
   const nutrients = [...new Set(shown.flatMap((p) => p.nutrition.map((n) => n.nutrient)))];
   const rows: { label: string; render: (p: Product) => ReactNode }[] = [
-    { label: "Ingredients (as printed)", render: (p) => p.ingredients ?? "—" },
-    { label: "Allergen advice (as printed)", render: (p) => p.allergens ?? "No allergen statement printed on pack" },
+    ...(shown.some((product) => product.ingredients) ? [{ label: "Ingredients (as printed)", render: (p: Product) => p.ingredients ?? "Not provided" }] : []),
+    ...(shown.some((product) => product.allergens) ? [{ label: "Allergen advice (as printed)", render: (p: Product) => p.allergens ?? "Not provided" }] : []),
     ...nutrients.map((n) => ({ label: `${n} (per 100 g)`, render: (p: Product) => nutrientValue(p, n) })),
     { label: "Pack", render: (p) => p.defaultVariant?.title ?? "—" },
     { label: "Price", render: (p) => (p.defaultVariant ? formatINR(p.defaultVariant.price_paise) : "—") },
