@@ -287,3 +287,26 @@ describe("shipping zones", () => {
     expect(calculateShippingPaise(z, { weightGrams: 1200, subtotalAfterDiscountPaise: 0, freeShipping: false }).paise).toBe(9000);
   });
 });
+
+describe("COD restrictions explain checkout eligibility", () => {
+  it("identifies a zone that disallows COD even when online payment is selected", () => {
+    const q = computeQuote(baseInput({ zones: [zone({ cod_available: false })] }));
+    expect(q.codAvailable).toBe(false);
+    expect(q.codUnavailableReason).toContain("delivery zone");
+    expect(q.canCheckout).toBe(true);
+  });
+  it("explains the order limit and rejects COD above it", () => {
+    const input = baseInput({ paymentMethod: "cod" });
+    input.checkout.cod_max_order_paise = 20000;
+    const q = computeQuote(input);
+    expect(q.codUnavailableReason).toContain("₹200");
+    expect(q.canCheckout).toBe(false);
+    expect(q.codFeePaise).toBe(0);
+  });
+  it("requires a selected active delivery zone and respects excluded states", () => {
+    const q = computeQuote(baseInput({ zones: [zone({ match_type: "states", states: ["Kerala"] })], paymentMethod: "cod" }));
+    expect(q.shipping.status).toBe("unserviceable");
+    expect(q.codAvailable).toBe(false);
+    expect(q.canCheckout).toBe(false);
+  });
+});

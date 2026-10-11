@@ -98,9 +98,10 @@ export async function authenticate(email: string, password: string): Promise<Aut
 async function cookieIsSecure(): Promise<boolean> {
   const h = await headers();
   const proto = (h.get("x-forwarded-proto") ?? "").split(",")[0].trim();
-  if (proto) return proto === "https";
   const host = h.get("host") ?? "";
-  return process.env.NODE_ENV === "production" && !/^(localhost|127\.0\.0\.1|\[::1\])(:\d+)?$/.test(host);
+  const local = /^(localhost|127\.0\.0\.1|\[::1\])(:\d+)?$/.test(host);
+  // The public production store uses HTTPS even if an internal proxy hop uses HTTP.
+  return proto === "https" || (process.env.NODE_ENV === "production" && !local);
 }
 
 /** Signs the user in on this browser (server actions and route handlers only). */
@@ -145,8 +146,8 @@ export async function endAllSessions(userId: string): Promise<void> {
 export async function issueToken(userId: string, purpose: TokenPurpose, ttlMinutes: number): Promise<string> {
   const pool = await getReadyPool();
   const token = randomToken(32);
-  // Older unused links of the same kind stop working.
-  await pool.query("UPDATE auth_tokens SET used_at = ? WHERE user_id = ? AND purpose = ? AND used_at IS NULL", [now(), userId, purpose]);
+  // Keep delivered links valid if a later email fails to send. Consuming any
+  // link revokes all its siblings atomically below.
   await pool.query("INSERT INTO auth_tokens (id, user_id, purpose, expires_at) VALUES (?, ?, ?, ?)", [sha256Hex(token), userId, purpose, inMinutes(ttlMinutes)]);
   return token;
 }
@@ -156,13 +157,20 @@ export async function consumeToken(token: string, purpose: TokenPurpose): Promis
   if (!token || token.length > 200) return null;
   const pool = await getReadyPool();
   const id = sha256Hex(token);
-  const [result] = await pool.query<ResultSetHeader>(
-    "UPDATE auth_tokens SET used_at = ? WHERE id = ? AND purpose = ? AND used_at IS NULL AND expires_at > UTC_TIMESTAMP(3)",
-    [now(), id, purpose],
-  );
-  if (result.affectedRows !== 1) return null;
-  const [rows] = await pool.query<RowDataPacket[]>("SELECT user_id FROM auth_tokens WHERE id = ?", [id]);
-  return (rows[0]?.user_id as string | undefined) ?? null;
+  return withTransaction(pool, async (conn) => {
+    const [rows] = await conn.query<RowDataPacket[]>("SELECT user_id FROM auth_tokens WHERE id = ? AND purpose = ?", [id, purpose]);
+    const userId = rows[0]?.user_id as string | undefined;
+    if (!userId) return null;
+    // Lock the account first: concurrent sibling links cannot both succeed.
+    await conn.query("SELECT id FROM auth_users WHERE id = ? FOR UPDATE", [userId]);
+    const [result] = await conn.query<ResultSetHeader>(
+      "UPDATE auth_tokens SET used_at = ? WHERE id = ? AND purpose = ? AND used_at IS NULL AND expires_at > UTC_TIMESTAMP(3)",
+      [now(), id, purpose],
+    );
+    if (result.affectedRows !== 1) return null;
+    await conn.query("UPDATE auth_tokens SET used_at = ? WHERE user_id = ? AND purpose = ? AND used_at IS NULL", [now(), userId, purpose]);
+    return userId;
+  });
 }
 
 export async function confirmEmail(userId: string): Promise<void> {

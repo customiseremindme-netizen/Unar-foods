@@ -5,6 +5,7 @@ import { getPublicDb, getUserDb } from "@/lib/db/client";
 import { getStaffAccess } from "@/lib/auth/session";
 import { logError } from "@/lib/monitoring";
 import { isSectionType, parseSectionContent, type HomeSection } from "@/lib/cms/sections";
+import { readSectionLayout } from "@/lib/cms/layout";
 
 /**
  * Preview mode is ON only when Next.js draft mode is enabled AND the visitor
@@ -48,6 +49,7 @@ export const getHomeSections = cache(async (): Promise<HomeSection[]> => {
           type: row.type,
           sortOrder: row.sort_order,
           isVisible: row.is_visible,
+          layout: readSectionLayout(row.content),
           content: parseSectionContent(row.type as never, row.content),
         }) as HomeSection,
     );

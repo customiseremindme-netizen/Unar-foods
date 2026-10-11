@@ -1,3 +1,4 @@
+import path from "node:path";
 import { expect, test } from "@playwright/test";
 import { addProductToCart, fillCheckout, loginAsAdmin, PRODUCT_PATH, stubRazorpayCheckout } from "./support/helpers";
 
@@ -100,6 +101,118 @@ test.describe("admin dashboard", () => {
     await expect(page.locator("main")).toContainText("EM000000001IN");
     await page.getByRole("button", { name: "Mark shipped" }).first().click();
     await expect(page.locator("main")).toContainText(/Shipped/i);
+    await page.context().grantPermissions(["clipboard-read", "clipboard-write"]);
+    await page.getByRole("button", { name: "Copy tracking number", exact: true }).click();
+    expect(await page.evaluate(() => navigator.clipboard.readText())).toBe("EM000000001IN");
     await admin.close();
   });
+});
+
+
+test("admin photo upload, reordering and removal update the storefront", async ({ browser, page: storefront }) => {
+  const admin = await loginAsAdmin(browser);
+  const editor = await admin.newPage();
+  try {
+    await editor.goto("/admin/products");
+    await editor.getByRole("link", { name: /Dry Fruits/i }).first().click();
+    await editor.waitForURL(/\/admin\/products\/[0-9a-f-]{36}/);
+    await expect(editor.locator("#section-images")).toBeVisible();
+    const rows = editor.locator("#section-images ol > li");
+    const originalCount = await rows.count();
+    await editor.getByLabel("Upload product images").setInputFiles(path.resolve("public/images/products/dry-fruits-seeds/01-main-hero-pouch.webp"));
+    await expect(rows).toHaveCount(originalCount + 1);
+    await editor.locator(`#img-alt-${originalCount}`).fill("Gallery upload QA");
+    for (let n = originalCount + 1; n > 1; n--) await editor.getByRole("button", { name: `Move image ${n} up`, exact: true }).click();
+    await editor.getByRole("button", { name: /^Save$/ }).click();
+    await expect(editor.getByText(/Saved/).first()).toBeVisible();
+    await storefront.goto(PRODUCT_PATH);
+    const photo = storefront.getByRole("button", { name: "Open image viewer: Gallery upload QA", exact: true }).locator("img");
+    await expect.poll(() => photo.evaluate((img: HTMLImageElement) => img.complete && img.naturalWidth > 0)).toBe(true);
+    await editor.getByRole("button", { name: "Remove image 1", exact: true }).click();
+    await editor.getByRole("button", { name: /^Save$/ }).click();
+    await expect(editor.getByText(/Saved/).first()).toBeVisible();
+    await storefront.reload();
+    await expect(storefront.getByRole("button", { name: "Open image viewer: Gallery upload QA", exact: true })).toHaveCount(0);
+    await expect(storefront.getByRole("list", { name: "Product images" }).getByRole("button")).toHaveCount(5);
+  } finally { await admin.close(); }
+});
+
+test("new products support sizes, stock-preserving edits, photos, publishing and safe duplication", async ({ browser, request }) => {
+  const admin = await loginAsAdmin(browser);
+  const editor = await admin.newPage(), inventory = await admin.newPage();
+  editor.on("dialog", (dialog) => dialog.accept());
+  const marker = `QA-${Date.now()}`, title = `Test product ${marker}`, slug = marker.toLowerCase();
+  const sku = `${marker}-`.padEnd(64, "A");
+  try {
+    await editor.goto("/admin/products");
+    await editor.getByRole("button", { name: "New product", exact: true }).click();
+    await editor.waitForURL(/\/admin\/products\/[0-9a-f-]{36}/);
+    await editor.fill("#title", title);
+    await editor.fill("#slug", slug);
+    await editor.fill("#v-sku-0", sku);
+    await editor.fill("#v-mrp-0", "100");
+    await editor.fill("#v-price-0", "90");
+    await editor.getByRole("button", { name: "Add a size", exact: true }).click();
+    await editor.fill("#v-title-1", "200 g");
+    await editor.fill("#v-sku-1", `${marker}-200`);
+    await editor.fill("#v-mrp-1", "180");
+    await editor.fill("#v-price-1", "170");
+    await editor.getByLabel("Upload product images").setInputFiles(path.resolve("public/images/products/dry-fruits-seeds/01-main-hero-pouch.webp"));
+    await editor.fill("#img-alt-0", "Test product pouch");
+    await editor.getByRole("button", { name: /^Save$/ }).click();
+    await expect(editor.getByText("Saved.", { exact: true }).first()).toBeVisible();
+    expect((await request.get(`/products/${slug}`)).status()).toBe(404);
+    await inventory.goto("/admin/inventory");
+    const row = inventory.getByRole("row").filter({ hasText: `${marker}-200` });
+    await row.getByRole("button", { name: "Update stock" }).click();
+    await inventory.locator('input[name="quantity"]').fill("5");
+    await inventory.locator('input[name="note"]').fill("Isolated new-product QA stock");
+    await inventory.getByRole("button", { name: /^Save$/ }).click();
+    await expect(inventory.getByText(/Stock for .* is now/).first()).toBeVisible();
+    await editor.fill("#v-price-1", "169");
+    await editor.getByRole("button", { name: /^Save$/ }).click();
+    await expect(editor.getByText("Saved.", { exact: true }).first()).toBeVisible();
+    await inventory.reload();
+    await expect(row.locator("td").nth(2).locator("span").first()).toHaveText("5");
+    await editor.getByRole("button", { name: "Save & publish", exact: true }).click();
+    await expect(editor.getByText("Saved and live on the website.", { exact: true }).first()).toBeVisible();
+    const publicPage = await request.get(`/products/${slug}`);
+    expect(publicPage.status()).toBe(200);
+    expect(await publicPage.text()).toContain(title);
+    const home = await request.get("/");
+    expect(await home.text()).toContain(title);
+    const shopper = await browser.newContext();
+    const purchase = await shopper.newPage();
+    await purchase.goto("/");
+    await expect(purchase.locator("#compare")).toHaveCount(1);
+    await expect(purchase.locator("#compare")).not.toContainText(title);
+    await purchase.goto("/shop");
+    await purchase.getByRole("link", { name: `Choose options: ${title}`, exact: true }).click();
+    await expect(purchase.getByRole("group", { name: "Choose a size / pack" })).toBeVisible();
+    await purchase.getByRole("radio", { name: "100 g — sold out", exact: true }).check();
+    await expect(purchase.getByRole("button", { name: "Sold out", exact: true })).toBeDisabled();
+    await purchase.getByRole("radio", { name: "200 g", exact: true }).check();
+    await expect(purchase.getByTestId("selected-variant")).toContainText(`${marker}-200`);
+    await purchase.getByRole("button", { name: `Add to cart: ${title}`, exact: true }).click();
+    await expect(purchase.getByRole("dialog")).toContainText("200 g");
+    await shopper.close();
+
+    await editor.locator('input[name="status"][value="draft"]').check();
+    await editor.getByRole("button", { name: /^Save$/ }).click();
+    await expect(editor.getByText("Saved.", { exact: true }).first()).toBeVisible();
+    expect((await request.get(`/products/${slug}`)).status()).toBe(404);
+    await editor.goto("/admin/products");
+    await editor.getByRole("row").filter({ hasText: title }).getByRole("button", { name: "Product actions" }).click();
+    await editor.getByRole("menuitem", { name: "Duplicate", exact: true }).click();
+    await editor.waitForURL(/\/admin\/products\/[0-9a-f-]{36}/);
+    expect(await editor.inputValue("#v-sku-0")).not.toBe(sku);
+    expect((await editor.inputValue("#v-sku-0")).length).toBeLessThanOrEqual(64);
+    await editor.goto("/admin/products");
+    for (const name of [`${title} (copy)`, title]) {
+      const product = editor.getByRole("row").filter({ has: editor.getByRole("link", { name, exact: true }) });
+      await product.getByRole("button", { name: "Product actions" }).click();
+      await editor.getByRole("menuitem", { name: "Delete", exact: true }).click();
+      await expect(product).toHaveCount(0);
+    }
+  } finally { await admin.close(); }
 });

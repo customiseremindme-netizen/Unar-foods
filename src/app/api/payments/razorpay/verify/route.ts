@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { getRazorpayEnv } from "@/lib/env";
 import { verifyPaymentSignature } from "@/lib/payments/razorpay";
+import { browserPaymentStatus } from "@/lib/commerce/payment-validation";
 import { confirmRazorpayPayment } from "@/lib/commerce/payments";
 import { checkRateLimit } from "@/lib/security/rate-limit";
 import { getClientIp, isSameOrigin } from "@/lib/security/request";
@@ -53,10 +54,7 @@ export async function POST(request: Request) {
       razorpayOrderId: body.razorpay_order_id,
       razorpayPaymentId: body.razorpay_payment_id,
     });
-    const status =
-      result === "paid" || result === "already_paid" || result === "paid_needs_attention" || result === "amount_mismatch"
-        ? "paid"
-        : result;
+    const status = browserPaymentStatus(result);
     return NextResponse.json({ status, redirectTo });
   } catch (error) {
     // Razorpay unreachable: the webhook / reconciliation job will finish the job.

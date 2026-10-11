@@ -135,6 +135,7 @@ export function SchemaFields({
                       <input
                         type="checkbox"
                         checked={selected.includes(p.slug)}
+                        disabled={!selected.includes(p.slug) && selected.length >= (field.max ?? 12)}
                         onChange={(e) =>
                           set(field.name, e.target.checked ? [...selected, p.slug] : selected.filter((s) => s !== p.slug))
                         }

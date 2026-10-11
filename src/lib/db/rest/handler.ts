@@ -1,4 +1,4 @@
-import type { Pool } from "mysql2/promise";
+import type { Pool, PoolConnection } from "mysql2/promise";
 import { DbError, toDbError, type DbContext } from "./context";
 import { deleteRows, insertRows, readRows, updateRows, type Prefer } from "./engine";
 import { parseQuery, QueryParseError } from "./parse";
@@ -63,6 +63,7 @@ export async function handleDataRequest(
   rpcs: Record<string, RpcHandler>,
   input: string | URL | Request,
   init: RequestInit = {},
+  transactionConnection?: PoolConnection,
 ): Promise<Response> {
   try {
     const url = new URL(typeof input === "string" ? input : input instanceof URL ? input.href : input.url);
@@ -83,6 +84,7 @@ export async function handleDataRequest(
 
     // Functions: /rest/rpc/<name>
     if (segments[0] === "rpc" && segments.length === 2) {
+      if (transactionConnection) throw new DbError("PGRST202", "RPCs cannot run inside a data transaction", 400);
       const fn = rpcs[segments[1]];
       if (!fn) throw new DbError("PGRST202", `Could not find the function public.${segments[1]}`, 404);
       const args = method === "GET" || method === "HEAD" ? Object.fromEntries(url.searchParams) : ((body ?? {}) as Record<string, unknown>);
@@ -99,32 +101,32 @@ export async function handleDataRequest(
     const query = parseQuery(url.searchParams);
 
     if (method === "GET" || method === "HEAD") {
-      const result = await readRows(pool, ctx, table, query, !!prefer.count);
+      const result = await readRows(transactionConnection ?? pool, ctx, table, query, !!prefer.count);
       const range = { "content-range": contentRange(result.offset, result.rows.length, result.count) };
       if (method === "HEAD") return new Response(null, { status: 200, headers: range });
       const shaped = shape(result.rows, wantsObject);
       return json(shaped.status, shaped.body, range);
     }
 
-    const conn = await pool.getConnection();
+    const conn = transactionConnection ?? await pool.getConnection();
     let rows: Record<string, unknown>[];
     try {
-      await conn.beginTransaction();
+      if (!transactionConnection) await conn.beginTransaction();
       if (method === "POST") rows = await insertRows(conn, ctx, table, body, query, prefer);
       else if (method === "PATCH") rows = await updateRows(conn, ctx, table, body, query, prefer);
       else if (method === "DELETE") rows = await deleteRows(conn, ctx, table, query, prefer);
       else throw new DbError("PGRST117", `Unsupported method ${method}`, 405);
       if (wantsObject && prefer.returnRepresentation && rows.length !== 1) {
-        await conn.rollback();
+        if (!transactionConnection) await conn.rollback();
         const shaped = shape(rows, true);
         return json(shaped.status, shaped.body);
       }
-      await conn.commit();
+      if (!transactionConnection) await conn.commit();
     } catch (error) {
-      await conn.rollback().catch(() => undefined);
+      if (!transactionConnection) await conn.rollback().catch(() => undefined);
       throw error;
     } finally {
-      conn.release();
+      if (!transactionConnection) conn.release();
     }
     const status = method === "POST" ? 201 : 200;
     if (!prefer.returnRepresentation) return new Response(null, { status: 204 });

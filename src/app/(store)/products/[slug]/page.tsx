@@ -1,17 +1,20 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import Link from "next/link";
+import Image from "next/image";
+import { ReviewMedia } from "@/components/product/review-media";
+import { ShareProduct } from "@/components/product/share-product";
 import { notFound } from "next/navigation";
 import { BadgeCheck, Leaf, PackageCheck, ShieldCheck, Truck } from "lucide-react";
-import { getPreviewProductBySlug, getProductBySlug, getPublishedProducts, primaryImage, variantAvailability } from "@/lib/data/catalog";
+import { getPreviewProductBySlug, getProductBySlug, getPublishedProducts, primaryImage } from "@/lib/data/catalog";
 import { getProductReviews, reviewStats } from "@/lib/data/reviews";
 import { getPublicSettings } from "@/lib/settings";
 import { getSiteUrl } from "@/lib/env";
 import { formatDate } from "@/lib/utils";
-import { Badge, Breadcrumbs, Price, Stars, VegMark } from "@/components/ui/misc";
+import { Breadcrumbs, Stars, VegMark } from "@/components/ui/misc";
 import { Markdown } from "@/components/ui/markdown";
 import { ProductGallery } from "@/components/product/gallery";
-import { BuyBox } from "@/components/product/add-to-cart";
+import { ProductOptions } from "@/components/product/product-options";
 import { ProductCard } from "@/components/product/product-card";
 import { ReviewForm } from "@/components/product/review-form";
 import { Reveal } from "@/components/motion/motion";
@@ -59,9 +62,6 @@ export default async function ProductPage({ params }: { params: Params }) {
   const [settings, reviews, all] = await Promise.all([getPublicSettings(), getProductReviews(product.id), getPublishedProducts()]);
   const stats = reviewStats(reviews);
   const variant = product.defaultVariant;
-  const availability = variantAvailability(variant);
-  const soldOut = availability === "out_of_stock" || availability === "unavailable";
-  const maxQuantity = variant ? Math.min(variant.stock, settings.checkout.max_quantity_per_item) : 0;
   const related = all.filter((p) => p.id !== product.id).slice(0, 3);
   const site = getSiteUrl();
   const name = product.short_title ?? product.title;
@@ -86,7 +86,7 @@ export default async function ProductPage({ params }: { params: Params }) {
           <div className="lg:sticky lg:top-28">
             <ProductGallery
               productName={name}
-              images={product.images.map((i) => ({ id: i.id, url: i.url, alt: i.alt, kind: i.kind, width: i.width, height: i.height }))}
+              images={product.images.filter((i) => i.kind !== "front_label" && i.kind !== "back_label").map((i) => ({ id: i.id, url: i.url, alt: i.alt, kind: i.kind, width: i.width, height: i.height }))}
             />
           </div>
         </div>
@@ -102,24 +102,7 @@ export default async function ProductPage({ params }: { params: Params }) {
             </a>
           ) : null}
 
-          <div className="mt-6 flex flex-wrap items-end gap-x-4 gap-y-2">
-            {variant ? <Price pricePaise={variant.price_paise} mrpPaise={variant.mrp_paise} size="lg" /> : null}
-            {availability === "in_stock" ? (
-              <Badge tone="success">In stock</Badge>
-            ) : availability === "low_stock" ? (
-              <Badge tone="banana">Only {variant!.stock} left</Badge>
-            ) : (
-              <Badge tone="muted">Sold out</Badge>
-            )}
-          </div>
-          {variant ? (
-            <p className="mt-2 text-[0.8rem] text-muted">
-              {variant.mrp_paise === variant.price_paise ? "MRP " : ""}
-              {settings.tax.prices_include_tax ? "Inclusive of all taxes" : "GST added at checkout"} · Net weight {variant.title} · SKU{" "}
-              {variant.sku}
-            </p>
-          ) : null}
-
+          <ProductOptions variants={product.variants} productName={name} maxPerItem={settings.checkout.max_quantity_per_item} pricesIncludeTax={settings.tax.prices_include_tax}>
           {product.short_description ? <p className="mt-6 text-[1.02rem] leading-relaxed text-muted">{product.short_description}</p> : null}
 
           {product.claims.length > 0 || product.dietary_mark === "vegetarian" ? (
@@ -137,8 +120,8 @@ export default async function ProductPage({ params }: { params: Params }) {
             </ul>
           ) : null}
 
-          <div className="mt-8 rounded-[1.75rem] border border-line bg-paper p-5 sm:p-6">
-            <BuyBox variantId={variant?.id ?? null} maxQuantity={maxQuantity} productName={name} soldOut={soldOut} />
+          </ProductOptions>
+          <div className="mt-4">
             <ul className="mt-5 grid gap-2.5 border-t border-line pt-5 text-[0.82rem] text-muted">
               <li className="flex items-center gap-2.5">
                 <ShieldCheck className="size-4 text-olive" aria-hidden="true" /> Secure checkout
@@ -152,6 +135,7 @@ export default async function ProductPage({ params }: { params: Params }) {
             </ul>
           </div>
 
+          <ShareProduct title={product.title} />
           <div className="mt-8 border-t border-line">
             {product.description_md ? (
               <DetailBlock title="Description">
@@ -206,6 +190,18 @@ export default async function ProductPage({ params }: { params: Params }) {
                 <p className="mt-1 text-[0.78rem] text-muted">Values as printed on the pack.</p>
               </DetailBlock>
             ) : null}
+            {product.images.some((i) => i.kind === "front_label" || i.kind === "back_label") ? (
+              <DetailBlock title="Approved packaging artwork">
+                <p className="mb-4 text-[0.8rem] text-muted">Original label artwork, separate from the product photography.</p>
+                <div className="grid gap-4">
+                  {product.images.filter((i) => i.kind === "front_label" || i.kind === "back_label").map((image) => (
+                    <a key={image.id} href={image.url} target="_blank" rel="noopener noreferrer" aria-label={`Open original ${image.kind === "front_label" ? "front" : "back"} label in a new tab`}>
+                      <Image src={image.url} alt={image.alt} width={image.width || 1200} height={image.height || 1200} sizes="(min-width: 1024px) 35vw, 90vw" className="h-auto w-full rounded-xl object-contain" />
+                    </a>
+                  ))}
+                </div>
+              </DetailBlock>
+            ) : null}
             {product.storage_instructions || product.shelf_life ? (
               <DetailBlock title="Storage & shelf life">
                 {product.storage_instructions ? <p>{product.storage_instructions}</p> : null}
@@ -257,6 +253,7 @@ export default async function ProductPage({ params }: { params: Params }) {
                     {r.title ? <p className="font-semibold text-forest">{r.title}</p> : null}
                   </div>
                   <p className="mt-3 whitespace-pre-line leading-relaxed">{r.body}</p>
+                  <ReviewMedia items={r.review_media ?? []} />
                   <p className="mt-3 text-[0.8rem] text-muted">
                     {r.author_name} · {formatDate(r.created_at)}
                     {r.is_verified_purchase ? (

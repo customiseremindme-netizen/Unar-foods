@@ -151,7 +151,7 @@ export const getPublishedProducts = cache(async (): Promise<Product[]> => {
     .order("created_at", { ascending: true });
   if (error) {
     logError("catalog.list", error);
-    return [];
+    throw new Error("Products are temporarily unavailable. Please try again shortly.");
   }
   return (data as unknown as Row[]).map(mapProduct);
 });

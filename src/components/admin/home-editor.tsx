@@ -1,11 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { ArrowDown, ArrowUp, ChevronDown, Eye, EyeOff, Plus, Trash2 } from "lucide-react";
+import { ArrowDown, ArrowUp, ChevronDown, Copy, Eye, EyeOff, Plus, Trash2 } from "lucide-react";
 import { discardHomeDraftAction, publishHomeAction, saveHomeDraftAction } from "@/app/admin/_actions/content";
+import { readSectionLayout } from "@/lib/cms/layout";
 import { SECTION_TYPES, isSectionType, type SectionType } from "@/lib/cms/sections";
 import { Button } from "@/components/ui/button";
-import { Select } from "@/components/ui/field";
+import { Label, Select } from "@/components/ui/field";
 import { Badge } from "@/components/ui/misc";
 import { formatDateTime } from "@/lib/utils";
 import { cn } from "@/lib/utils";
@@ -70,6 +71,7 @@ export function HomeEditor({
           if (!isSectionType(s.type)) return null;
           const def = SECTION_TYPES[s.type];
           const open = openKey === s.key;
+          const layout = readSectionLayout(s.content);
           return (
             <li key={s.key} className={cn("rounded-[1.25rem] border bg-paper", open ? "border-forest" : "border-line", !s.is_visible && "opacity-70")}>
               <div className="flex flex-wrap items-center gap-2 px-4 py-3">
@@ -89,6 +91,11 @@ export function HomeEditor({
                 </button>
                 {!s.is_visible ? <Badge tone="muted">Hidden</Badge> : null}
                 <span className="flex items-center gap-0.5">
+                  <button type="button" disabled={sections.length >= 30} className="grid size-9 place-items-center rounded-full hover:bg-forest/[0.06] disabled:opacity-30" aria-label={`Duplicate ${def.label}`} onClick={() => {
+                    const key = `${s.type.replace(/_/g, "-")}-${crypto.randomUUID().slice(0, 8)}`;
+                    setSections((list) => [...list.slice(0, i + 1), { ...s, key, content: structuredClone(s.content) }, ...list.slice(i + 1)]);
+                    setOpenKey(key);
+                  }}><Copy className="size-4" aria-hidden="true" /></button>
                   <button type="button" onClick={() => update(i, { is_visible: !s.is_visible })} className="grid size-9 place-items-center rounded-full hover:bg-forest/[0.06]" aria-label={s.is_visible ? `Hide ${def.label}` : `Show ${def.label}`} title={s.is_visible ? "Hide" : "Show"}>
                     {s.is_visible ? <Eye className="size-4" aria-hidden="true" /> : <EyeOff className="size-4" aria-hidden="true" />}
                   </button>
@@ -113,6 +120,15 @@ export function HomeEditor({
               {open ? (
                 <div className="border-t border-line px-4 py-5 sm:px-6">
                   <p className="mb-4 text-[0.82rem] text-muted">{def.description}</p>
+                  <fieldset className="mb-6 grid gap-4 rounded-xl bg-cream p-4 sm:grid-cols-2">
+                    <legend className="px-2 text-[0.85rem] font-semibold">Section appearance</legend>
+                    <div><Label htmlFor={`background-${s.key}`}>Background</Label><Select id={`background-${s.key}`} value={layout.background} onChange={(e) => update(i, { content: { ...s.content, _layout: { ...layout, background: e.target.value } } })}>
+                      <option value="original">Original design</option><option value="cream">Warm cream</option><option value="paper">White paper</option><option value="sage">Soft sage</option>
+                    </Select></div>
+                    <div><Label htmlFor={`spacing-${s.key}`}>Section spacing</Label><Select id={`spacing-${s.key}`} value={layout.spacing} onChange={(e) => update(i, { content: { ...s.content, _layout: { ...layout, spacing: e.target.value } } })}>
+                      <option value="standard">Original spacing</option><option value="compact">Compact</option><option value="airy">Extra breathing room</option>
+                    </Select></div>
+                  </fieldset>
                   <SchemaFields fields={def.fields} value={s.content} onChange={(content) => update(i, { content })} idPrefix={`sec-${s.key}`} products={products} />
                 </div>
               ) : null}
@@ -136,8 +152,9 @@ export function HomeEditor({
           type="button"
           size="sm"
           variant="secondary"
+          disabled={sections.length >= 30}
           onClick={() => {
-            const key = `${newType.replace(/_/g, "-")}-${Math.random().toString(36).slice(2, 7)}`;
+            const key = `${newType.replace(/_/g, "-")}-${crypto.randomUUID().slice(0, 8)}`;
             setSections((list) => [...list, { key, type: newType, is_visible: true, content: {} }]);
             setOpenKey(key);
           }}

@@ -1,6 +1,6 @@
 import type { MetadataRoute } from "next";
 import { getSiteUrl } from "@/lib/env";
-import { getPublishedProducts } from "@/lib/data/catalog";
+import { getCategories, getPublishedProducts } from "@/lib/data/catalog";
 import { listCmsPages } from "@/lib/data/content";
 
 /** Pages read the live database, so they are rendered when visitors open them (not while building). */
@@ -8,11 +8,12 @@ export const dynamic = "force-dynamic";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const site = getSiteUrl();
-  const [products, policies, posts, pages] = await Promise.all([
+  const [products, policies, posts, pages, categories] = await Promise.all([
     getPublishedProducts(),
     listCmsPages("policy"),
     listCmsPages("post"),
     listCmsPages("page"),
+    getCategories(),
   ]);
   const staticRoutes = ["", "/shop", "/about", "/faqs", "/contact", "/blog", "/track-order"].map((path) => ({
     url: `${site}${path}`,
@@ -21,6 +22,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   }));
   return [
     ...staticRoutes,
+    ...categories.map((c) => ({ url: `${site}/shop?collection=${encodeURIComponent(c.slug)}`, changeFrequency: "weekly" as const, priority: 0.8 })),
     ...products.map((p) => ({
       url: `${site}/products/${p.slug}`,
       lastModified: p.updated_at,

@@ -28,6 +28,7 @@ export const ADMIN_NAV: { group: string; items: AdminNavItem[] }[] = [
   {
     group: "Website",
     items: [
+      { href: "/admin/customize", label: "Customize website", icon: "settings", permission: "content.write" },
       {
         href: "/admin/content",
         label: "Content",

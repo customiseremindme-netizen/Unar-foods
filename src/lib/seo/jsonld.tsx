@@ -17,7 +17,8 @@ export function organizationJsonLd(settings: PublicSettings, site: string) {
   const sameAs = [settings.social.instagram_url, settings.social.facebook_url, settings.social.youtube_url].filter(Boolean);
   return {
     "@context": "https://schema.org",
-    "@type": "Organization",
+    "@type": ["Organization", "OnlineStore"],
+    "@id": `${site}/#organization`,
     name: settings.store.name,
     url: site,
     logo: absolute(site, settings.brand.logo_url),
@@ -44,6 +45,9 @@ export function websiteJsonLd(settings: PublicSettings, site: string) {
   return {
     "@context": "https://schema.org",
     "@type": "WebSite",
+    "@id": `${site}/#website`,
+    publisher: { "@id": `${site}/#organization` },
+    inLanguage: "en-IN",
     name: settings.store.name,
     url: site,
     potentialAction: {
@@ -86,20 +90,27 @@ export function productJsonLd(input: {
     name: product.title,
     description: product.seo_description || product.short_description || undefined,
     sku: variant?.sku,
-    ...(variant?.barcode && /^\d{8,14}$/.test(variant.barcode) ? { gtin13: variant.barcode } : {}),
+    additionalProperty: [
+      ...(product.ingredients ? [{ "@type": "PropertyValue", name: "Ingredients", value: product.ingredients }] : []),
+      ...(product.allergens ? [{ "@type": "PropertyValue", name: "Allergen advice", value: product.allergens }] : []),
+      ...(product.storage_instructions ? [{ "@type": "PropertyValue", name: "Storage instructions", value: product.storage_instructions }] : []),
+    ],
+    ...(variant?.barcode && /^\d+$/.test(variant.barcode) && [8, 12, 13, 14].includes(variant.barcode.length) ? { [`gtin${variant.barcode.length}`]: variant.barcode } : {}),
     brand: { "@type": "Brand", name: input.brand },
     image: product.images.map((i) => absolute(site, i.url)),
     url: `${site}/products/${product.slug}`,
     ...(variant
       ? {
-          offers: {
+          offers: product.variants.map((v) => ({
             "@type": "Offer",
+            sku: v.sku,
+            name: v.title,
             url: `${site}/products/${product.slug}`,
             priceCurrency: "INR",
-            price: (variant.price_paise / 100).toFixed(2),
-            availability: variant.stock > 0 ? "https://schema.org/InStock" : "https://schema.org/OutOfStock",
+            price: (v.price_paise / 100).toFixed(2),
+            availability: v.stock > 0 ? "https://schema.org/InStock" : "https://schema.org/OutOfStock",
             itemCondition: "https://schema.org/NewCondition",
-          },
+          })),
         }
       : {}),
     ...(input.stats

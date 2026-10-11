@@ -1,4 +1,6 @@
 import "server-only";
+import type { PoolConnection } from "mysql2/promise";
+import { withDbTransaction } from "./rest/transaction";
 import { cache } from "react";
 import { PostgrestClient } from "@supabase/postgrest-js";
 import { connection } from "next/server";
@@ -86,3 +88,8 @@ export const getUserDb = cache(async (): Promise<Db | null> => {
   if (!isDatabaseConfigured()) return null;
   return createDb(() => getDbContext());
 });
+
+/** Authenticated multi-table edits keep row permissions and commit together. */
+export async function withUserDbTransaction<T>(fn: (db: Db, conn: PoolConnection) => Promise<T>): Promise<T> {
+  return withDbTransaction(await getReadyPool(), await getDbContext(), fn);
+}

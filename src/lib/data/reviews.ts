@@ -13,6 +13,7 @@ export type PublicReview = {
   is_verified_purchase: boolean;
   admin_reply: string | null;
   created_at: string;
+  review_media: { id: string; mime_type: string; width: number | null; height: number | null }[];
 };
 
 export type ReviewStats = { count: number; average: number };
@@ -23,7 +24,7 @@ export const getApprovedReviews = cache(async (): Promise<PublicReview[]> => {
   if (!db) return [];
   const { data, error } = await db
     .from("reviews")
-    .select("id, product_id, author_name, rating, title, body, is_verified_purchase, admin_reply, created_at")
+    .select("id, product_id, author_name, rating, title, body, is_verified_purchase, admin_reply, created_at, review_media(id, mime_type, width, height)")
     .eq("status", "approved")
     .order("created_at", { ascending: false })
     .limit(200);

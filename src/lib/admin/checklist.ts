@@ -3,7 +3,7 @@ import { getEmailEnv, getRazorpayEnv, getCronSecret } from "@/lib/env";
 import { getAllSettings } from "@/lib/settings";
 import { requireServiceDb } from "@/lib/db/client";
 
-export type ChecklistItem = { label: string; done: boolean; detail: string; href: string };
+export type ChecklistItem = { label: string; done: boolean; detail: string; href: string; optional?: boolean };
 
 /** Launch readiness checks shown on the dashboard overview (all computed from real data/config). */
 export async function getLaunchChecklist(): Promise<ChecklistItem[]> {
@@ -12,7 +12,7 @@ export async function getLaunchChecklist(): Promise<ChecklistItem[]> {
   const [products, variants, zones, policies] = await Promise.all([
     admin.from("products").select("id, status, claims, shelf_life, shelf_life_approved, gst_rate"),
     admin.from("product_variants").select("id, stock, is_demo_stock, product_id, products(status)"),
-    admin.from("shipping_zones").select("id").eq("is_active", true),
+    admin.from("shipping_zones").select("id, cod_available").eq("is_active", true),
     admin.from("cms_pages").select("id").eq("kind", "policy").eq("state", "published").eq("requires_owner_review", true),
   ]);
   const published = (products.data ?? []).filter((p) => p.status === "published");
@@ -23,13 +23,16 @@ export async function getLaunchChecklist(): Promise<ChecklistItem[]> {
     (p) => Array.isArray(p.claims) && (p.claims as { approved?: boolean }[]).some((c) => !c.approved),
   );
   const razorpay = getRazorpayEnv();
+  const codReady = settings.shipping.enabled && settings.checkout.cod_enabled && (zones.data ?? []).some((z) => z.cod_available);
+  const onlineReady = settings.checkout.online_payments_enabled && razorpay?.mode === "live" && !!razorpay.webhookSecret;
+
 
   const items: ChecklistItem[] = [
     {
       label: "Confirm business contact details",
       done: settings.store.details_confirmed,
       detail: "Check email, phone, address and FSSAI number, then tick “Details confirmed”.",
-      href: "/admin/settings?tab=store",
+      href: "/admin/settings#set-store",
     },
     {
       label: "Review product claims and labels",
@@ -56,27 +59,38 @@ export async function getLaunchChecklist(): Promise<ChecklistItem[]> {
       href: "/admin/shipping",
     },
     {
+      label: "Enable a checkout payment method",
+      done: codReady || onlineReady,
+      detail: codReady ? "COD enabled for at least one active delivery zone. Each address and order limit is checked at checkout."
+        : onlineReady ? "Live online payments configured."
+        : "For COD: enable Cash on Delivery in Settings → Checkout and in each eligible active shipping zone. Online payments can be connected later.",
+      href: "/admin/settings#set-checkout",
+    },
+    {
       label: "Connect Razorpay payments",
+      optional: codReady,
       done: !!razorpay,
       detail: razorpay ? `Connected in ${razorpay.mode.toUpperCase()} mode.` : "Add your Razorpay keys in your hosting settings (see the setup guide).",
       href: "/admin/integrations",
     },
     {
       label: "Add the Razorpay webhook",
+      optional: codReady,
       done: !!razorpay?.webhookSecret,
       detail: "Lets payments be confirmed even if a customer closes the browser.",
       href: "/admin/integrations",
     },
     {
       label: "Switch Razorpay to live mode",
+      optional: codReady,
       done: razorpay?.mode === "live",
       detail: "Test thoroughly first, then replace the test keys with live keys.",
       href: "/admin/integrations",
     },
     {
-      label: "Connect order emails",
+      label: "Connect account and order emails",
       done: !!getEmailEnv(),
-      detail: "Add your Hostinger email (SMTP) or Resend details so customers receive order emails.",
+      detail: "Account creation and password reset need Hostinger email (SMTP) or Resend. Open Integrations for the setup instructions.",
       href: "/admin/integrations",
     },
     {
@@ -88,9 +102,10 @@ export async function getLaunchChecklist(): Promise<ChecklistItem[]> {
       href: "/admin/content/pages",
     },
     {
-      label: "Schedule the payment clean-up job",
+      label: "Configure payment maintenance access",
+      optional: codReady,
       done: !!getCronSecret(),
-      detail: "Set CRON_SECRET and add a daily Hostinger cron job — see the setup guide, Part 5.",
+      detail: "This checks CRON_SECRET only. Also schedule and verify the daily job in Hostinger; the website cannot confirm that hosting task is running.",
       href: "/admin/integrations",
     },
   ];
@@ -99,7 +114,7 @@ export async function getLaunchChecklist(): Promise<ChecklistItem[]> {
       label: "Complete GST details",
       done: !!settings.tax.gstin && published.every((p) => p.gst_rate !== null),
       detail: "Enter your GSTIN and a GST rate + HSN code for every product (ask your accountant).",
-      href: "/admin/settings?tab=tax",
+      href: "/admin/settings#set-tax",
     });
   }
   return items;

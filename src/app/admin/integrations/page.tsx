@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 import { requireStaffPage } from "@/lib/auth/session";
 import { getUserDb } from "@/lib/db/client";
 import { getRequestSiteUrl } from "@/lib/site-url";
-import { getCronSecret, getEmailEnv, getRazorpayEnv, getConfiguredSiteUrl, getShiprocketEnv, maskSecret } from "@/lib/env";
+import { getGoogleEnv, getCronSecret, getEmailEnv, getRazorpayEnv, getConfiguredSiteUrl, getShiprocketEnv, maskSecret } from "@/lib/env";
 import { checkDatabase } from "@/lib/db/health";
 import { getDbConfig } from "@/lib/db/pool";
 import { formatDateTime } from "@/lib/utils";
@@ -30,6 +30,7 @@ export default async function IntegrationsPage() {
   const db = (await getUserDb())!;
   const razorpay = getRazorpayEnv();
   const email = getEmailEnv();
+  const google = getGoogleEnv();
   const shiprocket = getShiprocketEnv();
   const [dbHealth, dbConfig] = [await checkDatabase(), getDbConfig()];
   const site = await getRequestSiteUrl();
@@ -61,15 +62,20 @@ export default async function IntegrationsPage() {
           <p className="mt-3 text-[0.78rem] text-muted">Webhook events to tick: payment.authorized, payment.captured, payment.failed, order.paid, refund.processed, refund.failed.</p>
         </Card>
 
-        <Card title="Email (order emails)" actions={<Status ok={!!email} />}>
+        <Card title="Email (accounts and orders)" actions={<Status ok={!!email} />}>
           <Row label="Sent through" value={email ? (email.provider === "resend" ? "Resend" : `SMTP · ${email.smtp.host}:${email.smtp.port}`) : "not set"} />
           <Row label="Sender address" value={email?.from ?? "not set"} />
           <Row label={email?.provider === "smtp" ? "Mailbox password" : "API key"} value={maskSecret(email ? (email.provider === "resend" ? email.resendApiKey : email.smtp.password) : null)} />
           <p className="mt-3 text-[0.78rem] text-muted">
-            Use Resend, or your Hostinger email (SMTP). Without email, orders still work — customers see their order on screen, but no emails are sent.
+            Use Resend or your Hostinger email (SMTP). Email is required for account confirmation and password reset links. Guest orders can still be placed without email, but customers will not receive order notifications.
           </p>
         </Card>
 
+        <Card title="Google customer sign-in" actions={<Status ok={!!google} okText="Configured — test sign-in" />}>
+          <Row label="Callback URL" value={`${site}/auth/google/callback`} />
+          <p className="mt-3 text-[0.85rem] text-muted">In Google Cloud, create a Web application OAuth client. Configure the consent screen and add this exact callback URL. Add GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET and NEXT_PUBLIC_SITE_URL privately to Hostinger, then redeploy. In Google’s Testing mode, add your test users; publish the consent screen before opening sign-in to customers.</p>
+          <p className="mt-3 text-[0.8rem] text-muted">Google verifies new customers’ email addresses. Email/password accounts still need sending email for confirmation and password resets. Staff use their existing secure password login.</p>
+        </Card>
         <Card title="Shiprocket (optional)" actions={<Status ok={!!shiprocket} noText="Not used" />}>
           <Row label="Login email" value={shiprocket ? shiprocket.email.replace(/^(.).*(@.*)$/, "$1•••$2") : "not set"} />
           <Row label="Password" value={maskSecret(shiprocket?.password)} />
@@ -82,6 +88,12 @@ export default async function IntegrationsPage() {
           <Row label="Cron secret (payment check job)" value={getCronSecret() ? maskSecret(getCronSecret()) : <span className="text-danger">not set</span>} />
         </Card>
       </div>
+
+      {!email ? <Card title="Enable customer accounts: connect email first" description="Create a sending mailbox or a Resend account, add its details privately to this website's Hostinger environment variables, then redeploy.">
+        <p className="text-[0.85rem]">For your Hostinger mailbox, add EMAIL_FROM, SMTP_HOST, SMTP_PORT, SMTP_USER and SMTP_PASSWORD. Use the SMTP host and port from your mailbox settings (commonly smtp.hostinger.com and port 465). SMTP_USER is your full email address; SMTP_PASSWORD is that mailbox’s password.</p>
+        <p className="mt-3 text-[0.85rem]">Alternatively, verify your sending domain in Resend and set RESEND_API_KEY and EMAIL_FROM. Set NEXT_PUBLIC_SITE_URL to {site}. Never put passwords or API keys in homepage content or product fields.</p>
+        <p className="mt-3 text-[0.85rem]">After redeploying, send a test email below. Then register a new customer, open the confirmation email and sign in. Configuration status alone does not prove email delivery.</p>
+      </Card> : null}
 
       <IntegrationTests emailReady={!!email} shiprocketReady={!!shiprocket} />
 

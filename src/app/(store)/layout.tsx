@@ -1,4 +1,5 @@
 import { getPublicSettings } from "@/lib/settings";
+import { appearanceCss } from "@/lib/settings/appearance";
 import { defaultSettings } from "@/lib/settings/schema";
 import { getBanners, isPreview, listCmsPages } from "@/lib/data/content";
 import { getPublishedProducts, primaryImage } from "@/lib/data/catalog";
@@ -21,14 +22,18 @@ function themeCss(theme: Record<string, string>) {
 }
 
 export default async function StoreLayout({ children }: { children: React.ReactNode }) {
-  const [settings, announcements, products, policies, preview] = await Promise.all([
+  const [settings, announcements, catalog, policies, preview] = await Promise.all([
     getPublicSettings(),
     getBanners("announcement"),
-    getPublishedProducts(),
+    getPublishedProducts().then(
+      (products) => ({ products, unavailable: false }),
+      () => ({ products: [], unavailable: true }),
+    ),
     listCmsPages("policy"),
     isPreview(),
   ]);
 
+  const { products, unavailable: catalogUnavailable } = catalog;
   const logo = {
     url: settings.brand.logo_svg_url || settings.brand.logo_url,
     width: settings.brand.logo_width,
@@ -54,9 +59,10 @@ export default async function StoreLayout({ children }: { children: React.ReactN
 
   return (
     <ToastProvider>
-      <MotionProvider>
+      <MotionProvider enabled={settings.appearance.animations_enabled}>
+        <div className="unar-store min-h-screen bg-cream">
         <CartProvider>
-          {css ? <style>{css}</style> : null}
+          <style>{css + appearanceCss(settings.appearance)}</style>
           <noscript>
             <style>{"[data-reveal]{opacity:1!important;transform:none!important}"}</style>
           </noscript>
@@ -70,8 +76,10 @@ export default async function StoreLayout({ children }: { children: React.ReactN
           {announcement && !maintenance ? (
             <AnnouncementBar title={announcement.title} ctaLabel={announcement.cta_label} ctaUrl={announcement.cta_url} />
           ) : null}
+          {catalogUnavailable ? <p role="status" className="border-b border-line bg-cream-deep px-4 py-3 text-center text-[0.85rem] text-forest">Products are temporarily unavailable. Please try again shortly.</p> : null}
           <SiteHeader
             logo={logo}
+            sticky={settings.appearance.sticky_header}
             links={settings.navigation.header}
             searchIndex={searchIndex}
             contact={{ email: settings.store.email, phone: settings.store.phone }}
@@ -114,6 +122,7 @@ export default async function StoreLayout({ children }: { children: React.ReactN
           />
           <CartDrawer />
         </CartProvider>
+        </div>
       </MotionProvider>
     </ToastProvider>
   );

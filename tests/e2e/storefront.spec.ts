@@ -67,3 +67,47 @@ test.describe("mobile @mobile", () => {
     await expect(page.getByRole("dialog").getByText("Your cart")).toBeVisible();
   });
 });
+
+test.describe("product photography", () => {
+  for (const slug of ["banana-chewy-dry-fruits-seeds", "banana-chewy-fresh-raw-banana"]) {
+    test(`all five photos load for ${slug}`, async ({ page }) => {
+      await page.goto(`/products/${slug}`);
+      const thumbs = page.getByRole("list", { name: "Product images" }).getByRole("button");
+      await expect(thumbs).toHaveCount(5);
+      for (let i = 0; i < 5; i++) {
+        await thumbs.nth(i).click();
+        await expect(thumbs.nth(i)).toHaveAttribute("aria-current", "true");
+        const photo = page.getByRole("button", { name: /open image viewer/i }).locator("img");
+        await expect.poll(() => photo.evaluate((img: HTMLImageElement) => img.complete && img.naturalWidth > 0)).toBe(true);
+      }
+      await page.getByRole("button", { name: /open image viewer/i }).click();
+      await expect(page.getByRole("dialog")).toBeVisible();
+      await page.keyboard.press("ArrowRight");
+      await expect(page.getByRole("dialog")).toContainText("1 / 5");
+      await page.keyboard.press("Escape");
+      await expect(page.getByRole("dialog")).toBeHidden();
+    });
+  }
+});
+
+
+test("gallery supports actual touch swipes and reduced motion @mobile", async ({ page, context }) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.goto("/products/banana-chewy-dry-fruits-seeds");
+  const hero = page.getByRole("button", { name: /^Open image viewer:/ });
+  await hero.scrollIntoViewIfNeeded();
+  const bounds = (await hero.boundingBox())!;
+  const client = await context.newCDPSession(page);
+  const y = bounds.y + bounds.height * 0.4;
+  await client.send("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: [{ x: bounds.x + bounds.width * 0.75, y }] });
+  await client.send("Input.dispatchTouchEvent", { type: "touchMove", touchPoints: [{ x: bounds.x + bounds.width * 0.25, y }] });
+  await client.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
+  await expect(page.getByRole("button", { name: /^Show image 2 of 5:/ })).toHaveAttribute("aria-current", "true");
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+  await hero.hover();
+  await expect(hero.locator("img")).toHaveCSS("transform", "matrix(1, 0, 0, 1, 0, 0)");
+  await hero.click();
+  await expect(page.getByRole("dialog")).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+});

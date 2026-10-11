@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { getPublicSettings } from "@/lib/settings";
 import { getCategories, getPublishedProducts, type Product } from "@/lib/data/catalog";
 import { getApprovedReviews, reviewStats } from "@/lib/data/reviews";
 import { getBanners } from "@/lib/data/content";
@@ -62,11 +63,12 @@ export default async function ShopPage({ searchParams }: { searchParams: SearchP
   const inStock = one(params.in_stock) === "1";
   const page = Math.max(1, Number.parseInt(one(params.page) || "1", 10) || 1);
 
-  const [products, categories, reviews, banners] = await Promise.all([
+  const [products, categories, reviews, banners, settings] = await Promise.all([
     getPublishedProducts(),
     getCategories(),
     getApprovedReviews(),
     getBanners("shop_top"),
+    getPublicSettings(),
   ]);
 
   const category = categories.find((c) => c.slug === collection) ?? null;
@@ -113,9 +115,9 @@ export default async function ShopPage({ searchParams }: { searchParams: SearchP
         <LeafSprig className="absolute -right-2 top-4 hidden h-48 w-32 text-sage sm:block" />
         <div className="container-site relative py-12 lg:py-16">
           <Breadcrumbs items={crumbs} />
-          <h1 className="mt-6 text-[2.6rem] sm:text-[3.4rem]">{category ? category.name : "Shop the Goodness"}</h1>
+          <h1 className="mt-6 text-[2.6rem] sm:text-[3.4rem]">{category ? category.name : settings.appearance.shop_heading}</h1>
           <p className="mt-3 max-w-xl text-muted">
-            {category?.description ?? "Chewy dehydrated banana snacks — pick your favourite, or try both."}
+            {category?.description ?? (settings.appearance.shop_description || "Chewy dehydrated banana snacks — pick your favourite, or try both.")}
           </p>
         </div>
       </section>
@@ -191,7 +193,7 @@ export default async function ShopPage({ searchParams }: { searchParams: SearchP
             action={products.length > 0 ? <ButtonLink href="/shop" variant="secondary">Clear filters</ButtonLink> : undefined}
           />
         ) : (
-          <div className="mt-10 grid gap-x-10 gap-y-16 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="shop-product-grid mt-10 grid gap-x-10 gap-y-16 sm:grid-cols-2 lg:grid-cols-3">
             {visible.map((product, i) => (
               <ProductCard
                 key={product.id}

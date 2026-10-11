@@ -13,6 +13,8 @@ import type { Database } from "@/lib/db/database.types";
 import { installSchema } from "@/lib/db/install";
 import { ANON, SERVICE, type DbContext } from "@/lib/db/rest/context";
 import { handleDataRequest } from "@/lib/db/rest/handler";
+import { withDbTransaction } from "@/lib/db/rest/transaction";
+import { persistVerifiedGoogleCustomer } from "@/lib/auth/google-customer";
 import { RPCS } from "@/lib/db/rpc";
 import { permissionsForRole, type StaffRole } from "@/lib/auth/permissions";
 
@@ -61,7 +63,8 @@ describe.skipIf(!url)("data access rules", () => {
     }
     await pool.query("INSERT INTO staff_members (user_id, role) VALUES (?, 'owner'), (?, 'content_editor')", [ownerId, editorId]);
 
-    // One product published with 1 pack left, one left as a draft.
+    // One product published with 1 pack left, explicitly keep the other as a draft.
+    await pool.query("UPDATE products SET status = 'draft' WHERE slug = 'banana-chewy-fresh-raw-banana'");
     await pool.query("UPDATE products SET status = 'published' WHERE slug = 'banana-chewy-dry-fruits-seeds'");
     const [v] = await pool.query<mysql.RowDataPacket[]>(
       "SELECT pv.id FROM product_variants pv JOIN products p ON p.id = pv.product_id WHERE p.slug = 'banana-chewy-dry-fruits-seeds'",
@@ -104,9 +107,29 @@ describe.skipIf(!url)("data access rules", () => {
     expect(data!.every((p) => p.status === "published")).toBe(true);
   });
 
+  it("review attachments stay private until approval and cannot be claimed by another customer", async () => {
+    const reviewId = randomUUID(), mediaId = randomUUID();
+    const [products] = await pool.query<mysql.RowDataPacket[]>("SELECT id FROM products WHERE status = 'published' LIMIT 1");
+    await pool.query("INSERT INTO reviews (id, product_id, user_id, author_name, rating, body, status) VALUES (?, ?, ?, 'Test customer', 4, 'A genuine test review for the isolated test store', 'pending')", [reviewId, products[0].id, customerId]);
+    await pool.query("INSERT INTO review_media (id, review_id, owner_id, mime_type, size_bytes, data) VALUES (?, ?, ?, 'image/webp', 1, ?)", [mediaId, reviewId, customerId, Buffer.from([0])]);
+    const query = (ctx: DbContext) => clientFor(pool, ctx).from("review_media").select("id").eq("id", mediaId);
+    expect((await query(ANON)).data).toEqual([]);
+    expect((await query(user(otherId))).data).toEqual([]);
+    expect((await query(user(customerId))).data?.length).toBe(1);
+    expect((await query(user(ownerId, "owner"))).data?.length).toBe(1);
+    const patch = await clientFor(pool, user(otherId)).from("review_media").update({ review_id: randomUUID() }).eq("id", mediaId);
+    expect(patch.error).toBeTruthy();
+    await pool.query("UPDATE reviews SET status = 'approved' WHERE id = ?", [reviewId]);
+    expect((await query(ANON)).data?.length).toBe(1);
+    await pool.query("UPDATE reviews SET status = 'rejected' WHERE id = ?", [reviewId]);
+    expect((await query(ANON)).data).toEqual([]);
+    await pool.query("DELETE FROM review_media WHERE id = ?", [mediaId]);
+    await pool.query("DELETE FROM reviews WHERE id = ?", [reviewId]);
+  });
+
   it("visitors cannot read private data", async () => {
     const anon = clientFor(pool, ANON);
-    for (const table of ["orders", "profiles", "addresses", "carts", "payments", "audit_logs", "webhook_events", "staff_members", "subscribers", "contact_messages", "auth_users"] as const) {
+    for (const table of ["orders", "profiles", "addresses", "carts", "payments", "audit_logs", "webhook_events", "staff_members", "subscribers", "contact_messages", "auth_users", "migration_backups"] as const) {
       const { data } = await anon.from(table as "orders").select("*").limit(1);
       expect(data ?? [], table).toEqual([]);
     }
@@ -138,6 +161,7 @@ describe.skipIf(!url)("data access rules", () => {
     expect(error?.code).toBe("42501");
     const [after] = await pool.query<mysql.RowDataPacket[]>("SELECT price_paise FROM product_variants WHERE id = ?", [variantId]);
     expect(after[0].price_paise).not.toBe(1);
+    expect((await customer.from("settings").upsert({ key: "appearance", is_public: true, value: { shop_heading: "Hacked" } })).error?.code).toBe("42501");
     expect((await customer.rpc("adjust_stock", { p_variant_id: variantId, p_delta: 100, p_reason: "restock", p_note: "" })).error?.code).toBe("42501");
     const { data: product } = await customer.from("products").select("id").limit(1).single();
     const fake = await customer.from("reviews").insert({ product_id: product!.id, author_name: "Fake", rating: 5, body: "Fake five star review", status: "approved" });
@@ -187,6 +211,44 @@ describe.skipIf(!url)("data access rules", () => {
     expect((await owner.from("staff_members").delete().eq("user_id", ownerId)).error?.message).toContain("LAST_OWNER");
     expect((await owner.from("staff_members").update({ role: "admin" }).eq("user_id", ownerId)).error?.message).toContain("LAST_OWNER");
     expect((await owner.from("staff_members").update({ role: "admin" }).eq("user_id", editorId)).error).toBeNull();
+  });
+
+  it("multi-table product edits roll back on SKU conflicts and retain access controls", async () => {
+    const owner = user(ownerId, "owner");
+    const [before] = await pool.query<mysql.RowDataPacket[]>("SELECT product_id, sku FROM product_variants WHERE id = ?", [variantId]);
+    const productId = before[0].product_id;
+    const [product] = await pool.query<mysql.RowDataPacket[]>("SELECT title FROM products WHERE id = ?", [productId]);
+    await expect(withDbTransaction(pool, owner, async (db) => {
+      const updated = await db.from("products").update({ title: "Must roll back" }).eq("id", productId);
+      expect(updated.error).toBeNull();
+      const inserted = await db.from("product_variants").insert({ product_id: productId, title: "Conflict", sku: before[0].sku, mrp_paise: 100, price_paise: 100 });
+      if (inserted.error) throw new Error("SKU conflict");
+    })).rejects.toThrow("SKU conflict");
+    const [after] = await pool.query<mysql.RowDataPacket[]>("SELECT title FROM products WHERE id = ?", [productId]);
+    expect(after[0].title).toBe(product[0].title);
+    await expect(withDbTransaction(pool, user(customerId), async (db) => {
+      expect((await db.from("products").update({ title: "Hacked" }).eq("id", productId)).error?.code).toBe("42501");
+      expect((await db.from("product_images").insert({ product_id: productId, url: "/hacked.webp", alt: "Hacked" })).error?.code).toBe("42501");
+      expect((await db.rpc("adjust_stock", { p_variant_id: variantId, p_delta: 1, p_reason: "restock", p_note: "" })).error).not.toBeNull();
+    })).rejects.toThrow("rolled back");
+  });
+
+  it("verified Google customers persist without duplicates and cannot acquire staff access", async () => {
+    const identity = { sub: "verified-google-customer", email: "google-new@example.com", email_verified: true as const, name: "Google Customer" };
+    const id = await persistVerifiedGoogleCustomer(pool, identity);
+    expect(await persistVerifiedGoogleCustomer(pool, identity)).toBe(id);
+    const [profile] = await pool.query<mysql.RowDataPacket[]>("SELECT email, marketing_consent FROM profiles WHERE id = ?", [id]);
+    expect(profile[0].email).toBe(identity.email);
+    expect(Boolean(profile[0].marketing_consent)).toBe(false);
+    const [staff] = await pool.query<mysql.RowDataPacket[]>("SELECT user_id FROM staff_members WHERE user_id = ?", [id]);
+    expect(staff).toHaveLength(0);
+    await expect(persistVerifiedGoogleCustomer(pool, { ...identity, sub: "staff-attempt", email: "owner@example.com", authoritativeEmail: true })).rejects.toThrow();
+    await expect(persistVerifiedGoogleCustomer(pool, { ...identity, sub: "external-email-attempt", email: "customer@example.com" })).rejects.toThrow();
+    await pool.query("INSERT INTO auth_users (id, email, password_hash) VALUES (?, 'unconfirmed@example.com', 'x')", [randomUUID()]);
+    await expect(persistVerifiedGoogleCustomer(pool, { ...identity, sub: "unconfirmed-attempt", email: "unconfirmed@example.com" })).rejects.toThrow();
+    expect((await clientFor(pool, ANON).from("auth_identities").select("*")).data).toEqual([]);
+    expect((await clientFor(pool, user(id)).from("auth_identities").select("*")).data).toEqual([]);
+    await pool.query("DELETE FROM auth_users WHERE id = ? OR email = 'unconfirmed@example.com'", [id]);
   });
 
   it("two shoppers can't both buy the last pack", async () => {

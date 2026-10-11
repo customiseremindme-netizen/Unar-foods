@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { getSessionUser } from "@/lib/auth/session";
 import { isSafeInternalPath } from "@/lib/validation/common";
+import { getGoogleEnv } from "@/lib/env";
+import { GoogleSignIn } from "@/components/auth/google-sign-in";
 import { AuthShell } from "@/components/auth/auth-shell";
 import { RegisterForm } from "@/components/auth/auth-forms";
 
@@ -14,6 +16,7 @@ export default async function RegisterPage({ searchParams }: { searchParams: Pro
   if (await getSessionUser()) redirect(target);
   return (
     <AuthShell title="Create your account" description="Track orders, save addresses and check out faster.">
+      <GoogleSignIn next={target} available={!!getGoogleEnv()} />
       <RegisterForm next={target} />
     </AuthShell>
   );

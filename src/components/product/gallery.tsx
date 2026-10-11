@@ -1,8 +1,10 @@
 "use client";
 
 import Image from "next/image";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState, type PointerEvent } from "react";
 import { ChevronLeft, ChevronRight, Expand, ZoomIn, ZoomOut } from "lucide-react";
+import { useStoreReducedMotion } from "@/components/motion/motion";
+import { swipeDirection } from "@/lib/gallery/swipe";
 import { Sheet } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
 
@@ -21,15 +23,37 @@ export function ProductGallery({ images, productName }: { images: GalleryImage[]
   const [zoomed, setZoomed] = useState(false);
   const [origin, setOrigin] = useState("50% 50%");
   const [hovering, setHovering] = useState(false);
-  const current = images[index];
+  const selectedIndex = images.length ? index % images.length : 0;
+  const current = images[selectedIndex];
+  const reduceMotion = useStoreReducedMotion();
+  const touchStart = useRef<{ x: number; y: number; id: number } | null>(null);
+  const suppressClick = useRef(false);
 
   const go = useCallback(
     (delta: number) => {
       setZoomed(false);
-      setIndex((i) => (i + delta + images.length) % images.length);
+      setHovering(false);
+      if (images.length) setIndex((i) => (i + delta + images.length) % images.length);
     },
     [images.length],
   );
+
+  const swipeHandlers = {
+    onPointerDown: (e: PointerEvent<HTMLElement>) => {
+      suppressClick.current = false;
+      if (e.pointerType !== "touch" || zoomed) return;
+      touchStart.current = { x: e.clientX, y: e.clientY, id: e.pointerId };
+      e.currentTarget.setPointerCapture(e.pointerId);
+    },
+    onPointerUp: (e: PointerEvent<HTMLElement>) => {
+      const start = touchStart.current;
+      touchStart.current = null;
+      if (!start || start.id !== e.pointerId) return;
+      const direction = swipeDirection(start, { x: e.clientX, y: e.clientY });
+      if (direction && images.length > 1) { suppressClick.current = true; go(direction); }
+    },
+    onPointerCancel: () => { touchStart.current = null; suppressClick.current = false; },
+  };
 
   useEffect(() => {
     if (!viewerOpen) return;
@@ -50,7 +74,15 @@ export function ProductGallery({ images, productName }: { images: GalleryImage[]
       <div className="relative flex-1">
         <button
           type="button"
-          onClick={() => setViewerOpen(true)}
+          {...swipeHandlers}
+          style={{ touchAction: "pan-y pinch-zoom" }}
+          onClick={() => {
+            if (suppressClick.current) { suppressClick.current = false; return; }
+            setViewerOpen(true);
+          }}
+          onKeyDown={(e) => {
+            if (e.key === "ArrowLeft" || e.key === "ArrowRight") { e.preventDefault(); go(e.key === "ArrowRight" ? 1 : -1); }
+          }}
           onMouseMove={(e) => {
             const rect = e.currentTarget.getBoundingClientRect();
             setOrigin(`${((e.clientX - rect.left) / rect.width) * 100}% ${((e.clientY - rect.top) / rect.height) * 100}%`);
@@ -65,10 +97,10 @@ export function ProductGallery({ images, productName }: { images: GalleryImage[]
             src={current.url}
             alt={current.alt || productName}
             fill
-            priority={index === 0}
+            preload={selectedIndex === 0}
             sizes="(min-width: 1024px) 45vw, 100vw"
             className="animate-fade-in object-contain transition-transform duration-300 ease-out motion-reduce:transition-none"
-            style={{ transformOrigin: origin, transform: hovering ? "scale(1.6)" : "scale(1)" }}
+            style={{ transformOrigin: origin, transform: hovering && !reduceMotion ? "scale(1.6)" : "scale(1)" }}
           />
           <span className="pointer-events-none absolute bottom-4 right-4 inline-flex items-center gap-1.5 rounded-full bg-paper/90 px-3 py-1.5 text-[0.75rem] font-semibold text-forest shadow-soft backdrop-blur">
             <Expand className="size-3.5" aria-hidden="true" /> View larger
@@ -84,7 +116,7 @@ export function ProductGallery({ images, productName }: { images: GalleryImage[]
             <button
               type="button"
               onClick={() => go(-1)}
-              className="absolute left-3 top-1/2 grid size-10 -translate-y-1/2 place-items-center rounded-full bg-paper/90 text-forest shadow-soft lg:hidden"
+              className="absolute left-3 top-1/2 grid size-10 -translate-y-1/2 place-items-center rounded-full bg-paper/90 text-forest shadow-soft"
               aria-label="Previous image"
             >
               <ChevronLeft className="size-5" aria-hidden="true" />
@@ -92,7 +124,7 @@ export function ProductGallery({ images, productName }: { images: GalleryImage[]
             <button
               type="button"
               onClick={() => go(1)}
-              className="absolute right-3 top-1/2 grid size-10 -translate-y-1/2 place-items-center rounded-full bg-paper/90 text-forest shadow-soft lg:hidden"
+              className="absolute right-3 top-1/2 grid size-10 -translate-y-1/2 place-items-center rounded-full bg-paper/90 text-forest shadow-soft"
               aria-label="Next image"
             >
               <ChevronRight className="size-5" aria-hidden="true" />
@@ -101,18 +133,19 @@ export function ProductGallery({ images, productName }: { images: GalleryImage[]
         ) : null}
       </div>
 
+      <p className="sr-only" aria-live="polite" aria-atomic="true">Image {selectedIndex + 1} of {images.length}: {current.alt || productName}</p>
       {images.length > 1 ? (
         <ul className="flex gap-3 overflow-x-auto pb-1 lg:w-20 lg:flex-col lg:overflow-visible" aria-label="Product images">
           {images.map((img, i) => (
             <li key={img.id} className="shrink-0">
               <button
                 type="button"
-                onClick={() => setIndex(i)}
-                aria-current={i === index ? "true" : undefined}
+                onClick={() => { setIndex(i); setZoomed(false); setHovering(false); }}
+                aria-current={i === selectedIndex ? "true" : undefined}
                 aria-label={`Show image ${i + 1} of ${images.length}: ${img.alt || productName}`}
                 className={cn(
                   "relative block size-16 overflow-hidden rounded-xl bg-paper ring-1 transition-all lg:size-20",
-                  i === index ? "ring-2 ring-forest" : "ring-line opacity-80 hover:opacity-100",
+                  i === selectedIndex ? "ring-2 ring-forest" : "ring-line opacity-80 hover:opacity-100",
                 )}
               >
                 <Image src={img.url} alt="" fill sizes="80px" className="object-contain" />
@@ -129,12 +162,12 @@ export function ProductGallery({ images, productName }: { images: GalleryImage[]
           setZoomed(false);
         }}
         side="center"
-        title={<span className="font-sans text-[0.95rem] font-semibold">{`${index + 1} / ${images.length} · ${productName}`}</span>}
+        title={<span className="font-sans text-[0.95rem] font-semibold">{`${selectedIndex + 1} / ${images.length} · ${productName}`}</span>}
         labelledBy="gallery-viewer-title"
         className="max-h-[92dvh]"
       >
         <div className="relative">
-          <div className={cn("bg-paper", zoomed ? "max-h-[70dvh] overflow-auto" : "")}>
+          <div {...swipeHandlers} style={{ touchAction: zoomed ? "auto" : "pan-y pinch-zoom" }} className={cn("bg-paper", zoomed ? "max-h-[70dvh] overflow-auto" : "")}>
             {zoomed && current.width && current.height ? (
               <Image
                 src={current.url}

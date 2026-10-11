@@ -240,7 +240,8 @@ export function CheckoutForm({
   }
 
   const lines = cartState?.cart.lines ?? [];
-  const showCod = codEnabled && (quote ? quote.codAvailable || quote.shipping.status !== "ok" : true);
+  const codUnavailable = !!quote && !quote.codAvailable && quote.shipping.status !== "pending_address";
+  const paymentAllowed = paymentMethod === "cod" ? codEnabled && !!quote?.codAvailable : onlineAvailable;
 
   const payload = useMemo(
     () => ({
@@ -473,19 +474,19 @@ export function CheckoutForm({
                 </span>
               </label>
             ) : null}
-            {showCod ? (
+            {codEnabled ? (
               <label
                 className={cn(
                   "flex cursor-pointer items-start gap-3 rounded-2xl border bg-paper p-4",
                   paymentMethod === "cod" ? "border-forest ring-2 ring-forest/10" : "border-line",
                 )}
               >
-                <input type="radio" name="payment" checked={paymentMethod === "cod"} onChange={() => setPaymentMethod("cod")} className="mt-1 accent-[var(--color-forest)]" />
+                <input type="radio" name="payment" disabled={codUnavailable} aria-describedby="cod-availability" checked={paymentMethod === "cod"} onChange={() => setPaymentMethod("cod")} className="mt-1 accent-[var(--color-forest)]" />
                 <span>
                   <span className="flex items-center gap-2 font-semibold text-forest">
                     <Wallet className="size-4" aria-hidden="true" /> Cash on Delivery
                   </span>
-                  <span className="block text-[0.85rem] text-muted">Pay when your order arrives (where available).</span>
+                  <span id="cod-availability" className="block text-[0.85rem] text-muted" role="status">{quote?.codUnavailableReason ?? "Pay when your order arrives. Enter your PIN code and state to check availability."}</span>
                 </span>
               </label>
             ) : null}
@@ -615,7 +616,7 @@ export function CheckoutForm({
               <FormMessage tone="error">{quote.errors[0]}</FormMessage>
             </div>
           ) : null}
-          <Button type="submit" size="lg" className="mt-6 w-full" loading={submitting} disabled={lines.length === 0 || (!onlineAvailable && !codEnabled)}>
+          <Button type="submit" size="lg" className="mt-6 w-full" loading={submitting} disabled={lines.length === 0 || quoting || !quote?.canCheckout || !paymentAllowed}>
             <Lock className="size-4" aria-hidden="true" />
             {paymentMethod === "cod" ? "Place order" : "Continue to payment"}
           </Button>

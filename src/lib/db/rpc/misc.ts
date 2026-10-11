@@ -25,6 +25,7 @@ export async function cleanup_rate_limits(ctx: DbContext, _args: Record<string, 
   await exec(pool, "DELETE FROM rate_limits WHERE window_start < UTC_TIMESTAMP(3) - INTERVAL 1 DAY");
   await exec(pool, "DELETE FROM auth_sessions WHERE expires_at < UTC_TIMESTAMP(3)");
   await exec(pool, "DELETE FROM auth_tokens WHERE expires_at < UTC_TIMESTAMP(3) - INTERVAL 7 DAY");
+  await exec(pool, "DELETE FROM review_media WHERE review_id IS NULL AND created_at < UTC_TIMESTAMP(3) - INTERVAL 1 DAY");
   return null;
 }
 

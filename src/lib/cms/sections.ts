@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { linkSchema } from "@/lib/validation/common";
+import type { SectionLayout } from "./layout";
 
 /**
  * Homepage section registry.
@@ -45,7 +46,7 @@ export type FieldDef =
   | { name: string; label: string; type: "icon"; help?: string }
   | { name: string; label: string; type: "number"; min: number; max: number; help?: string }
   | { name: string; label: string; type: "select"; options: { value: string; label: string }[]; help?: string }
-  | { name: string; label: string; type: "products"; help?: string }
+  | { name: string; label: string; type: "products"; max?: number; help?: string }
   | { name: string; label: string; type: "list"; itemLabel: string; max: number; fields: FieldDef[]; help?: string };
 
 const text = (max: number) => z.string().trim().max(max).catch("");
@@ -115,8 +116,10 @@ export const SECTION_TYPES = {
   },
   featured_products: {
     label: "Product showcase",
-    description: "Shows your published products with prices and add-to-cart buttons.",
+    description: "Show all published products automatically, featured items, or a hand-picked selection.",
     fields: [
+      { name: "product_selection", label: "Product selection", type: "select", options: [{ value: "automatic", label: "Automatic — selected products, otherwise all" }, { value: "all", label: "All published products (includes new products)" }, { value: "featured", label: "Featured products only" }, { value: "selected", label: "Selected products only" }] },
+      { name: "max_products", label: "Maximum products to display", type: "number", min: 1, max: 24 },
       { name: "eyebrow", label: "Small text above the heading", type: "text", max: 60 },
       { name: "heading", label: "Heading", type: "text", max: 120 },
       { name: "description", label: "Description", type: "textarea", max: 300 },
@@ -124,12 +127,14 @@ export const SECTION_TYPES = {
         name: "product_slugs",
         label: "Products to show",
         type: "products",
-        help: "Leave empty to show all featured products.",
+        help: "Used for Selected products (and Automatic when checked). Published products only; drafts never appear.",
       },
       { name: "cta_label", label: "Link text", type: "text", max: 40 },
       { name: "cta_href", label: "Link address", type: "text", max: 200 },
     ],
     schema: z.object({
+      product_selection: z.enum(["automatic", "all", "featured", "selected"]).catch("automatic").default("automatic"),
+      max_products: z.coerce.number().int().min(1).max(24).catch(12).default(12),
       eyebrow: text(60).default(""),
       heading: text(120).default("Shop the Goodness"),
       description: text(300).default(""),
@@ -189,13 +194,15 @@ export const SECTION_TYPES = {
   },
   comparison: {
     label: "Product comparison",
-    description: "Compares ingredients, allergen advice and nutrition of your published products automatically.",
+    description: "Choose published products to compare. Automatic selection includes only products with ingredient or nutrition details.",
     fields: [
+      { name: "product_slugs", label: "Products to compare", type: "products", max: 3, help: "Choose up to three products. Leave empty to compare products with ingredient or nutrition details automatically." },
       { name: "eyebrow", label: "Small text above the heading", type: "text", max: 60 },
       { name: "heading", label: "Heading", type: "text", max: 120 },
       { name: "description", label: "Description", type: "textarea", max: 300 },
     ],
     schema: z.object({
+      product_slugs: z.array(z.string().max(120)).max(3).catch([]).default([]),
       eyebrow: text(60).default(""),
       heading: text(120).default(""),
       description: text(300).default(""),
@@ -311,7 +318,7 @@ export type SectionType = keyof typeof SECTION_TYPES;
 export type SectionContent<T extends SectionType> = z.output<(typeof SECTION_TYPES)[T]["schema"]>;
 
 export function isSectionType(type: string): type is SectionType {
-  return type in SECTION_TYPES;
+  return Object.hasOwn(SECTION_TYPES, type);
 }
 
 export function parseSectionContent<T extends SectionType>(type: T, raw: unknown): SectionContent<T> {
@@ -322,5 +329,5 @@ export function parseSectionContent<T extends SectionType>(type: T, raw: unknown
 }
 
 export type HomeSection = {
-  [T in SectionType]: { id: string; key: string; type: T; sortOrder: number; isVisible: boolean; content: SectionContent<T> };
+  [T in SectionType]: { id: string; key: string; type: T; sortOrder: number; isVisible: boolean; layout: SectionLayout; content: SectionContent<T> };
 }[SectionType];

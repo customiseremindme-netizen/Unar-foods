@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { ReviewMedia } from "@/components/product/review-media";
 import { requireStaffPage } from "@/lib/auth/session";
 import { getUserDb } from "@/lib/db/client";
 import { formatDateTime } from "@/lib/utils";
@@ -23,7 +24,7 @@ export default async function ReviewsPage({ searchParams }: { searchParams: Prom
   const db = (await getUserDb())!;
   const { data: reviews, count } = await db
     .from("reviews")
-    .select("id, author_name, rating, title, body, status, is_verified_purchase, admin_reply, created_at, products(title, slug)", { count: "exact" })
+    .select("id, author_name, rating, title, body, status, is_verified_purchase, admin_reply, created_at, products(title, slug), review_media(id, mime_type, width, height)", { count: "exact" })
     .eq("status", status)
     .order("created_at", { ascending: false })
     .range((page - 1) * PAGE_SIZE, page * PAGE_SIZE - 1);
@@ -66,6 +67,7 @@ export default async function ReviewsPage({ searchParams }: { searchParams: Prom
                 ) : null}
               </p>
               <p className="mt-3 whitespace-pre-wrap text-[0.92rem] leading-relaxed">{r.body}</p>
+              <ReviewMedia items={r.review_media ?? []} />
               <ReviewModeration id={r.id} status={r.status as "pending" | "approved" | "rejected" | "spam"} reply={r.admin_reply ?? ""} />
             </li>
           ))}

@@ -36,8 +36,18 @@ export async function verifyPassword(password: string, stored: string | null | u
   if (parts.length !== 6 || parts[0] !== "scrypt") return false;
   const [, n, r, p, saltB64, hashB64] = parts;
   const expected = Buffer.from(hashB64, "base64url");
+  const salt = Buffer.from(saltB64, "base64url");
   const cost = Number(n);
-  if (!Number.isInteger(cost) || cost < 1024 || cost > 1 << 20 || !expected.length) return false;
-  const key = await derive(password, Buffer.from(saltB64, "base64url"), { N: cost, r: Number(r), p: Number(p) }, expected.length);
-  return key.length === expected.length && timingSafeEqual(key, expected);
+  const blockSize = Number(r);
+  const parallelism = Number(p);
+  if (!Number.isInteger(cost) || cost < 1024 || cost > 1 << 20 || (cost & (cost - 1)) !== 0) return false;
+  if (!Number.isInteger(blockSize) || blockSize < 1 || blockSize > 32 || !Number.isInteger(parallelism) || parallelism < 1 || parallelism > 16) return false;
+  if (expected.length !== KEY_LENGTH || salt.length !== 16 || 128 * cost * blockSize >= 64 * 1024 * 1024) return false;
+  try {
+    const key = await derive(password, salt, { N: cost, r: blockSize, p: parallelism }, expected.length);
+    return key.length === expected.length && timingSafeEqual(key, expected);
+  } catch {
+    // A malformed stored hash must fail authentication, not crash the login route.
+    return false;
+  }
 }

@@ -90,8 +90,12 @@ export function ProductEditor({
     const result = await run(() => saveProductAction(next as ProductPayload));
     setErrors(result.errors ?? {});
     if (result.ok) {
-      setP(next);
-      setSaved(JSON.stringify(next));
+      const committed = { ...next,
+        variants: next.variants.map((v, i) => ({ ...v, id: result.data?.variantIds[i] ?? v.id })),
+        images: next.images.map((image, i) => ({ ...image, id: result.data?.imageIds[i] ?? image.id })),
+      };
+      setP(committed);
+      setSaved(JSON.stringify(committed));
     } else if (result.errors) {
       const first = Object.keys(result.errors)[0];
       document.querySelector<HTMLElement>(`[data-field="${first}"]`)?.scrollIntoView({ behavior: "smooth", block: "center" });

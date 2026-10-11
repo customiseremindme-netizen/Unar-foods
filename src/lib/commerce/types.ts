@@ -94,6 +94,7 @@ export type Quote = {
   shipping: ShippingQuote;
   shippingPaise: number;
   codAvailable: boolean;
+  codUnavailableReason: string | null;
   codFeePaise: number;
   taxPaise: number;
   taxBreakdown: TaxBreakdown;
