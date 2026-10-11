@@ -61,3 +61,11 @@ test("search metadata and AI guide expose only published public products", async
     expect(body).not.toContain("auth_identities");
   } else { expect(guide.status()).toBe(404); }
 });
+
+test("Google button starts a full browser OAuth navigation without prefetching", async ({ page }) => {
+  await page.route("https://accounts.google.com/**", (route) => route.fulfill({ contentType: "text/html", body: "<h1>Test-only Google consent destination</h1>" }));
+  await page.goto("/login");
+  await page.getByRole("link", { name: "Continue with Google", exact: true }).click();
+  await page.waitForURL((url) => url.origin === "https://accounts.google.com");
+  await expect(page.getByRole("heading", { name: "Test-only Google consent destination" })).toBeVisible();
+});
