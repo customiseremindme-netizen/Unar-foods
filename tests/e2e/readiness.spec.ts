@@ -62,10 +62,26 @@ test("search metadata and AI guide expose only published public products", async
   } else { expect(guide.status()).toBe(404); }
 });
 
-test("Google button starts a full browser OAuth navigation without prefetching", async ({ page }) => {
-  await page.route("https://accounts.google.com/**", (route) => route.fulfill({ contentType: "text/html", body: "<h1>Test-only Google consent destination</h1>" }));
+test("Google button starts a document navigation only after a click", async ({ page }) => {
+  let starts = 0;
+  // Intercept the first request: Playwright routes do not intercept the next
+  // URL in a redirected navigation. Do not depend on Google's external pages
+  // or treat this navigation fixture as a completed provider authentication.
+  await page.route("**/auth/google?**", async (route) => {
+    starts++;
+    expect(route.request().isNavigationRequest()).toBe(true);
+    expect(route.request().resourceType()).toBe("document");
+    const response = await route.fetch({ maxRedirects: 0 });
+    expect(response.status()).toBe(307);
+    const destination = new URL(response.headers().location);
+    expect(destination.origin).toBe("https://accounts.google.com");
+    expect(destination.searchParams.get("code_challenge_method")).toBe("S256");
+    await route.fulfill({ status: 200, contentType: "text/html", body: "<h1>Test-only OAuth navigation intercepted</h1>" });
+  });
   await page.goto("/login");
+  await page.waitForLoadState("networkidle");
+  expect(starts).toBe(0);
   await page.getByRole("link", { name: "Continue with Google", exact: true }).click();
-  await page.waitForURL((url) => url.origin === "https://accounts.google.com");
-  await expect(page.getByRole("heading", { name: "Test-only Google consent destination" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Test-only OAuth navigation intercepted" })).toBeVisible();
+  expect(starts).toBe(1);
 });
