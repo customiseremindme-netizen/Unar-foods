@@ -221,7 +221,7 @@ describe.skipIf(!url)("data access rules", () => {
     await expect(withDbTransaction(pool, owner, async (db) => {
       const updated = await db.from("products").update({ title: "Must roll back" }).eq("id", productId);
       expect(updated.error).toBeNull();
-      const inserted = await db.from("product_variants").insert({ product_id: productId, title: "Conflict", sku: before[0].sku });
+      const inserted = await db.from("product_variants").insert({ product_id: productId, title: "Conflict", sku: before[0].sku, mrp_paise: 100, price_paise: 100 });
       if (inserted.error) throw new Error("SKU conflict");
     })).rejects.toThrow("SKU conflict");
     const [after] = await pool.query<mysql.RowDataPacket[]>("SELECT title FROM products WHERE id = ?", [productId]);
