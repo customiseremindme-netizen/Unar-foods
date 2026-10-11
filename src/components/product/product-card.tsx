@@ -6,12 +6,14 @@ import { NoImage } from "@/components/layout/site-header";
 import { primaryImage, variantAvailability, type Product } from "@/lib/data/catalog";
 import type { ReviewStats } from "@/lib/data/reviews";
 import { AddToCartButton } from "./add-to-cart";
+import { ButtonLink } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 export function AvailabilityBadge({ product }: { product: Product }) {
-  const availability = variantAvailability(product.defaultVariant);
+  const availableVariant = product.variants.find((v) => v.stock > 0) ?? product.defaultVariant;
+  const availability = variantAvailability(availableVariant);
   if (availability === "out_of_stock" || availability === "unavailable") return <Badge tone="muted">Sold out</Badge>;
-  if (availability === "low_stock") return <Badge tone="banana">Only {product.defaultVariant!.stock} left</Badge>;
+  if (availability === "low_stock") return <Badge tone="banana">Only {availableVariant!.stock} left</Badge>;
   return null;
 }
 
@@ -28,8 +30,9 @@ export function ProductCard({
 }) {
   const image = primaryImage(product);
   const hoverImage = product.images.find((i) => i.id !== image?.id && i.kind !== "back_label" && i.kind !== "front_label");
-  const variant = product.defaultVariant;
-  const soldOut = !variant || variant.stock <= 0;
+  const variant = [...product.variants].sort((a, b) => a.price_paise - b.price_paise)[0] ?? null;
+  const soldOut = product.variants.every((v) => v.stock <= 0);
+  const multiple = product.variants.length > 1;
   const name = product.short_title ?? product.title;
 
   return (
@@ -94,12 +97,12 @@ export function ProductCard({
           {variant ? (
             <div>
               <Price pricePaise={variant.price_paise} mrpPaise={variant.mrp_paise} />
-              <p className="text-[0.75rem] text-muted">{variant.title}</p>
+              <p className="text-[0.75rem] text-muted">{multiple ? `${product.variants.length} sizes / packs` : variant.title}</p>
             </div>
           ) : (
             <span className="text-muted">Price coming soon</span>
           )}
-          <AddToCartButton variantId={variant?.id ?? null} disabled={soldOut} productName={name} size="sm" />
+          {multiple ? <ButtonLink href={`/products/${product.slug}`} size="sm" aria-label={`Choose options: ${name}`}>Choose options</ButtonLink> : <AddToCartButton variantId={variant?.id ?? null} disabled={soldOut} productName={name} size="sm" />}
         </div>
       </div>
     </article>

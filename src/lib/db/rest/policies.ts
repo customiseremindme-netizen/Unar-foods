@@ -68,6 +68,7 @@ const readOnlyFor = (...p: Permission[]): TableRules => ({ read: (ctx) => perm(c
 export const RULES: Record<string, TableRules> = {
   // Accounts are only handled by the sign-in code (service).
   auth_users: {},
+  auth_identities: {},
   auth_sessions: {},
   auth_tokens: {},
   counters: {},

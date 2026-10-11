@@ -10,6 +10,7 @@ import { Checkbox, Input, Label, Select, Textarea } from "@/components/ui/field"
 import { useAdminAction, useUnsavedWarning } from "./forms";
 import { ImageField } from "./image-field";
 import { Card } from "./ui";
+import { FONT_PAIRINGS } from "@/lib/settings/fonts";
 import { AppearancePreview } from "./appearance-preview";
 
 type Value = Record<string, unknown>;
@@ -97,6 +98,17 @@ export function SettingsForm({
         className="grid gap-5"
       >
         {settingKey === "appearance" || settingKey === "theme" ? <AppearancePreview kind={settingKey} value={value} /> : null}
+        {settingKey === "appearance" ? <div>
+          <Label htmlFor="appearance-font-pairing">Recommended font pairing</Label>
+          <Select id="appearance-font-pairing" value={FONT_PAIRINGS.find((pair) => pair.heading === value.heading_font && pair.body === value.body_font)?.id ?? "custom"} onChange={(e) => {
+            const pair = FONT_PAIRINGS.find((option) => option.id === e.target.value);
+            if (pair) setValue((prev) => ({ ...prev, heading_font: pair.heading, body_font: pair.body }));
+          }}>
+            <option value="custom">Custom combination</option>
+            {FONT_PAIRINGS.map((pair) => <option key={pair.id} value={pair.id}>{pair.label}</option>)}
+          </Select>
+          <p className="mt-1 text-[0.75rem] text-muted">Choose a pairing or set the two fonts separately. Preview above; press Save to apply it.</p>
+        </div> : null}
         {fields.map((f) => {
           const fid = `${settingKey}-${f.name}`;
           const v = value[f.name];

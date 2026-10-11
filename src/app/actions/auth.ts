@@ -128,7 +128,7 @@ export async function registerAction(_prev: FormState, formData: FormData): Prom
   }
   if (!isDatabaseConfigured()) return { ok: false, message: "Accounts are not available yet." };
   if (!getEmailEnv()) {
-    return { ok: false, message: "Creating an account isn't available yet. You can still place an order as a guest." };
+    return { ok: false, message: "Account confirmation emails are not set up yet. Please contact us for help, or place an order as a guest." };
   }
   const next = safeNext(formData.get("next"));
   try {
@@ -140,7 +140,7 @@ export async function registerAction(_prev: FormState, formData: FormData): Prom
       marketingConsent: parsed.data.marketing,
     });
     const sent = await sendAccountLink({ userId, email: parsed.data.email, name: parsed.data.full_name, purpose: "verify_email", next });
-    if (!sent) return { ok: false, message: "Your account was saved, but the confirmation email could not be sent. Use Resend confirmation to try again; you do not need to create another account." };
+    if (!sent) return { ok: false, resendConfirmation: true, message: "Your account was saved, but the confirmation email could not be sent. Use Resend confirmation to try again; you do not need to create another account." };
   } catch (error) {
     if (!(error instanceof EmailTakenError)) {
       logError("auth.signup", error);

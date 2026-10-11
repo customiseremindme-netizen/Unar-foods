@@ -92,6 +92,16 @@ export const TABLES: Record<string, Table> = {
     primaryKey: ["id"],
     unique: [["email"]],
   },
+  auth_identities: {
+    columns: {
+      provider: str(20),
+      subject: str(255),
+      user_id: ref("auth_users"),
+      created_at: createdAt(),
+    },
+    primaryKey: ["provider", "subject"],
+    unique: [["provider", "user_id"]],
+  },
   auth_sessions: {
     columns: {
       id: str(64), // sha-256 of the session token

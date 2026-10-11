@@ -159,3 +159,15 @@ export function maskSecret(value: string | null | undefined): string {
   if (value.length <= 8) return "••••";
   return `••••${value.slice(-4)}`;
 }
+
+/** Google OAuth requires a stable, explicitly configured callback origin. */
+export function getGoogleEnv(): { clientId: string; clientSecret: string; redirectUri: string } | null {
+  const clientId = read("GOOGLE_CLIENT_ID"), clientSecret = read("GOOGLE_CLIENT_SECRET"), site = getConfiguredSiteUrl();
+  if (!clientId || !clientSecret || !site) return null;
+  try {
+    const url = new URL(site);
+    const local = ["localhost", "127.0.0.1"].includes(url.hostname);
+    if (url.username || url.password || url.search || url.hash || url.pathname !== "/" || (url.protocol !== "https:" && !(local && url.protocol === "http:"))) return null;
+    return { clientId, clientSecret, redirectUri: `${url.origin}/auth/google/callback` };
+  } catch { return null; }
+}

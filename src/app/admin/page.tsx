@@ -93,14 +93,14 @@ export default async function AdminOverviewPage({ searchParams }: { searchParams
     (v) => v.stock <= v.low_stock_threshold && v.products?.status !== "archived",
   );
   const net = s ? s.gross_revenue_paise - s.refunds_paise : 0;
-  const remaining = checklist?.filter((c) => !c.done).length ?? 0;
+  const remaining = checklist?.filter((c) => !c.done && !c.optional).length ?? 0;
 
   return (
     <div className="space-y-8">
       <PageHeader title="Overview" description="Real figures from paid orders only. Revenue is counted when payment is received." />
 
-      {checklist && remaining > 0 ? (
-        <Card title={`Launch checklist — ${remaining} step${remaining === 1 ? "" : "s"} left`} description="Complete these before taking real orders.">
+      {checklist && checklist.some((item) => !item.done) ? (
+        <Card title={`Launch checklist — ${remaining} step${remaining === 1 ? "" : "s"} left`} description="Complete the required steps before launch. Steps marked Optional can be completed later for a COD store.">
           <ul className="grid gap-2 md:grid-cols-2">
             {checklist.map((item) => (
               <li key={item.label}>
@@ -111,7 +111,7 @@ export default async function AdminOverviewPage({ searchParams }: { searchParams
                     <Circle className="mt-0.5 size-5 shrink-0 text-muted" aria-label="To do" />
                   )}
                   <span>
-                    <span className={item.done ? "text-muted line-through" : "font-semibold text-forest"}>{item.label}</span>
+                    <span className={item.done ? "text-muted line-through" : "font-semibold text-forest"}>{item.label}{item.optional ? " (Optional for COD)" : ""}</span>
                     <span className="block text-[0.8rem] text-muted">{item.detail}</span>
                   </span>
                 </Link>

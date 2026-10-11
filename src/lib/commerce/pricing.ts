@@ -112,10 +112,16 @@ export function computeQuote(input: QuoteInput): Quote {
     shipping.status === "ok" &&
     shipping.codAvailable &&
     (input.checkout.cod_max_order_paise === null || preCodTotal <= input.checkout.cod_max_order_paise);
+  const codUnavailableReason = codAvailable ? null
+    : !input.checkout.cod_enabled ? "Cash on Delivery is currently switched off."
+    : shipping.status === "pending_address" ? "Enter your PIN code and state to check Cash on Delivery."
+    : shipping.status !== "ok" ? "Cash on Delivery requires an available delivery service for your address."
+    : !shipping.codAvailable ? "Cash on Delivery is not offered in your delivery zone."
+    : `Cash on Delivery is available for orders up to ${formatINR(input.checkout.cod_max_order_paise!)} (including shipping and applicable tax, before any COD fee).`;
   let codFeePaise = 0;
   if (input.paymentMethod === "cod") {
     if (!codAvailable && shipping.status !== "pending_address") {
-      errors.push("Cash on Delivery is not available for this order.");
+      errors.push(codUnavailableReason!);
     } else if (codAvailable) {
       codFeePaise = input.checkout.cod_fee_paise;
     }
@@ -139,6 +145,7 @@ export function computeQuote(input: QuoteInput): Quote {
     shipping,
     shippingPaise,
     codAvailable,
+    codUnavailableReason,
     codFeePaise,
     taxPaise,
     taxBreakdown: breakdown,

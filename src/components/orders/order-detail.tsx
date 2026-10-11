@@ -6,6 +6,7 @@ import { orderStatusLabel } from "@/lib/orders/view";
 import { formatINR } from "@/lib/money";
 import { formatDate, formatDateTime, titleCase } from "@/lib/utils";
 import { Badge } from "@/components/ui/misc";
+import { ShipmentShare } from "./shipment-share";
 import { RetryPayment } from "./retry-payment";
 
 const PAYMENT_LABELS: Record<string, string> = {
@@ -125,7 +126,7 @@ export function OrderDetail({ order, token, showRetry = true }: { order: OrderVi
               </div>
             ) : null}
           </dl>
-          {paid ? (
+          {paid || (order.payment_method === "cod" && order.status === "placed") ? (
             <Link href={invoiceHref} className="mt-6 inline-flex items-center gap-2 text-[0.88rem] font-semibold text-forest underline underline-offset-4">
               <FileText className="size-4" aria-hidden="true" /> View / download invoice
             </Link>
@@ -166,6 +167,7 @@ export function OrderDetail({ order, token, showRetry = true }: { order: OrderVi
                   Track on courier website <ExternalLink className="size-3.5" aria-hidden="true" />
                 </a>
               ) : null}
+              <ShipmentShare carrier={s.carrier} trackingNumber={s.tracking_number} trackingUrl={s.tracking_url} />
               {s.shipment_events.length > 0 ? (
                 <ol className="mt-3 space-y-2 border-l border-sage pl-4">
                   {s.shipment_events.map((e) => (

@@ -13,6 +13,8 @@ import type { Database } from "@/lib/db/database.types";
 import { installSchema } from "@/lib/db/install";
 import { ANON, SERVICE, type DbContext } from "@/lib/db/rest/context";
 import { handleDataRequest } from "@/lib/db/rest/handler";
+import { withDbTransaction } from "@/lib/db/rest/transaction";
+import { persistVerifiedGoogleCustomer } from "@/lib/auth/google-customer";
 import { RPCS } from "@/lib/db/rpc";
 import { permissionsForRole, type StaffRole } from "@/lib/auth/permissions";
 
@@ -209,6 +211,43 @@ describe.skipIf(!url)("data access rules", () => {
     expect((await owner.from("staff_members").delete().eq("user_id", ownerId)).error?.message).toContain("LAST_OWNER");
     expect((await owner.from("staff_members").update({ role: "admin" }).eq("user_id", ownerId)).error?.message).toContain("LAST_OWNER");
     expect((await owner.from("staff_members").update({ role: "admin" }).eq("user_id", editorId)).error).toBeNull();
+  });
+
+  it("multi-table product edits roll back on SKU conflicts and retain access controls", async () => {
+    const owner = user(ownerId, "owner");
+    const [before] = await pool.query<mysql.RowDataPacket[]>("SELECT product_id, sku FROM product_variants WHERE id = ?", [variantId]);
+    const productId = before[0].product_id;
+    const [product] = await pool.query<mysql.RowDataPacket[]>("SELECT title FROM products WHERE id = ?", [productId]);
+    await expect(withDbTransaction(pool, owner, async (db) => {
+      const updated = await db.from("products").update({ title: "Must roll back" }).eq("id", productId);
+      expect(updated.error).toBeNull();
+      const inserted = await db.from("product_variants").insert({ product_id: productId, title: "Conflict", sku: before[0].sku });
+      if (inserted.error) throw new Error("SKU conflict");
+    })).rejects.toThrow("SKU conflict");
+    const [after] = await pool.query<mysql.RowDataPacket[]>("SELECT title FROM products WHERE id = ?", [productId]);
+    expect(after[0].title).toBe(product[0].title);
+    await expect(withDbTransaction(pool, user(customerId), async (db) => {
+      expect((await db.from("products").update({ title: "Hacked" }).eq("id", productId)).error?.code).toBe("42501");
+      expect((await db.from("product_images").insert({ product_id: productId, url: "/hacked.webp", alt: "Hacked" })).error?.code).toBe("42501");
+      expect((await db.rpc("adjust_stock", { p_variant_id: variantId, p_delta: 1, p_reason: "restock", p_note: "" })).error).not.toBeNull();
+    })).rejects.toThrow("rolled back");
+  });
+
+  it("verified Google customers persist without duplicates and cannot acquire staff access", async () => {
+    const identity = { sub: "verified-google-customer", email: "google-new@example.com", email_verified: true as const, name: "Google Customer" };
+    const id = await persistVerifiedGoogleCustomer(pool, identity);
+    expect(await persistVerifiedGoogleCustomer(pool, identity)).toBe(id);
+    const [profile] = await pool.query<mysql.RowDataPacket[]>("SELECT email, marketing_consent FROM profiles WHERE id = ?", [id]);
+    expect(profile[0].email).toBe(identity.email);
+    expect(Boolean(profile[0].marketing_consent)).toBe(false);
+    const [staff] = await pool.query<mysql.RowDataPacket[]>("SELECT user_id FROM staff_members WHERE user_id = ?", [id]);
+    expect(staff).toHaveLength(0);
+    await expect(persistVerifiedGoogleCustomer(pool, { ...identity, sub: "staff-attempt", email: "owner@example.com" })).rejects.toThrow();
+    await pool.query("INSERT INTO auth_users (id, email, password_hash) VALUES (?, 'unconfirmed@example.com', 'x')", [randomUUID()]);
+    await expect(persistVerifiedGoogleCustomer(pool, { ...identity, sub: "unconfirmed-attempt", email: "unconfirmed@example.com" })).rejects.toThrow();
+    expect((await clientFor(pool, ANON).from("auth_identities").select("*")).data).toEqual([]);
+    expect((await clientFor(pool, user(id)).from("auth_identities").select("*")).data).toEqual([]);
+    await pool.query("DELETE FROM auth_users WHERE id = ? OR email = 'unconfirmed@example.com'", [id]);
   });
 
   it("two shoppers can't both buy the last pack", async () => {

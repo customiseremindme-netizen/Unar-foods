@@ -22,6 +22,15 @@ export type Database = {
           { foreignKeyName: "audit_logs_actor_id_fkey"; columns: ["actor_id"]; isOneToOne: false; referencedRelation: "auth_users"; referencedColumns: ["id"] },
         ]
       }
+      "auth_identities": {
+        Row: { "created_at": string; "provider": string; "subject": string; "user_id": string }
+        ComputedFields: never
+        Insert: { "created_at"?: string; "provider": string; "subject": string; "user_id": string }
+        Update: { "created_at"?: string; "provider"?: string; "subject"?: string; "user_id"?: string }
+        Relationships: [
+          { foreignKeyName: "auth_identities_user_id_fkey"; columns: ["user_id"]; isOneToOne: false; referencedRelation: "auth_users"; referencedColumns: ["id"] },
+        ]
+      }
       "auth_sessions": {
         Row: { "created_at": string; "expires_at": string; "id": string; "user_agent": string | null; "user_id": string }
         ComputedFields: never

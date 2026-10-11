@@ -126,3 +126,25 @@ test("section duplication and presentation save as a draft and publish safely", 
     expect(await storefront.locator("#why-unar h2").evaluate((el) => getComputedStyle(el).color)).toBe("rgb(242, 241, 230)");
   } finally { await admin.close(); }
 });
+
+test("font pair presets persist and apply Manrope and Inter to the storefront", async ({ browser, page: storefront }) => {
+  const admin = await loginAsAdmin(browser), editor = await admin.newPage();
+  try {
+    await editor.goto("/admin/customize");
+    const form = editor.locator("#set-appearance");
+    await editor.selectOption("#appearance-font-pairing", "modern");
+    await expect(editor.locator("#appearance-heading_font")).toHaveValue("manrope");
+    await expect(editor.locator("#appearance-body_font")).toHaveValue("inter");
+    await form.getByRole("button", { name: "Save", exact: true }).click();
+    await expect(editor.getByText("Settings saved.").first()).toBeVisible();
+    await editor.reload();
+    await expect(editor.locator("#appearance-font-pairing")).toHaveValue("modern");
+    await storefront.goto("/shop");
+    await storefront.evaluate(() => document.fonts.ready);
+    expect(await storefront.locator("h1").evaluate((el) => getComputedStyle(el).fontFamily)).toContain("Manrope");
+    expect(await storefront.locator(".unar-store").evaluate((el) => getComputedStyle(el).fontFamily)).toContain("Inter");
+    await form.getByRole("button", { name: "Load brand defaults", exact: true }).click();
+    await form.getByRole("button", { name: "Save", exact: true }).click();
+    await expect(editor.getByText("Settings saved.").first()).toBeVisible();
+  } finally { await admin.close(); }
+});

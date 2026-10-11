@@ -8,6 +8,7 @@ import { logAdminAction } from "@/lib/audit";
 import { revalidateStorefront } from "@/lib/cache";
 import { rupeesToPaise } from "@/lib/money";
 import { randomToken } from "@/lib/security/tokens";
+import { withUserDbTransaction } from "@/lib/db/client";
 import { slugSchema } from "@/lib/validation/common";
 
 const label = z.object({ label: z.string().trim().min(1).max(80), approved: z.boolean() });
@@ -93,8 +94,8 @@ const productSchema = z.object({
 
 export type ProductPayload = z.input<typeof productSchema>;
 
-export async function saveProductAction(payload: ProductPayload): Promise<ActionResult> {
-  return runAdminAction("products.write", async ({ db }) => {
+export async function saveProductAction(payload: ProductPayload): Promise<ActionResult<{ variantIds: string[]; imageIds: string[] }>> {
+  return runAdminAction("products.write", async () => {
     const p = productSchema.parse(payload);
 
     const variants = p.variants.map((v, i) => {
@@ -113,177 +114,208 @@ export async function saveProductAction(payload: ProductPayload): Promise<Action
       if (p.images.some((i) => !i.alt)) throw new UserFacingError("Add a description (alt text) to every image before publishing.");
     }
 
-    const { data: current } = check(await db.from("products").select("published_at, status").eq("id", p.id).single());
+    const saved = await withUserDbTransaction(async (db, conn) => {
+      await conn.query("SELECT id FROM products WHERE id = ? FOR UPDATE", [p.id]);
+      const { data: current } = check(await db.from("products").select("published_at, status").eq("id", p.id).single());
+      const { data: originalVariants } = check(await db.from("product_variants").select("id").eq("product_id", p.id));
+      const { data: originalImages } = check(await db.from("product_images").select("id").eq("product_id", p.id));
+      for (const [items, originals] of [[p.variants, originalVariants], [p.images, originalImages]] as const) {
+        const ids = items.flatMap((item) => item.id ? [item.id] : []);
+        const allowed = new Set((originals ?? []).map((item) => item.id));
+        if (new Set(ids).size !== ids.length || ids.some((id) => !allowed.has(id))) {
+          throw new UserFacingError("This product's sizes or images have changed. Reload the editor before saving.");
+        }
+      }
+      const variantIds: string[] = [], imageIds: string[] = [];
 
-    check(
-      await db
-        .from("products")
-        .update({
-          title: p.title,
-          short_title: p.short_title,
-          subtitle: p.subtitle,
-          slug: p.slug,
-          status: p.status,
-          short_description: p.short_description,
-          description_md: p.description_md,
-          ingredients: p.ingredients,
-          allergens: p.allergens,
-          dietary_mark: p.dietary_mark,
-          nutrition: p.nutrition,
-          nutrition_note: p.nutrition_note,
-          claims: p.claims,
-          benefits: p.benefits,
-          storage_instructions: p.storage_instructions,
-          shelf_life: p.shelf_life,
-          shelf_life_approved: p.shelf_life_approved,
-          shipping_returns_md: p.shipping_returns_md,
-          manufacturer_info: p.manufacturer_info,
-          fssai_license: p.fssai_license,
-          hsn_code: p.hsn_code,
-          gst_rate: p.gst_rate,
-          is_featured: p.is_featured,
-          sort_order: p.sort_order,
-          seo_title: p.seo_title,
-          seo_description: p.seo_description,
-          og_image_url: p.og_image_url,
-          published_at: p.status === "published" ? (current?.published_at ?? new Date().toISOString()) : current?.published_at ?? null,
-        })
-        .eq("id", p.id),
-      "Could not save the product. The web address (slug) may already be used by another product.",
-    );
 
-    // Collections
-    check(await db.from("product_categories").delete().eq("product_id", p.id));
-    if (p.category_ids.length) {
-      check(await db.from("product_categories").insert(p.category_ids.map((category_id) => ({ product_id: p.id, category_id }))));
-    }
+      check(
+        await db
+          .from("products")
+          .update({
+            title: p.title,
+            short_title: p.short_title,
+            subtitle: p.subtitle,
+            slug: p.slug,
+            status: p.status,
+            short_description: p.short_description,
+            description_md: p.description_md,
+            ingredients: p.ingredients,
+            allergens: p.allergens,
+            dietary_mark: p.dietary_mark,
+            nutrition: p.nutrition,
+            nutrition_note: p.nutrition_note,
+            claims: p.claims,
+            benefits: p.benefits,
+            storage_instructions: p.storage_instructions,
+            shelf_life: p.shelf_life,
+            shelf_life_approved: p.shelf_life_approved,
+            shipping_returns_md: p.shipping_returns_md,
+            manufacturer_info: p.manufacturer_info,
+            fssai_license: p.fssai_license,
+            hsn_code: p.hsn_code,
+            gst_rate: p.gst_rate,
+            is_featured: p.is_featured,
+            sort_order: p.sort_order,
+            seo_title: p.seo_title,
+            seo_description: p.seo_description,
+            og_image_url: p.og_image_url,
+            published_at: p.status === "published" ? (current?.published_at ?? new Date().toISOString()) : current?.published_at ?? null,
+          })
+          .eq("id", p.id),
+        "Could not save the product. The web address (slug) may already be used by another product.",
+      );
 
-    // Variants (stock is managed in Inventory, never here)
-    const { data: existingVariants } = check(await db.from("product_variants").select("id").eq("product_id", p.id));
-    const keepIds = new Set(variants.filter((v) => v.id).map((v) => v.id!));
-    const toDelete = (existingVariants ?? []).filter((v) => !keepIds.has(v.id)).map((v) => v.id);
-    if (toDelete.length) check(await db.from("product_variants").delete().in("id", toDelete));
-    for (const v of variants) {
-      const row = {
-        title: v.title,
-        sku: v.sku,
-        barcode: v.barcode,
-        weight_grams: v.weight_grams,
-        mrp_paise: v.mrp_paise,
-        price_paise: v.price_paise,
-        low_stock_threshold: v.low_stock_threshold,
-        is_active: v.is_active,
-        sort_order: v.sort_order,
-      };
-      if (v.id) check(await db.from("product_variants").update(row).eq("id", v.id).eq("product_id", p.id), `Could not save variant ${v.sku} (is the SKU already used?).`);
-      else check(await db.from("product_variants").insert({ ...row, product_id: p.id, stock: 0 }), `Could not add variant ${v.sku} (is the SKU already used?).`);
-    }
+      // Collections
+      check(await db.from("product_categories").delete().eq("product_id", p.id));
+      if (p.category_ids.length) {
+        check(await db.from("product_categories").insert(p.category_ids.map((category_id) => ({ product_id: p.id, category_id }))));
+      }
 
-    // Images (order = position in the list)
-    const { data: existingImages } = check(await db.from("product_images").select("id").eq("product_id", p.id));
-    const keepImages = new Set(p.images.filter((i) => i.id).map((i) => i.id!));
-    const removeImages = (existingImages ?? []).filter((i) => !keepImages.has(i.id)).map((i) => i.id);
-    if (removeImages.length) check(await db.from("product_images").delete().in("id", removeImages));
-    for (const [index, img] of p.images.entries()) {
-      const row = { url: img.url, alt: img.alt, kind: img.kind, width: img.width, height: img.height, sort_order: index + 1 };
-      if (img.id) check(await db.from("product_images").update(row).eq("id", img.id).eq("product_id", p.id));
-      else check(await db.from("product_images").insert({ ...row, product_id: p.id }));
-    }
+      // Variants (stock is managed in Inventory, never here)
+      const existingVariants = originalVariants;
+      const keepIds = new Set(variants.filter((v) => v.id).map((v) => v.id!));
+      const toDelete = (existingVariants ?? []).filter((v) => !keepIds.has(v.id)).map((v) => v.id);
+      if (toDelete.length) check(await db.from("product_variants").delete().in("id", toDelete));
+      for (const v of variants) {
+        const row = {
+          title: v.title,
+          sku: v.sku,
+          barcode: v.barcode,
+          weight_grams: v.weight_grams,
+          mrp_paise: v.mrp_paise,
+          price_paise: v.price_paise,
+          low_stock_threshold: v.low_stock_threshold,
+          is_active: v.is_active,
+          sort_order: v.sort_order,
+        };
+        if (v.id) check(await db.from("product_variants").update(row).eq("id", v.id).eq("product_id", p.id), `Could not save variant ${v.sku} (is the SKU already used?).`);
+        else {
+          const { data } = check(await db.from("product_variants").insert({ ...row, product_id: p.id, stock: 0 }).select("id").single(), `Could not add variant ${v.sku} (is the SKU already used?).`);
+          variantIds.push(data!.id);
+        }
+        if (v.id) variantIds.push(v.id);
+      }
 
+      // Images (order = position in the list)
+      const existingImages = originalImages;
+      const keepImages = new Set(p.images.filter((i) => i.id).map((i) => i.id!));
+      const removeImages = (existingImages ?? []).filter((i) => !keepImages.has(i.id)).map((i) => i.id);
+      if (removeImages.length) check(await db.from("product_images").delete().in("id", removeImages));
+      for (const [index, img] of p.images.entries()) {
+        const row = { url: img.url, alt: img.alt, kind: img.kind, width: img.width, height: img.height, sort_order: index + 1 };
+        if (img.id) check(await db.from("product_images").update(row).eq("id", img.id).eq("product_id", p.id));
+        else {
+          const { data } = check(await db.from("product_images").insert({ ...row, product_id: p.id }).select("id").single());
+          imageIds.push(data!.id);
+        }
+        if (img.id) imageIds.push(img.id);
+      }
+
+      return { current, variantIds, imageIds };
+    });
     await logAdminAction({
       action: "product.save",
       entityType: "product",
       entityId: p.id,
-      summary: `Saved “${p.title}” (${p.status})${current?.status !== p.status ? `, status ${current?.status} → ${p.status}` : ""}`,
+      summary: `Saved “${p.title}” (${p.status})${saved.current?.status !== p.status ? `, status ${saved.current?.status} → ${p.status}` : ""}`,
     });
     revalidateStorefront();
     revalidatePath("/admin/products");
-    return { ok: true, message: p.status === "published" ? "Saved and live on the website." : "Saved." };
+    return { ok: true, message: p.status === "published" ? "Saved and live on the website." : "Saved.", data: { variantIds: saved.variantIds, imageIds: saved.imageIds } };
   });
 }
 
 export async function createProductAction(): Promise<void> {
-  const result = await runAdminAction("products.write", async ({ db }) => {
-    const suffix = randomToken(4).toLowerCase().replace(/[^a-z0-9]/g, "x");
-    const { data } = check(
-      await db.from("products").insert({ title: "New product", slug: `new-product-${suffix}`, status: "draft" }).select("id").single(),
-    );
-    check(
-      await db.from("product_variants").insert({
-        product_id: data!.id,
-        title: "100 g",
-        sku: `NEW-${suffix.toUpperCase()}`,
-        mrp_paise: 0,
-        price_paise: 0,
-        stock: 0,
-      }),
-    );
-    await logAdminAction({ action: "product.create", entityType: "product", entityId: data!.id, summary: "Created a new draft product" });
-    return { ok: true, message: null, data: data!.id };
+  const result = await runAdminAction("products.write", async () => {
+    const id = await withUserDbTransaction(async (db) => {
+      const suffix = randomToken(4).toLowerCase().replace(/[^a-z0-9]/g, "x");
+      const { data } = check(
+        await db.from("products").insert({ title: "New product", slug: `new-product-${suffix}`, status: "draft" }).select("id").single(),
+      );
+      check(
+        await db.from("product_variants").insert({
+          product_id: data!.id,
+          title: "100 g",
+          sku: `NEW-${suffix.toUpperCase()}`,
+          mrp_paise: 0,
+          price_paise: 0,
+          stock: 0,
+        }),
+      );
+      return data!.id;
+    });
+    await logAdminAction({ action: "product.create", entityType: "product", entityId: id, summary: "Created a new draft product" });
+    return { ok: true, message: null, data: id };
   });
   if (result.ok && result.data) redirect(`/admin/products/${result.data}`);
   redirect(`/admin/products?error=${encodeURIComponent(result.message ?? "Could not create product")}`);
 }
 
 export async function duplicateProductAction(productId: string): Promise<ActionResult<string>> {
-  return runAdminAction("products.write", async ({ db }) => {
+  return runAdminAction("products.write", async () => {
     z.uuid().parse(productId);
-    const { data: src } = check(
-      await db
-        .from("products")
-        .select("*, product_variants(*), product_images(*), product_categories(category_id)")
-        .eq("id", productId)
-        .single(),
-    );
-    const suffix = randomToken(3).toLowerCase().replace(/[^a-z0-9]/g, "x");
-    const { id: _id, created_at: _c, updated_at: _u, published_at: _p, product_variants, product_images, product_categories, ...rest } = src!;
-    void _id;
-    void _c;
-    void _u;
-    void _p;
-    const { data: copy } = check(
-      await db
-        .from("products")
-        .insert({ ...rest, title: `${src!.title} (copy)`, slug: `${src!.slug}-copy-${suffix}`.slice(0, 120), status: "draft", is_featured: false })
-        .select("id")
-        .single(),
-    );
-    for (const v of product_variants ?? []) {
-      check(
-        await db.from("product_variants").insert({
-          product_id: copy!.id,
-          title: v.title,
-          sku: `${v.sku}-COPY-${suffix.toUpperCase()}`.slice(0, 64),
-          barcode: null,
-          weight_grams: v.weight_grams,
-          mrp_paise: v.mrp_paise,
-          price_paise: v.price_paise,
-          stock: 0,
-          low_stock_threshold: v.low_stock_threshold,
-          is_active: v.is_active,
-          sort_order: v.sort_order,
-        }),
+    const duplicated = await withUserDbTransaction(async (db, conn) => {
+      await conn.query("SELECT id FROM products WHERE id = ? FOR UPDATE", [productId]);
+      const { data: src } = check(
+        await db
+          .from("products")
+          .select("*, product_variants(*), product_images(*), product_categories(category_id)")
+          .eq("id", productId)
+          .single(),
       );
-    }
-    if ((product_images ?? []).length) {
-      check(
-        await db.from("product_images").insert(
-          product_images.map((i) => ({ product_id: copy!.id, url: i.url, alt: i.alt, kind: i.kind, width: i.width, height: i.height, sort_order: i.sort_order })),
-        ),
+      const suffix = randomToken(3).toLowerCase().replace(/[^a-z0-9]/g, "x");
+      const { id: _id, created_at: _c, updated_at: _u, published_at: _p, product_variants, product_images, product_categories, ...rest } = src!;
+      void _id;
+      void _c;
+      void _u;
+      void _p;
+      const { data: copy } = check(
+        await db
+          .from("products")
+          .insert({ ...rest, title: `${src!.title.slice(0, 153)} (copy)`, slug: `${src!.slug.slice(0, 114 - suffix.length)}-copy-${suffix}`, status: "draft", is_featured: false })
+          .select("id")
+          .single(),
       );
-    }
-    if ((product_categories ?? []).length) {
-      check(await db.from("product_categories").insert(product_categories.map((c) => ({ product_id: copy!.id, category_id: c.category_id }))));
-    }
-    await logAdminAction({ action: "product.duplicate", entityType: "product", entityId: copy!.id, summary: `Duplicated “${src!.title}”` });
+      for (const v of product_variants ?? []) {
+        check(
+          await db.from("product_variants").insert({
+            product_id: copy!.id,
+            title: v.title,
+            sku: `${v.sku.slice(0, 58 - suffix.length)}-COPY-${suffix.toUpperCase()}`,
+            barcode: null,
+            weight_grams: v.weight_grams,
+            mrp_paise: v.mrp_paise,
+            price_paise: v.price_paise,
+            stock: 0,
+            low_stock_threshold: v.low_stock_threshold,
+            is_active: v.is_active,
+            sort_order: v.sort_order,
+          }),
+        );
+      }
+      if ((product_images ?? []).length) {
+        check(
+          await db.from("product_images").insert(
+            product_images.map((i) => ({ product_id: copy!.id, url: i.url, alt: i.alt, kind: i.kind, width: i.width, height: i.height, sort_order: i.sort_order })),
+          ),
+        );
+      }
+      if ((product_categories ?? []).length) {
+        check(await db.from("product_categories").insert(product_categories.map((c) => ({ product_id: copy!.id, category_id: c.category_id }))));
+      }
+      return { id: copy!.id, title: src!.title };
+    });
+    await logAdminAction({ action: "product.duplicate", entityType: "product", entityId: duplicated.id, summary: `Duplicated “${duplicated.title}”` });
     revalidatePath("/admin/products");
-    return { ok: true, message: "Copy created as a draft (stock 0, barcode cleared).", data: copy!.id };
+    return { ok: true, message: "Copy created as a draft (stock 0, barcode cleared).", data: duplicated.id };
   });
 }
 
 export async function setProductStatusAction(productId: string, status: "draft" | "published" | "archived"): Promise<ActionResult> {
   return runAdminAction("products.write", async ({ db }) => {
     z.uuid().parse(productId);
+    z.enum(["draft", "published", "archived"]).parse(status);
     const { data: product } = check(
       await db.from("products").select("title, published_at, product_images(id), product_variants(id, is_active, price_paise)").eq("id", productId).single(),
     );

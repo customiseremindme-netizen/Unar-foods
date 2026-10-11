@@ -1,3 +1,4 @@
+import { selectShowcaseProducts } from "@/lib/cms/product-selection";
 import Image from "next/image";
 import type { ReactNode } from "react";
 import Link from "next/link";
@@ -51,12 +52,7 @@ export function FeaturedProducts({
   products: Product[];
   stats: Record<string, ReviewStats | null>;
 }) {
-  const chosen =
-    content.product_slugs.length > 0
-      ? content.product_slugs.map((slug) => products.find((p) => p.slug === slug)).filter((p): p is Product => !!p)
-      : products.filter((p) => p.is_featured).length > 0
-        ? products.filter((p) => p.is_featured)
-        : products;
+  const chosen = selectShowcaseProducts(products, content);
 
   return (
     <section id={anchorId} aria-labelledby={headingId} className="relative py-24 lg:py-32">
@@ -80,7 +76,7 @@ export function FeaturedProducts({
             description="Banana Chewy will be available to order here soon."
           />
         ) : (
-          <Stagger className="mt-14 grid gap-x-10 gap-y-16 sm:grid-cols-2 lg:gap-x-16" gap={0.14}>
+          <Stagger className="mt-8 grid gap-x-6 gap-y-10 sm:grid-cols-2 lg:grid-cols-3 lg:gap-x-8" gap={0.14}>
             {chosen.map((product, i) => (
               <StaggerItem key={product.id}>
                 <ProductCard product={product} stats={stats[product.id]} priority={i < 2} />
@@ -289,6 +285,12 @@ export function ReviewsSection({
   productNames: Record<string, string>;
 }) {
   const shown = reviews.slice(0, 6);
+  if (shown.length === 0) return <section aria-labelledby={headingId} className="bg-paper py-10">
+    <div className="container-site grid items-center gap-5 md:grid-cols-2">
+      <SectionHeading id={headingId} eyebrow={content.eyebrow} title={content.heading} />
+      <p className="text-[0.95rem] text-muted"><strong className="block text-forest">Be the first to review</strong>{content.empty_text}</p>
+    </div>
+  </section>;
   return (
     <section aria-labelledby={headingId} className="relative overflow-hidden py-24 lg:py-32">
       <div className="container-site">

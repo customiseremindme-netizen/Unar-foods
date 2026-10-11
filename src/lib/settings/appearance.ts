@@ -1,9 +1,9 @@
+import { FONT_FAMILIES } from "./fonts";
 import type { SettingsValue } from "./schema";
 
 /** Values come from the validated settings schema, never arbitrary CSS. */
 export function appearanceCss(value: SettingsValue<"appearance">) {
-  const headings = { fraunces: 'var(--font-fraunces), Georgia, serif', montserrat: 'var(--font-montserrat), sans-serif', georgia: 'Georgia, serif' };
-  const bodies = { montserrat: 'var(--font-montserrat), sans-serif', system: 'system-ui, sans-serif' };
+  const headings = FONT_FAMILIES, bodies = FONT_FAMILIES;
   const widths = { compact: '68rem', standard: '80rem', wide: '96rem' };
   const buttons = { pill: '9999px', soft: '0.75rem', square: '0.25rem' };
   const images = { organic: '2rem', soft: '1rem', square: '0.25rem' };

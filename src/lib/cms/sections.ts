@@ -116,8 +116,10 @@ export const SECTION_TYPES = {
   },
   featured_products: {
     label: "Product showcase",
-    description: "Shows your published products with prices and add-to-cart buttons.",
+    description: "Show all published products automatically, featured items, or a hand-picked selection.",
     fields: [
+      { name: "product_selection", label: "Product selection", type: "select", options: [{ value: "automatic", label: "Automatic — selected products, otherwise all" }, { value: "all", label: "All published products (includes new products)" }, { value: "featured", label: "Featured products only" }, { value: "selected", label: "Selected products only" }] },
+      { name: "max_products", label: "Maximum products to display", type: "number", min: 1, max: 24 },
       { name: "eyebrow", label: "Small text above the heading", type: "text", max: 60 },
       { name: "heading", label: "Heading", type: "text", max: 120 },
       { name: "description", label: "Description", type: "textarea", max: 300 },
@@ -125,12 +127,14 @@ export const SECTION_TYPES = {
         name: "product_slugs",
         label: "Products to show",
         type: "products",
-        help: "Leave empty to show all featured products.",
+        help: "Used for Selected products (and Automatic when checked). Published products only; drafts never appear.",
       },
       { name: "cta_label", label: "Link text", type: "text", max: 40 },
       { name: "cta_href", label: "Link address", type: "text", max: 200 },
     ],
     schema: z.object({
+      product_selection: z.enum(["automatic", "all", "featured", "selected"]).catch("automatic").default("automatic"),
+      max_products: z.coerce.number().int().min(1).max(24).catch(12).default(12),
       eyebrow: text(60).default(""),
       heading: text(120).default("Shop the Goodness"),
       description: text(300).default(""),

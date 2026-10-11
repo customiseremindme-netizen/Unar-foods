@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Fraunces, Great_Vibes, Montserrat } from "next/font/google";
+import { DM_Sans, Fraunces, Great_Vibes, Inter, Manrope, Montserrat } from "next/font/google";
 import { getPublicSettings } from "@/lib/settings";
 import { getSiteUrl } from "@/lib/env";
 import "./globals.css";
@@ -19,6 +19,11 @@ const montserrat = Montserrat({
   variable: "--font-montserrat",
   display: "swap",
 });
+
+// Alternative storefront fonts are served locally and downloaded only when selected.
+const inter = Inter({ subsets: ["latin"], variable: "--font-inter", display: "swap", preload: false });
+const manrope = Manrope({ subsets: ["latin"], variable: "--font-manrope", display: "swap", preload: false });
+const dmSans = DM_Sans({ subsets: ["latin"], variable: "--font-dm-sans", display: "swap", preload: false });
 
 const greatVibes = Great_Vibes({
   subsets: ["latin"],
@@ -56,7 +61,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${fraunces.variable} ${montserrat.variable} ${greatVibes.variable}`}>
+    <html lang="en" className={`${fraunces.variable} ${montserrat.variable} ${greatVibes.variable} ${inter.variable} ${manrope.variable} ${dmSans.variable}`}>
       <body className="min-h-dvh">{children}</body>
     </html>
   );

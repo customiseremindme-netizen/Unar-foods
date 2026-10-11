@@ -27,7 +27,7 @@ export default async function InvoicePage({
   const order = await getOrderForViewer(decodeURIComponent(orderNumber), token ?? null, { allowStaff: true });
   if (!order) notFound();
   const paid = ["paid", "partially_refunded", "refunded", "cod_collected"].includes(order.payment_status);
-  if (!paid) notFound();
+  if (!paid && !(order.payment_method === "cod" && order.status === "placed")) notFound();
 
   const settings = await getAllSettings();
   const { store, tax, brand } = settings;
@@ -183,6 +183,7 @@ export default async function InvoicePage({
           </p>
         )}
 
+        {!paid && order.payment_method === "cod" ? <p className="mt-6 rounded-xl border border-line p-4 font-semibold text-forest">Amount due on delivery: {formatINRFixed(order.total_paise)}. Payment has not been collected.</p> : null}
         <footer className="mt-10 border-t border-line pt-6 text-[0.78rem] text-muted">
           <p>
             Payment: {order.payment_method === "cod" ? "Cash on Delivery" : "Online (Razorpay)"} · Status: {order.payment_status.replace(/_/g, " ")}

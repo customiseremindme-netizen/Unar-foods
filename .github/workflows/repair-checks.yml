@@ -38,6 +38,8 @@ jobs:
       RAZORPAY_KEY_SECRET: local_mock_secret_123
       RAZORPAY_WEBHOOK_SECRET: local_mock_webhook_secret
       RAZORPAY_API_BASE_URL: http://127.0.0.1:4010/v1
+      GOOGLE_CLIENT_ID: local-ci-client.apps.googleusercontent.com
+      GOOGLE_CLIENT_SECRET: local-ci-oauth-only
       CRON_SECRET: local_cron_secret_for_tests_0123456789
       SMTP_HOST: 127.0.0.1
       SMTP_PORT: "1025"

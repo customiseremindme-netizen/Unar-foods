@@ -33,3 +33,9 @@ describe("store customization", () => {
     expect(isSectionType("__proto__")).toBe(false);
   });
 });
+
+it("supports Manrope, Inter and curated font pairs without accepting arbitrary CSS", () => {
+  const appearance = settingsSchemas.appearance.parse({ heading_font: "manrope", body_font: "inter" });
+  expect(appearanceCss(appearance)).toContain("--font-manrope");
+  expect(appearanceCss(appearance)).toContain("--font-inter");
+});

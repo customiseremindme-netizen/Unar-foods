@@ -16,7 +16,7 @@ import { sendEmail } from "@/lib/email/send";
 import { escapeHtml } from "@/lib/email/templates";
 import { logError } from "@/lib/monitoring";
 
-export type FormState = { ok: boolean; message: string | null; errors?: FieldErrors };
+export type FormState = { ok: boolean; message: string | null; errors?: FieldErrors; resendConfirmation?: boolean };
 
 const flag = (v: FormDataEntryValue | null) => v === "on" || v === "true";
 

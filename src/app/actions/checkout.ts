@@ -31,6 +31,7 @@ export type QuoteSummary = Pick<
   | "taxPaise"
   | "totalPaise"
   | "codAvailable"
+  | "codUnavailableReason"
   | "errors"
   | "canCheckout"
   | "couponError"
@@ -48,6 +49,7 @@ function summarize(quote: Quote): QuoteSummary {
     taxPaise: quote.taxPaise,
     totalPaise: quote.totalPaise,
     codAvailable: quote.codAvailable,
+    codUnavailableReason: quote.codUnavailableReason,
     errors: quote.errors,
     canCheckout: quote.canCheckout,
     couponError: quote.couponError,

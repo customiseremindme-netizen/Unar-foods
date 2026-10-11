@@ -6,6 +6,7 @@ export type RateLimitRule = { limit: number; windowSeconds: number };
 
 /** Shared limits, tuned for a small shop. */
 export const RATE_LIMITS = {
+  googleLogin: { limit: 15, windowSeconds: 600 },
   login: { limit: 8, windowSeconds: 600 },
   setup: { limit: 10, windowSeconds: 3600 },
   signup: { limit: 5, windowSeconds: 3600 },
@@ -38,7 +39,7 @@ export async function checkRateLimit(bucket: keyof typeof RATE_LIMITS, identifie
   });
   if (error) {
     logError("rate-limit", error);
-    return !["login", "signup", "setup", "passwordReset", "verification", "reviewUpload"].includes(bucket);
+    return !["login", "googleLogin", "signup", "setup", "passwordReset", "verification", "reviewUpload"].includes(bucket);
   }
   return data === true;
 }

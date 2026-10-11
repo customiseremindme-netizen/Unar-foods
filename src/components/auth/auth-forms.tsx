@@ -89,7 +89,7 @@ export function RegisterForm({ next }: { next: string }) {
       <div aria-hidden="true" className="absolute -left-[9999px] h-0 overflow-hidden">
         <input name="website" tabIndex={-1} autoComplete="off" />
       </div>
-      {state.message ? <FormMessage tone="error">{state.message} <Link href="/resend-verification" className="underline">Resend confirmation</Link></FormMessage> : null}
+      {state.message ? <FormMessage tone="error">{state.message} {state.resendConfirmation ? <Link href="/resend-verification" className="underline">Resend confirmation</Link> : null}</FormMessage> : null}
       <Field label="Full name" htmlFor="full_name" error={state.errors?.full_name}>
         <Input id="full_name" name="full_name" autoComplete="name" required aria-invalid={!!state.errors?.full_name} />
       </Field>

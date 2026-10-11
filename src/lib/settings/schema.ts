@@ -43,8 +43,8 @@ export const settingsSchemas = {
     accent: hex.default("#E2B33C"),
   }),
   appearance: z.object({
-    heading_font: z.enum(["fraunces", "montserrat", "georgia"]).default("fraunces"),
-    body_font: z.enum(["montserrat", "system"]).default("montserrat"),
+    heading_font: z.enum(["fraunces", "montserrat", "manrope", "inter", "dm_sans", "georgia"]).default("fraunces"),
+    body_font: z.enum(["montserrat", "manrope", "inter", "dm_sans", "system"]).default("montserrat"),
     content_width: z.enum(["compact", "standard", "wide"]).default("standard"),
     button_style: z.enum(["pill", "soft", "square"]).default("pill"),
     image_style: z.enum(["organic", "soft", "square"]).default("organic"),

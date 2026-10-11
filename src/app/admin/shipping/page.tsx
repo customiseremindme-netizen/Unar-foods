@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { requireStaffPage } from "@/lib/auth/session";
 import { getUserDb } from "@/lib/db/client";
 import { getAllSettings } from "@/lib/settings";
@@ -24,6 +25,10 @@ export default async function ShippingPage() {
           No active shipping zone — customers can’t check out yet. Edit “All India — Standard” below, enter your real delivery charge, tick <strong>Active</strong> and save.
         </Notice>
       ) : null}
+      {!settings.checkout.cod_enabled ? <Notice tone="warning">
+        Cash on Delivery is switched off for the store. Enable it in <Link href="/admin/settings#set-checkout" className="font-semibold underline">Settings → Checkout</Link>, then tick “Cash on Delivery available here” in your delivery zones.
+      </Notice> : null}
+      <Notice>Only the states or PIN codes selected in an active zone can order. “All India” does not cover unchecked states when that zone is inactive. Check Tamil Nadu, Kerala and Puducherry if you deliver there. The most specific matching zone determines COD availability.</Notice>
       <section className="space-y-3">
         <h2 className="font-sans text-[1.05rem] font-semibold tracking-normal text-forest">Shipping zones</h2>
         <ZoneManager zones={(zones ?? []) as Zone[]} />
