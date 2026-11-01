@@ -12,7 +12,17 @@ import { formatINR } from "@/lib/money";
 import { cn } from "@/lib/utils";
 
 export type NavLink = { label: string; href: string };
-export type SearchItem = { slug: string; title: string; subtitle: string | null; imageUrl: string | null; imageAlt: string; pricePaise: number | null };
+export type SearchItem = {
+  slug: string;
+  title: string;
+  subtitle: string | null;
+  imageUrl: string | null;
+  imageAlt: string;
+  pricePaise: number | null;
+  soldOut: boolean;
+  /** Extra words to match (short name, ingredients, collections). */
+  keywords: string;
+};
 
 function isActive(pathname: string, href: string) {
   if (href.startsWith("/#")) return false;
@@ -188,9 +198,12 @@ function SearchDialog({ open, onClose, index }: { open: boolean; onClose: () => 
   const router = useRouter();
   const [query, setQuery] = useState("");
   const results = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    if (!q) return index;
-    return index.filter((item) => `${item.title} ${item.subtitle ?? ""}`.toLowerCase().includes(q));
+    const terms = query.trim().toLowerCase().split(/\s+/).filter(Boolean);
+    if (!terms.length) return index;
+    return index.filter((item) => {
+      const haystack = `${item.title} ${item.subtitle ?? ""} ${item.keywords}`.toLowerCase();
+      return terms.every((t) => haystack.includes(t));
+    });
   }, [query, index]);
 
   return (
@@ -221,17 +234,20 @@ function SearchDialog({ open, onClose, index }: { open: boolean; onClose: () => 
         </div>
         <ul className="mt-4 divide-y divide-line" aria-label="Matching products">
           {results.length === 0 ? (
-            <li className="py-6 text-center text-[0.92rem] text-muted">No products match “{query}”.</li>
+            <li className="py-6 text-center text-[0.92rem] text-muted">
+              {index.length === 0 ? "Our products will appear here soon." : <>No products match “{query}”.</>}
+            </li>
           ) : (
             results.map((item) => (
               <li key={item.slug}>
                 <Link href={`/products/${item.slug}`} onClick={onClose} className="flex items-center gap-4 rounded-xl px-2 py-3 hover:bg-forest/[0.04]">
                   <span className="relative size-14 shrink-0 overflow-hidden rounded-xl bg-cream-deep">
-                    {item.imageUrl ? <Image src={item.imageUrl} alt={item.imageAlt} fill sizes="56px" className="object-cover" /> : null}
+                    {item.imageUrl ? <Image src={item.imageUrl} alt={item.imageAlt} fill sizes="56px" className="object-contain" /> : null}
                   </span>
                   <span className="min-w-0 flex-1">
                     <span className="block truncate text-[0.95rem] font-semibold text-forest">{item.title}</span>
                     {item.subtitle ? <span className="block truncate text-[0.82rem] text-muted">{item.subtitle}</span> : null}
+                    {item.soldOut ? <span className="block text-[0.75rem] font-semibold text-muted">Sold out</span> : null}
                   </span>
                   {item.pricePaise !== null ? <span className="text-[0.9rem] font-semibold tabular-nums">{formatINR(item.pricePaise)}</span> : null}
                 </Link>

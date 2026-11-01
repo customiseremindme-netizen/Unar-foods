@@ -12,9 +12,15 @@ import { sendEmail } from "@/lib/email/send";
 import { escapeHtml } from "@/lib/email/templates";
 import { logError } from "@/lib/monitoring";
 
-export type FormState = { ok: boolean; message: string | null; errors?: FieldErrors };
+/** `values` returns what the visitor typed (never passwords) so a failed submit doesn't empty the form. */
+export type FormState = { ok: boolean; message: string | null; errors?: FieldErrors; values?: Record<string, string> };
 
 const flag = (v: FormDataEntryValue | null) => v === "on" || v === "true";
+
+/** What the visitor typed, sent back after a failed submit so the form keeps it. */
+function typed(formData: FormData, keys: string[]): Record<string, string> {
+  return Object.fromEntries(keys.map((k) => [k, typeof formData.get(k) === "string" ? String(formData.get(k)).slice(0, 4000) : ""]));
+}
 
 // ---------------------------------------------------------------------------
 // Newsletter
@@ -104,6 +110,7 @@ const contactSchema = z.object({
 });
 
 export async function submitContactAction(_prev: FormState, formData: FormData): Promise<FormState> {
+  const values = typed(formData, ["name", "email", "phone", "subject", "message"]);
   const parsed = contactSchema.safeParse({
     name: formData.get("name"),
     email: formData.get("email"),
@@ -112,13 +119,13 @@ export async function submitContactAction(_prev: FormState, formData: FormData):
     message: formData.get("message"),
     website: formData.get("website") ?? "",
   });
-  if (!parsed.success) return { ok: false, message: null, errors: toFieldErrors(parsed.error) };
+  if (!parsed.success) return { ok: false, message: null, errors: toFieldErrors(parsed.error), values };
   if (parsed.data.website) return { ok: true, message: "Thank you! We've received your message." };
   if (!(await checkRateLimit("contact", await getClientIp()))) {
-    return { ok: false, message: "You've sent several messages recently. Please try again later or email us directly." };
+    return { ok: false, message: "You've sent several messages recently. Please try again later or email us directly.", values };
   }
   const admin = getServiceDb();
-  if (!admin) return { ok: false, message: "Our contact form is not available right now. Please email us directly." };
+  if (!admin) return { ok: false, message: "Our contact form is not available right now. Please email us directly.", values };
 
   const { error } = await admin.from("contact_messages").insert({
     name: parsed.data.name,
@@ -129,7 +136,7 @@ export async function submitContactAction(_prev: FormState, formData: FormData):
   });
   if (error) {
     logError("contact.insert", error);
-    return { ok: false, message: "We couldn't send your message. Please try again or email us directly." };
+    return { ok: false, message: "We couldn't send your message. Please try again or email us directly.", values };
   }
 
   const settings = await getAllSettings();
@@ -168,6 +175,7 @@ export async function submitReviewAction(_prev: FormState, formData: FormData): 
   const user = await getSessionUser();
   if (!user) return { ok: false, message: "Please sign in to write a review." };
 
+  const values = typed(formData, ["title", "body", "author_name"]);
   const parsed = reviewSchema.safeParse({
     product_id: formData.get("product_id"),
     rating: formData.get("rating"),
@@ -176,21 +184,21 @@ export async function submitReviewAction(_prev: FormState, formData: FormData): 
     author_name: formData.get("author_name"),
     website: formData.get("website") ?? "",
   });
-  if (!parsed.success) return { ok: false, message: null, errors: toFieldErrors(parsed.error) };
+  if (!parsed.success) return { ok: false, message: null, errors: toFieldErrors(parsed.error), values };
   if (parsed.data.website) return { ok: true, message: "Thank you! Your review will appear once it has been checked." };
-  if (!(await checkRateLimit("review", user.id))) return { ok: false, message: "Please wait a while before posting another review." };
+  if (!(await checkRateLimit("review", user.id))) return { ok: false, message: "Please wait a while before posting another review.", values };
 
   const admin = getServiceDb();
-  if (!admin) return { ok: false, message: "Reviews are not available right now." };
+  if (!admin) return { ok: false, message: "Reviews are not available right now.", values };
   const settings = await getAllSettings();
-  if (!settings.reviews.enabled) return { ok: false, message: "Reviews are currently closed." };
+  if (!settings.reviews.enabled) return { ok: false, message: "Reviews are currently closed.", values };
 
   const { data: product } = await admin
     .from("products")
     .select("id, status")
     .eq("id", parsed.data.product_id)
     .maybeSingle();
-  if (!product || product.status !== "published") return { ok: false, message: "This product is not available for reviews." };
+  if (!product || product.status !== "published") return { ok: false, message: "This product is not available for reviews.", values };
 
   // Verified purchase: the customer has a paid order containing this product.
   const { data: purchases } = await admin
@@ -202,7 +210,7 @@ export async function submitReviewAction(_prev: FormState, formData: FormData): 
     .limit(1);
   const verified = (purchases ?? []).length > 0;
   if (settings.reviews.require_verified_purchase && !verified) {
-    return { ok: false, message: "Only customers who have bought this product can review it." };
+    return { ok: false, message: "Only customers who have bought this product can review it.", values };
   }
 
   const { error } = await admin.from("reviews").insert({
@@ -216,9 +224,9 @@ export async function submitReviewAction(_prev: FormState, formData: FormData): 
     status: "pending",
   });
   if (error) {
-    if (error.code === "23505") return { ok: false, message: "You have already reviewed this product. Thank you!" };
+    if (error.code === "23505") return { ok: false, message: "You have already reviewed this product. Thank you!", values };
     logError("review.insert", error);
-    return { ok: false, message: "We couldn't save your review. Please try again." };
+    return { ok: false, message: "We couldn't save your review. Please try again.", values };
   }
   return { ok: true, message: "Thank you! Your review will appear once it has been checked." };
 }

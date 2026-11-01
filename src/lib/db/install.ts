@@ -2,6 +2,7 @@ import "server-only";
 import type { Pool, PoolConnection, RowDataPacket } from "mysql2/promise";
 import initialData from "./data/initial-data.json";
 import { addForeignKeySql, allColumns, columnSql, createTableSql, foreignKeys, keyName, q, schemaFingerprint } from "./ddl";
+import { runDataMigrations } from "./data-migrations";
 import { getPool } from "./pool";
 import { prepareInsertRow } from "./rows";
 import { TABLES } from "./schema";
@@ -94,7 +95,11 @@ async function migrate(conn: PoolConnection) {
   }
 }
 
-/** Loads the starter content (brand settings, the two products as drafts, pages, FAQs) once. */
+/**
+ * Loads the starter content (brand settings, the two products, pages, FAQs)
+ * once. Rows that already exist (same id or unique key) are kept as they are;
+ * any other problem (a broken rule) stops the load so it is not hidden.
+ */
 async function loadInitialData(conn: PoolConnection) {
   await conn.beginTransaction();
   try {
@@ -103,8 +108,9 @@ async function loadInitialData(conn: PoolConnection) {
       for (const input of rows) {
         const row = prepareInsertRow(tableName, table, input);
         const cols = Object.keys(row);
+        const keep = q(table.primaryKey[0]!);
         await conn.query(
-          `INSERT IGNORE INTO ${q(tableName)} (${cols.map(q).join(", ")}) VALUES (${cols.map(() => "?").join(", ")})`,
+          `INSERT INTO ${q(tableName)} (${cols.map(q).join(", ")}) VALUES (${cols.map(() => "?").join(", ")}) ON DUPLICATE KEY UPDATE ${keep} = ${keep}`,
           cols.map((c) => row[c]),
         );
       }
@@ -117,7 +123,7 @@ async function loadInitialData(conn: PoolConnection) {
   }
 }
 
-export async function installSchema(pool: Pool): Promise<{ migrated: boolean; seeded: boolean }> {
+export async function installSchema(pool: Pool): Promise<{ migrated: boolean; seeded: boolean; dataFixes: string[] }> {
   const conn = await pool.getConnection();
   try {
     const [lock] = await conn.query<Rows>("SELECT GET_LOCK(?, 60) AS ok", [LOCK]);
@@ -137,7 +143,10 @@ export async function installSchema(pool: Pool): Promise<{ migrated: boolean; se
         await loadInitialData(conn);
         seeded = true;
       }
-      return { migrated, seeded };
+      const PREFIX = "data_migration:";
+      const done = new Set([...meta.keys()].filter((k) => k.startsWith(PREFIX)).map((k) => k.slice(PREFIX.length)));
+      const dataFixes = await runDataMigrations(conn, done, (id) => setMeta(conn, PREFIX + id, new Date().toISOString()));
+      return { migrated, seeded, dataFixes };
     } finally {
       await conn.query("SELECT RELEASE_LOCK(?)", [LOCK]).catch(() => undefined);
     }
@@ -160,7 +169,7 @@ export async function getReadyPool(): Promise<Pool> {
     if (Date.now() - failedAt < 5_000) throw new Error("The database is not reachable right now. It will be retried shortly.");
     globalForInstall.__unarInstall = installSchema(pool).then(
       (result) => {
-        if (result.migrated || result.seeded) console.info("[db] database prepared", result);
+        if (result.migrated || result.seeded || result.dataFixes.length) console.info("[db] database prepared", result);
       },
       (error) => {
         globalForInstall.__unarInstall = undefined;

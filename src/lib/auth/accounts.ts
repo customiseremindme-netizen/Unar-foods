@@ -21,7 +21,8 @@ import { getDummyHash, hashPassword, verifyPassword } from "./password";
 export const SESSION_COOKIE = "unar_session";
 const SESSION_DAYS = 30;
 
-export type TokenPurpose = "verify_email" | "reset_password";
+/** reset_session: proves this browser just opened a password-reset link (lets it set a new password without the old one). */
+export type TokenPurpose = "verify_email" | "reset_password" | "reset_session";
 
 export class EmailTakenError extends Error {
   constructor() {
@@ -84,18 +85,45 @@ export async function createUser(input: {
   return id;
 }
 
-export type AuthResult = { ok: true; userId: string } | { ok: false; reason: "invalid" | "email_not_confirmed" };
+/**
+ * Someone signs up again with an email whose account was never confirmed.
+ * Their new password and name replace the old ones, so a stranger who signed
+ * up first with this address (and never proved it was theirs) can't keep a
+ * password that would work once the real owner confirms the address.
+ */
+export async function replaceUnconfirmedSignup(input: { userId: string; password: string; fullName?: string | null; marketingConsent?: boolean; confirm: boolean }): Promise<boolean> {
+  const pool = await getReadyPool();
+  const hash = await hashPassword(input.password);
+  return withTransaction(pool, async (conn) => {
+    const [result] = await conn.query<ResultSetHeader>(
+      "UPDATE auth_users SET password_hash = ?, email_confirmed_at = ? WHERE id = ? AND email_confirmed_at IS NULL",
+      [hash, input.confirm ? now() : null, input.userId],
+    );
+    if (result.affectedRows !== 1) return false;
+    await conn.query("UPDATE profiles SET full_name = ?, marketing_consent = ? WHERE id = ?", [
+      input.fullName?.trim().slice(0, 120) || null,
+      input.marketingConsent ? 1 : 0,
+      input.userId,
+    ]);
+    // Old links and sessions of the earlier sign-up stop working.
+    await conn.query("UPDATE auth_tokens SET used_at = ? WHERE user_id = ? AND used_at IS NULL", [now(), input.userId]);
+    await conn.query("DELETE FROM auth_sessions WHERE user_id = ?", [input.userId]);
+    return true;
+  });
+}
+
+export type AuthResult = { ok: true; userId: string } | { ok: false; reason: "invalid" } | { ok: false; reason: "email_not_confirmed"; userId: string };
 
 /** Checks an email + password. Takes the same time whether or not the account exists. */
 export async function authenticate(email: string, password: string): Promise<AuthResult> {
   const user = await findUserByEmail(email);
   const valid = await verifyPassword(password, user?.password_hash ?? (await getDummyHash()));
   if (!user || !valid) return { ok: false, reason: "invalid" };
-  if (!user.email_confirmed_at) return { ok: false, reason: "email_not_confirmed" };
+  if (!user.email_confirmed_at) return { ok: false, reason: "email_not_confirmed", userId: user.id };
   return { ok: true, userId: user.id };
 }
 
-async function cookieIsSecure(): Promise<boolean> {
+export async function cookieIsSecure(): Promise<boolean> {
   const h = await headers();
   const proto = (h.get("x-forwarded-proto") ?? "").split(",")[0].trim();
   if (proto) return proto === "https";

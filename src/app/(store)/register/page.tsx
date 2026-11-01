@@ -4,6 +4,9 @@ import { getSessionUser } from "@/lib/auth/session";
 import { isSafeInternalPath } from "@/lib/validation/common";
 import { AuthShell } from "@/components/auth/auth-shell";
 import { RegisterForm } from "@/components/auth/auth-forms";
+import { FormMessage } from "@/components/ui/field";
+import { isDatabaseConfigured } from "@/lib/db/client";
+import { getEmailEnv } from "@/lib/env";
 
 export const metadata: Metadata = { title: "Create an account", robots: { index: false, follow: true } };
 export const dynamic = "force-dynamic";
@@ -14,7 +17,13 @@ export default async function RegisterPage({ searchParams }: { searchParams: Pro
   if (await getSessionUser()) redirect(target);
   return (
     <AuthShell title="Create your account" description="Track orders, save addresses and check out faster.">
-      <RegisterForm next={target} />
+      {isDatabaseConfigured() ? (
+        <RegisterForm next={target} emailVerification={!!getEmailEnv()} />
+      ) : (
+        <FormMessage tone="info">
+          Accounts open as soon as our shop&apos;s database is connected. Please check back shortly — or contact us if you need help with an order.
+        </FormMessage>
+      )}
     </AuthShell>
   );
 }

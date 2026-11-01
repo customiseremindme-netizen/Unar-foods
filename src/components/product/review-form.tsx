@@ -53,14 +53,14 @@ export function ReviewForm({ productId, productSlug }: { productId: string; prod
       </fieldset>
       <div className="grid gap-5 sm:grid-cols-2">
         <Field label="Your name (shown publicly)" htmlFor="review-name" required error={state.errors?.author_name}>
-          <Input id="review-name" name="author_name" autoComplete="given-name" maxLength={60} aria-invalid={!!state.errors?.author_name} />
+          <Input id="review-name" name="author_name" defaultValue={state.values?.author_name} autoComplete="given-name" maxLength={60} aria-invalid={!!state.errors?.author_name} />
         </Field>
         <Field label="Title (optional)" htmlFor="review-title" error={state.errors?.title}>
-          <Input id="review-title" name="title" maxLength={120} />
+          <Input id="review-title" name="title" defaultValue={state.values?.title} maxLength={120} />
         </Field>
       </div>
       <Field label="Your review" htmlFor="review-body" required error={state.errors?.body}>
-        <Textarea id="review-body" name="body" rows={4} maxLength={2000} aria-invalid={!!state.errors?.body} />
+        <Textarea id="review-body" name="body" defaultValue={state.values?.body} rows={4} maxLength={2000} aria-invalid={!!state.errors?.body} />
       </Field>
       {state.message ? (
         <FormMessage tone="error">

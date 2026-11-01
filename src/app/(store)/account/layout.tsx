@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import type { Metadata } from "next";
-import { requireUser, getStaffAccess } from "@/lib/auth/session";
+import { getSessionUser, getStaffAccess } from "@/lib/auth/session";
 import { signOutAction } from "@/app/actions/auth";
 import { AccountNav } from "@/components/account/account-nav";
 
@@ -8,7 +8,9 @@ export const metadata: Metadata = { title: "My account", robots: { index: false,
 export const dynamic = "force-dynamic";
 
 export default async function AccountLayout({ children }: { children: ReactNode }) {
-  const user = await requireUser("/account");
+  // Each account page sends signed-out visitors to sign in and back to that exact page.
+  const user = await getSessionUser();
+  if (!user) return <>{children}</>;
   const staff = await getStaffAccess();
   return (
     <div className="container-site py-10 lg:py-14">

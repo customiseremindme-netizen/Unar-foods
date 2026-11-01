@@ -30,7 +30,7 @@ export function ProductCard({
   const hoverImage = product.images.find((i) => i.id !== image?.id && i.kind !== "back_label" && i.kind !== "front_label");
   const variant = product.defaultVariant;
   const soldOut = !variant || variant.stock <= 0;
-  const name = product.short_title ?? product.title;
+  const name = product.title;
 
   return (
     <article className={cn("group relative flex flex-col", className)}>
@@ -47,7 +47,7 @@ export function ProductCard({
               fill
               priority={priority}
               sizes="(min-width: 1024px) 40vw, (min-width: 640px) 50vw, 100vw"
-              className="object-cover transition-transform duration-[1.2s] ease-[var(--ease-out-soft)] group-hover:scale-[1.045]"
+              className="object-contain transition-transform duration-[1.2s] ease-[var(--ease-out-soft)] group-hover:scale-[1.03] motion-reduce:transition-none"
             />
             {hoverImage ? (
               <Image
@@ -56,7 +56,7 @@ export function ProductCard({
                 aria-hidden="true"
                 fill
                 sizes="(min-width: 1024px) 40vw, (min-width: 640px) 50vw, 100vw"
-                className="object-cover opacity-0 transition-opacity duration-700 group-hover:opacity-100"
+                className="object-contain opacity-0 transition-opacity duration-700 group-hover:opacity-100"
               />
             ) : null}
           </>
@@ -72,7 +72,7 @@ export function ProductCard({
       </Link>
       <div className="mt-5 flex flex-1 flex-col">
         {product.subtitle ? <p className="eyebrow">{product.subtitle}</p> : null}
-        <h3 className="mt-2 text-[1.45rem] leading-snug">
+        <h3 className="mt-2 text-[1.3rem] leading-snug">
           <Link href={`/products/${product.slug}`} className="hover:text-forest-deep">
             {name}
           </Link>
@@ -95,7 +95,7 @@ export function ProductCard({
               <p className="text-[0.75rem] text-muted">{variant.title}</p>
             </div>
           ) : (
-            <span className="text-muted">Price coming soon</span>
+            <span className="text-muted">Currently unavailable</span>
           )}
           <AddToCartButton variantId={variant?.id ?? null} disabled={soldOut} productName={name} size="sm" />
         </div>

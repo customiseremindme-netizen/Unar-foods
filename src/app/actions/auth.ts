@@ -1,17 +1,20 @@
 "use server";
 
+import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import {
   authenticate,
   confirmEmail,
   consumeToken,
+  cookieIsSecure,
   createUser,
   EmailTakenError,
   endAllSessions,
   endSession,
   findUserByEmail,
   issueToken,
+  replaceUnconfirmedSignup,
   setPassword,
   startSession,
   type TokenPurpose,
@@ -37,8 +40,11 @@ function safeNext(value: FormDataEntryValue | null, fallback = "/account"): stri
   return next && isSafeInternalPath(next) && !next.startsWith("/auth") ? next : fallback;
 }
 
+/** Short-lived proof (httpOnly cookie) that this browser just opened a password-reset link. */
+const RESET_COOKIE = "unar_reset";
+
 /** Emails a one-time link (account confirmation or password reset). */
-async function sendAccountLink(input: { userId: string; email: string; name?: string | null; purpose: TokenPurpose; next?: string }) {
+async function sendAccountLink(input: { userId: string; email: string; name?: string | null; purpose: "verify_email" | "reset_password"; next?: string }) {
   const verify = input.purpose === "verify_email";
   const token = await issueToken(input.userId, input.purpose, verify ? 24 * 60 : 60);
   const site = await getRequestSiteUrl();
@@ -72,30 +78,50 @@ async function sendAccountLink(input: { userId: string; email: string; name?: st
 
 const loginSchema = z.object({ email: emailSchema, password: z.string().min(1, "Enter your password").max(200) });
 
+const text = (v: FormDataEntryValue | null, max = 254) => (typeof v === "string" ? v.slice(0, max) : "");
+
 export async function signInAction(_prev: FormState, formData: FormData): Promise<FormState> {
+  const values = { email: text(formData.get("email")) };
   const parsed = loginSchema.safeParse({ email: formData.get("email"), password: formData.get("password") });
-  if (!parsed.success) return { ok: false, message: null, errors: toFieldErrors(parsed.error) };
+  if (!parsed.success) return { ok: false, message: null, errors: toFieldErrors(parsed.error), values };
   const ip = await getClientIp();
-  if (!(await checkRateLimit("login", `${ip}:${parsed.data.email}`))) {
-    return { ok: false, message: "Too many sign-in attempts. Please wait 10 minutes and try again." };
+  if (!(await checkRateLimit("login", `${ip}:${parsed.data.email}`)) || !(await checkRateLimit("loginAccount", parsed.data.email))) {
+    return { ok: false, message: "Too many sign-in attempts. Please wait a while and try again.", values };
   }
-  if (!isDatabaseConfigured()) return { ok: false, message: "Sign-in is not available yet." };
+  if (!isDatabaseConfigured()) return { ok: false, message: "Sign-in is not available yet — the shop's database is still being connected.", values };
   let result;
   try {
     result = await authenticate(parsed.data.email, parsed.data.password);
   } catch (error) {
     logError("auth.signin", error);
-    return { ok: false, message: "Sign-in is temporarily unavailable. Please try again in a minute." };
+    return { ok: false, message: "Sign-in is temporarily unavailable. Please try again in a minute.", values };
   }
   if (!result.ok) {
     if (result.reason === "email_not_confirmed") {
-      return { ok: false, message: "Please confirm your email address first — check your inbox for the link we sent." };
+      // The right password proves it's them: send a fresh confirmation link (or, if the shop
+      // has no email set up, there is nothing to confirm with — activate the account).
+      if (!getEmailEnv()) {
+        await confirmEmail(result.userId);
+      } else {
+        if (await checkRateLimit("confirmResend", parsed.data.email)) {
+          await sendAccountLink({ userId: result.userId, email: parsed.data.email, purpose: "verify_email", next: safeNext(formData.get("next")) }).catch((e) =>
+            logError("auth.resend", e),
+          );
+        }
+        return {
+          ok: false,
+          message: "Please confirm your email address first. We've sent you a new confirmation link — check your inbox (and spam folder).",
+          values,
+        };
+      }
+    } else {
+      return { ok: false, message: "Incorrect email or password.", values };
     }
-    return { ok: false, message: "Incorrect email or password." };
   }
-  await startSession(result.userId);
+  const userId = result.userId;
+  await startSession(userId);
   // Merge the guest cart into the customer's cart.
-  await resolveCart({ create: false, userId: result.userId }).catch((e) => logError("auth.merge_cart", e));
+  await resolveCart({ create: false, userId }).catch((e) => logError("auth.merge_cart", e));
   redirect(safeNext(formData.get("next")));
 }
 
@@ -106,64 +132,91 @@ const registerSchema = z
     password: passwordSchema,
     confirm: z.string(),
     marketing: z.boolean(),
-    website: z.string().max(0).optional(),
   })
   .refine((v) => v.password === v.confirm, { path: ["confirm"], message: "Passwords do not match" });
 
 const REGISTERED_MESSAGE = "Almost done! We've sent a confirmation link to your email. Open it to activate your account.";
 
+/**
+ * Creates a customer account.
+ * - Email set up (SMTP or Resend): the account is activated by the emailed link.
+ * - No email set up: the account works straight away and the customer is signed in.
+ */
 export async function registerAction(_prev: FormState, formData: FormData): Promise<FormState> {
+  const values = { full_name: text(formData.get("full_name"), 120), email: text(formData.get("email")), marketing: formData.get("marketing") === "on" ? "on" : "" };
+  // Hidden field only bots fill in: pretend it worked.
+  if (text(formData.get("website"))) return { ok: true, message: REGISTERED_MESSAGE };
   const parsed = registerSchema.safeParse({
     full_name: formData.get("full_name"),
     email: formData.get("email"),
     password: formData.get("password"),
     confirm: formData.get("confirm"),
     marketing: formData.get("marketing") === "on",
-    website: formData.get("website") ?? "",
   });
-  if (!parsed.success) return { ok: false, message: null, errors: toFieldErrors(parsed.error) };
-  if (parsed.data.website) return { ok: true, message: REGISTERED_MESSAGE };
+  if (!parsed.success) return { ok: false, message: null, errors: toFieldErrors(parsed.error), values };
   if (!(await checkRateLimit("signup", await getClientIp()))) {
-    return { ok: false, message: "Too many sign-ups from this network. Please try again later." };
+    return { ok: false, message: "Too many sign-ups from this network. Please try again later.", values };
   }
-  if (!isDatabaseConfigured()) return { ok: false, message: "Accounts are not available yet." };
-  if (!getEmailEnv()) {
-    return { ok: false, message: "Creating an account isn't available yet. You can still place an order as a guest." };
+  if (!isDatabaseConfigured()) {
+    return { ok: false, message: "Accounts are not available yet — the shop's database is still being connected. You can still contact us.", values };
   }
+  const emailOn = !!getEmailEnv();
   const next = safeNext(formData.get("next"));
+  const input = { email: parsed.data.email, password: parsed.data.password, fullName: parsed.data.full_name, marketingConsent: parsed.data.marketing };
+  let userId: string;
   try {
-    const userId = await createUser({
-      email: parsed.data.email,
-      password: parsed.data.password,
-      fullName: parsed.data.full_name,
-      confirmed: false,
-      marketingConsent: parsed.data.marketing,
-    });
-    const sent = await sendAccountLink({ userId, email: parsed.data.email, name: parsed.data.full_name, purpose: "verify_email", next });
-    if (!sent) return { ok: false, message: "Your account was created, but we couldn't send the confirmation email. Please try again in a few minutes." };
+    userId = await createUser({ ...input, confirmed: !emailOn });
   } catch (error) {
     if (!(error instanceof EmailTakenError)) {
       logError("auth.signup", error);
-      return { ok: false, message: "We couldn't create your account. Please try again." };
+      return { ok: false, message: "We couldn't create your account. Please try again.", values };
     }
-    // Same answer whether or not the email already exists (prevents account discovery).
-    // If that account was never confirmed, send its confirmation link again.
     const existing = await findUserByEmail(parsed.data.email).catch(() => null);
     if (existing && !existing.email_confirmed_at) {
-      await sendAccountLink({ userId: existing.id, email: existing.email, purpose: "verify_email", next }).catch((e) => logError("auth.resend", e));
+      // Never confirmed: this sign-up replaces the earlier one (see replaceUnconfirmedSignup).
+      const replaced = await replaceUnconfirmedSignup({ userId: existing.id, ...input, confirm: !emailOn }).catch((e) => {
+        logError("auth.signup_replace", e);
+        return false;
+      });
+      if (!replaced) return { ok: false, message: "We couldn't create your account. Please try again.", values };
+      userId = existing.id;
+    } else if (emailOn) {
+      // Same answer whether or not the email already exists (prevents account discovery).
+      return { ok: true, message: REGISTERED_MESSAGE };
+    } else {
+      return {
+        ok: false,
+        message: "An account with this email already exists. Please sign in instead.",
+        errors: { email: "This email already has an account" },
+        values,
+      };
     }
+  }
+  if (!emailOn) {
+    await startSession(userId);
+    await resolveCart({ create: false, userId }).catch((e) => logError("auth.merge_cart", e));
+    redirect(next);
+  }
+  const sent = await sendAccountLink({ userId, email: parsed.data.email, name: parsed.data.full_name, purpose: "verify_email", next });
+  if (!sent) {
+    return {
+      ok: false,
+      message: "Your account was created, but we couldn't send the confirmation email. Try signing in later — we'll send a new link then.",
+      values,
+    };
   }
   return { ok: true, message: REGISTERED_MESSAGE };
 }
 
 export async function forgotPasswordAction(_prev: FormState, formData: FormData): Promise<FormState> {
+  const values = { email: text(formData.get("email")) };
   const parsed = emailSchema.safeParse(formData.get("email"));
-  if (!parsed.success) return { ok: false, message: null, errors: { email: "Enter a valid email address" } };
+  if (!parsed.success) return { ok: false, message: null, errors: { email: "Enter a valid email address" }, values };
   if (!(await checkRateLimit("passwordReset", await getClientIp()))) {
     return { ok: false, message: "Too many requests. Please try again later." };
   }
   if (!isDatabaseConfigured() || !getEmailEnv()) {
-    return { ok: false, message: "Password reset by email isn't available yet. Please contact us for help." };
+    return { ok: false, message: "Password reset by email isn't available yet. Please contact us for help.", values };
   }
   try {
     const user = await findUserByEmail(parsed.data);
@@ -178,21 +231,43 @@ const resetSchema = z
   .object({ password: passwordSchema, confirm: z.string() })
   .refine((v) => v.password === v.confirm, { path: ["confirm"], message: "Passwords do not match" });
 
+/**
+ * Sets a new password. Allowed when the browser just opened a password-reset
+ * link, or — when changing it from the profile page — with the current password.
+ */
 export async function updatePasswordAction(_prev: FormState, formData: FormData): Promise<FormState> {
   const parsed = resetSchema.safeParse({ password: formData.get("password"), confirm: formData.get("confirm") });
   if (!parsed.success) return { ok: false, message: null, errors: toFieldErrors(parsed.error) };
   const user = await getSessionUser();
-  if (!user) return { ok: false, message: "Your reset link has expired. Please request a new one." };
+  if (!user) return { ok: false, message: "Your session has ended. Please sign in again, or request a new reset link." };
+  const jar = await cookies();
   try {
     const pool = await getReadyPool();
     const [rows] = await pool.query<import("mysql2/promise").RowDataPacket[]>("SELECT password_hash FROM auth_users WHERE id = ?", [user.id]);
-    if (await verifyPassword(parsed.data.password, rows[0]?.password_hash as string | undefined)) {
+    const currentHash = rows[0]?.password_hash as string | undefined;
+    const resetToken = jar.get(RESET_COOKIE)?.value ?? "";
+    let allowed = false;
+    if (resetToken) {
+      const owner = await consumeToken(resetToken, "reset_session");
+      allowed = owner === user.id;
+    }
+    if (!allowed) {
+      const current = formData.get("current");
+      if (typeof current !== "string" || !current) {
+        return { ok: false, message: null, errors: { current: "Enter your current password" } };
+      }
+      if (!(await verifyPassword(current, currentHash))) {
+        return { ok: false, message: null, errors: { current: "That isn't your current password" } };
+      }
+    }
+    if (await verifyPassword(parsed.data.password, currentHash)) {
       return { ok: false, message: "Please choose a password you haven't used before." };
     }
     await setPassword(user.id, parsed.data.password);
     // Sign out everywhere else, keep this browser signed in.
     await endAllSessions(user.id);
     await startSession(user.id);
+    jar.delete(RESET_COOKIE);
   } catch (error) {
     logError("auth.update_password", error);
     return { ok: false, message: "We couldn't update your password. Please try again." };
@@ -222,6 +297,10 @@ export async function confirmLinkAction(formData: FormData): Promise<void> {
       if (userId) {
         await confirmEmail(userId); // a reset link also proves the email address
         await startSession(userId);
+        if (purpose === "reset_password") {
+          const proof = await issueToken(userId, "reset_session", 30);
+          (await cookies()).set(RESET_COOKIE, proof, { httpOnly: true, sameSite: "lax", path: "/", maxAge: 30 * 60, secure: await cookieIsSecure() });
+        }
       }
     } catch (error) {
       logError("auth.confirm", error);

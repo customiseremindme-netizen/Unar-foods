@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getCmsPage } from "@/lib/data/content";
 import { getPublicSettings } from "@/lib/settings";
-import { getSiteUrl } from "@/lib/env";
+import { getRequestSiteUrl } from "@/lib/site-url";
 import { CmsPageView } from "@/components/content/cms-page";
 import { JsonLd } from "@/lib/seo/jsonld";
 
@@ -22,7 +22,7 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
   const { slug } = await params;
   const [post, settings] = await Promise.all([getCmsPage("post", slug), getPublicSettings()]);
   if (!post) notFound();
-  const site = getSiteUrl();
+  const site = await getRequestSiteUrl();
   return (
     <>
       <JsonLd

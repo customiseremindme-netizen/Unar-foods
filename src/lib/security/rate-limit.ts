@@ -7,6 +7,9 @@ export type RateLimitRule = { limit: number; windowSeconds: number };
 /** Shared limits, tuned for a small shop. */
 export const RATE_LIMITS = {
   login: { limit: 8, windowSeconds: 600 },
+  // Per account, whatever network the attempts come from.
+  loginAccount: { limit: 20, windowSeconds: 3600 },
+  confirmResend: { limit: 3, windowSeconds: 3600 },
   setup: { limit: 10, windowSeconds: 3600 },
   signup: { limit: 5, windowSeconds: 3600 },
   passwordReset: { limit: 5, windowSeconds: 3600 },

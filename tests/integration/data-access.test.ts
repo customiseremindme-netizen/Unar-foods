@@ -63,6 +63,7 @@ describe.skipIf(!url)("data access rules", () => {
 
     // One product published with 1 pack left, one left as a draft.
     await pool.query("UPDATE products SET status = 'published' WHERE slug = 'banana-chewy-dry-fruits-seeds'");
+    await pool.query("UPDATE products SET status = 'draft' WHERE slug = 'banana-chewy-fresh-raw-banana'");
     const [v] = await pool.query<mysql.RowDataPacket[]>(
       "SELECT pv.id FROM product_variants pv JOIN products p ON p.id = pv.product_id WHERE p.slug = 'banana-chewy-dry-fruits-seeds'",
     );

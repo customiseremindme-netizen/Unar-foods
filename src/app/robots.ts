@@ -1,12 +1,12 @@
 import type { MetadataRoute } from "next";
-import { getSiteUrl } from "@/lib/env";
+import { getRequestSiteUrl } from "@/lib/site-url";
 import { getPublicSettings } from "@/lib/settings";
 
 /** Pages read the live database, so they are rendered when visitors open them (not while building). */
 export const dynamic = "force-dynamic";
 
 export default async function robots(): Promise<MetadataRoute.Robots> {
-  const site = getSiteUrl();
+  const site = await getRequestSiteUrl();
   const { seo } = await getPublicSettings();
   if (!seo.allow_indexing) return { rules: [{ userAgent: "*", disallow: "/" }] };
   return {

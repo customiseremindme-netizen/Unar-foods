@@ -1,7 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Fraunces, Great_Vibes, Montserrat } from "next/font/google";
 import { getPublicSettings } from "@/lib/settings";
-import { getSiteUrl } from "@/lib/env";
+import { getRequestSiteUrl } from "@/lib/site-url";
 import "./globals.css";
 
 /** Pages read the live database, so they are rendered when visitors open them (not while building). */
@@ -31,7 +31,7 @@ const greatVibes = Great_Vibes({
 export async function generateMetadata(): Promise<Metadata> {
   const { seo, store, brand } = await getPublicSettings();
   return {
-    metadataBase: new URL(getSiteUrl()),
+    metadataBase: new URL(await getRequestSiteUrl()),
     title: { default: seo.site_title, template: seo.title_template || "%s" },
     description: seo.description,
     applicationName: store.name,
@@ -56,7 +56,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${fraunces.variable} ${montserrat.variable} ${greatVibes.variable}`}>
+    <html lang="en" data-scroll-behavior="smooth" className={`${fraunces.variable} ${montserrat.variable} ${greatVibes.variable}`}>
       <body className="min-h-dvh">{children}</body>
     </html>
   );

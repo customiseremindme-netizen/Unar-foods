@@ -2,7 +2,7 @@ import { forwardRef, useId, type ComponentProps, type ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
 const control =
-  "w-full rounded-xl border border-line bg-paper px-4 py-3 text-[0.95rem] text-graphite placeholder:text-muted/70 transition-colors duration-200 hover:border-sage focus:border-forest focus:outline-none focus:ring-2 focus:ring-forest/15 aria-[invalid=true]:border-danger aria-[invalid=true]:ring-danger/10 disabled:bg-cream-deep disabled:text-muted";
+  "w-full rounded-xl border border-line bg-paper px-4 py-3 text-base text-graphite sm:text-[0.95rem] placeholder:text-muted/70 transition-colors duration-200 hover:border-sage focus:border-forest focus:outline-none focus:ring-2 focus:ring-forest/15 aria-[invalid=true]:border-danger aria-[invalid=true]:ring-danger/10 disabled:bg-cream-deep disabled:text-muted";
 
 export function Label({ className, ...props }: ComponentProps<"label">) {
   return <label className={cn("mb-1.5 block text-[0.82rem] font-semibold text-graphite", className)} {...props} />;

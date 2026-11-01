@@ -23,7 +23,7 @@ export default async function ProfilePage() {
       <section className="max-w-md">
         <h2 className="mb-6 text-[1.6rem]">Change password</h2>
         <div className="rounded-[1.75rem] border border-line bg-paper p-6">
-          <ResetPasswordForm />
+          <ResetPasswordForm requireCurrent />
         </div>
       </section>
     </div>

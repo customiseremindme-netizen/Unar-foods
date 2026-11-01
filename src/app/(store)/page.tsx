@@ -3,7 +3,7 @@ import { getBanners, getHomeSections, getFaqs, getInstagramPosts } from "@/lib/d
 import { getPublishedProducts } from "@/lib/data/catalog";
 import { getApprovedReviews, reviewStats } from "@/lib/data/reviews";
 import { getPublicSettings } from "@/lib/settings";
-import { getSiteUrl } from "@/lib/env";
+import { getRequestSiteUrl } from "@/lib/site-url";
 import type { HomeSection } from "@/lib/cms/sections";
 import { Hero } from "@/components/home/hero";
 import {
@@ -82,7 +82,7 @@ export default async function HomePage() {
     }
   }
 
-  const site = getSiteUrl();
+  const site = await getRequestSiteUrl();
   return (
     <>
       <JsonLd data={organizationJsonLd(settings, site)} />

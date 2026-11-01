@@ -18,10 +18,10 @@ export function ProfileForm({ profile }: { profile: { full_name: string; phone: 
         </div>
       ) : null}
       <Field label="Full name" htmlFor="full_name" error={state.errors?.full_name}>
-        <Input id="full_name" name="full_name" defaultValue={profile.full_name} autoComplete="name" />
+        <Input id="full_name" name="full_name" defaultValue={state.values?.full_name ?? profile.full_name} autoComplete="name" />
       </Field>
       <Field label="Mobile number" htmlFor="phone" error={state.errors?.phone}>
-        <Input id="phone" name="phone" defaultValue={profile.phone} inputMode="tel" autoComplete="tel-national" />
+        <Input id="phone" name="phone" defaultValue={state.values?.phone ?? profile.phone} inputMode="tel" autoComplete="tel-national" />
       </Field>
       <Field label="Email" htmlFor="email" hint="Contact us if you need to change your sign-in email." className="sm:col-span-2">
         <Input id="email" value={profile.email} disabled readOnly />

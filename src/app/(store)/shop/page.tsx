@@ -3,7 +3,7 @@ import Link from "next/link";
 import { getCategories, getPublishedProducts, type Product } from "@/lib/data/catalog";
 import { getApprovedReviews, reviewStats } from "@/lib/data/reviews";
 import { getBanners } from "@/lib/data/content";
-import { getSiteUrl } from "@/lib/env";
+import { getRequestSiteUrl } from "@/lib/site-url";
 import { ProductCard } from "@/components/product/product-card";
 import { ShopControls } from "@/components/shop/shop-controls";
 import { SORT_OPTIONS } from "@/lib/shop";
@@ -108,7 +108,7 @@ export default async function ShopPage({ searchParams }: { searchParams: SearchP
 
   return (
     <>
-      <JsonLd data={breadcrumbJsonLd(getSiteUrl(), crumbs)} />
+      <JsonLd data={breadcrumbJsonLd((await getRequestSiteUrl()), crumbs)} />
       <section className="paper relative overflow-hidden border-b border-line">
         <LeafSprig className="absolute -right-2 top-4 hidden h-48 w-32 text-sage sm:block" />
         <div className="container-site relative py-12 lg:py-16">

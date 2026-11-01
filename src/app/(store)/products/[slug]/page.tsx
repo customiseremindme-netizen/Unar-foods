@@ -6,7 +6,7 @@ import { BadgeCheck, Leaf, PackageCheck, ShieldCheck, Truck } from "lucide-react
 import { getPreviewProductBySlug, getProductBySlug, getPublishedProducts, primaryImage, variantAvailability } from "@/lib/data/catalog";
 import { getProductReviews, reviewStats } from "@/lib/data/reviews";
 import { getPublicSettings } from "@/lib/settings";
-import { getSiteUrl } from "@/lib/env";
+import { getRequestSiteUrl } from "@/lib/site-url";
 import { formatDate } from "@/lib/utils";
 import { Badge, Breadcrumbs, Price, Stars, VegMark } from "@/components/ui/misc";
 import { Markdown } from "@/components/ui/markdown";
@@ -63,7 +63,7 @@ export default async function ProductPage({ params }: { params: Params }) {
   const soldOut = availability === "out_of_stock" || availability === "unavailable";
   const maxQuantity = variant ? Math.min(variant.stock, settings.checkout.max_quantity_per_item) : 0;
   const related = all.filter((p) => p.id !== product.id).slice(0, 3);
-  const site = getSiteUrl();
+  const site = await getRequestSiteUrl();
   const name = product.short_title ?? product.title;
   const crumbs = [
     { name: "Home", href: "/" },

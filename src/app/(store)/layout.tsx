@@ -40,8 +40,10 @@ export default async function StoreLayout({ children }: { children: React.ReactN
     const image = primaryImage(p);
     return {
       slug: p.slug,
-      title: p.short_title ?? p.title,
+      title: p.title,
       subtitle: p.subtitle,
+      soldOut: !p.defaultVariant || p.defaultVariant.stock <= 0,
+      keywords: [p.short_title, p.short_description, p.ingredients, ...p.categories.map((c) => c.name)].filter(Boolean).join(" ").slice(0, 600),
       imageUrl: image?.url ?? null,
       imageAlt: image?.alt ?? p.title,
       pricePaise: p.defaultVariant?.price_paise ?? null,

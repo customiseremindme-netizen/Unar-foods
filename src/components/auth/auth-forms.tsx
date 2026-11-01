@@ -46,7 +46,7 @@ export function LoginForm({ next, linkError }: { next: string; linkError: boolea
       {linkError ? <FormMessage tone="error">That link is invalid or has expired. Please sign in or request a new link.</FormMessage> : null}
       {state.message ? <FormMessage tone="error">{state.message}</FormMessage> : null}
       <Field label="Email" htmlFor="email" error={state.errors?.email}>
-        <Input id="email" name="email" type="email" autoComplete="email" required aria-invalid={!!state.errors?.email} />
+        <Input id="email" name="email" type="email" autoComplete="email" required defaultValue={state.values?.email} aria-invalid={!!state.errors?.email} />
       </Field>
       <Field label="Password" htmlFor="password" error={state.errors?.password}>
         <PasswordInput id="password" name="password" autoComplete="current-password" invalid={!!state.errors?.password} />
@@ -69,8 +69,9 @@ export function LoginForm({ next, linkError }: { next: string; linkError: boolea
   );
 }
 
-export function RegisterForm({ next }: { next: string }) {
+export function RegisterForm({ next, emailVerification }: { next: string; emailVerification: boolean }) {
   const [state, action, pending] = useActionState(registerAction, initial);
+  const v = state.values;
   if (state.ok) {
     return (
       <div className="space-y-5">
@@ -89,10 +90,10 @@ export function RegisterForm({ next }: { next: string }) {
       </div>
       {state.message ? <FormMessage tone="error">{state.message}</FormMessage> : null}
       <Field label="Full name" htmlFor="full_name" error={state.errors?.full_name}>
-        <Input id="full_name" name="full_name" autoComplete="name" required aria-invalid={!!state.errors?.full_name} />
+        <Input id="full_name" name="full_name" autoComplete="name" required defaultValue={v?.full_name} aria-invalid={!!state.errors?.full_name} />
       </Field>
       <Field label="Email" htmlFor="email" error={state.errors?.email}>
-        <Input id="email" name="email" type="email" autoComplete="email" required aria-invalid={!!state.errors?.email} />
+        <Input id="email" name="email" type="email" autoComplete="email" required defaultValue={v?.email} aria-invalid={!!state.errors?.email} />
       </Field>
       <Field label="Password" htmlFor="password" error={state.errors?.password} hint="At least 8 characters, with a letter and a number">
         <PasswordInput id="password" name="password" autoComplete="new-password" invalid={!!state.errors?.password} />
@@ -100,10 +101,13 @@ export function RegisterForm({ next }: { next: string }) {
       <Field label="Confirm password" htmlFor="confirm" error={state.errors?.confirm}>
         <PasswordInput id="confirm" name="confirm" autoComplete="new-password" invalid={!!state.errors?.confirm} />
       </Field>
-      <Checkbox name="marketing" label="Email me about new products and offers (optional)" />
+      <Checkbox name="marketing" label="Email me about new products and offers (optional)" defaultChecked={v?.marketing === "on"} />
       <Button type="submit" size="lg" className="w-full" loading={pending}>
         Create account
       </Button>
+      {emailVerification ? (
+        <p className="text-center text-[0.8rem] text-muted">We&apos;ll email you a link to confirm your address.</p>
+      ) : null}
       <p className="text-center text-[0.8rem] text-muted">
         By creating an account you agree to our{" "}
         <Link href="/policies/terms" className="underline">
@@ -132,7 +136,7 @@ export function ForgotPasswordForm() {
     <form action={action} className="space-y-5" noValidate>
       {state.message ? <FormMessage tone="error">{state.message}</FormMessage> : null}
       <Field label="Email" htmlFor="email" error={state.errors?.email}>
-        <Input id="email" name="email" type="email" autoComplete="email" required aria-invalid={!!state.errors?.email} />
+        <Input id="email" name="email" type="email" autoComplete="email" required defaultValue={state.values?.email} aria-invalid={!!state.errors?.email} />
       </Field>
       <Button type="submit" size="lg" className="w-full" loading={pending}>
         Send reset link
@@ -141,7 +145,7 @@ export function ForgotPasswordForm() {
   );
 }
 
-export function ResetPasswordForm() {
+export function ResetPasswordForm({ requireCurrent = false }: { requireCurrent?: boolean }) {
   const [state, action, pending] = useActionState(updatePasswordAction, initial);
   if (state.ok) {
     return (
@@ -156,6 +160,11 @@ export function ResetPasswordForm() {
   return (
     <form action={action} className="space-y-5" noValidate>
       {state.message ? <FormMessage tone="error">{state.message}</FormMessage> : null}
+      {requireCurrent || state.errors?.current ? (
+        <Field label="Current password" htmlFor="current" error={state.errors?.current}>
+          <PasswordInput id="current" name="current" autoComplete="current-password" invalid={!!state.errors?.current} />
+        </Field>
+      ) : null}
       <Field label="New password" htmlFor="password" error={state.errors?.password} hint="At least 8 characters, with a letter and a number">
         <PasswordInput id="password" name="password" autoComplete="new-password" invalid={!!state.errors?.password} />
       </Field>

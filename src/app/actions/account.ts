@@ -29,7 +29,10 @@ export async function updateProfileAction(_prev: FormState, formData: FormData):
     phone: String(formData.get("phone") ?? "").trim(),
     marketing_consent: formData.get("marketing_consent") === "on",
   });
-  if (!parsed.success) return { ok: false, message: null, errors: toFieldErrors(parsed.error) };
+  if (!parsed.success) {
+    const values = { full_name: String(formData.get("full_name") ?? "").slice(0, 120), phone: String(formData.get("phone") ?? "").slice(0, 20) };
+    return { ok: false, message: null, errors: toFieldErrors(parsed.error), values };
+  }
   const { error } = await session.db
     .from("profiles")
     .update({ full_name: parsed.data.full_name, phone: parsed.data.phone || null, marketing_consent: parsed.data.marketing_consent })

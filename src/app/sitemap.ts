@@ -1,15 +1,16 @@
 import type { MetadataRoute } from "next";
-import { getSiteUrl } from "@/lib/env";
-import { getPublishedProducts } from "@/lib/data/catalog";
+import { getRequestSiteUrl } from "@/lib/site-url";
+import { getCategories, getPublishedProducts } from "@/lib/data/catalog";
 import { listCmsPages } from "@/lib/data/content";
 
 /** Pages read the live database, so they are rendered when visitors open them (not while building). */
 export const dynamic = "force-dynamic";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const site = getSiteUrl();
-  const [products, policies, posts, pages] = await Promise.all([
+  const site = await getRequestSiteUrl();
+  const [products, categories, policies, posts, pages] = await Promise.all([
     getPublishedProducts(),
+    getCategories(),
     listCmsPages("policy"),
     listCmsPages("post"),
     listCmsPages("page"),
@@ -21,12 +22,13 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   }));
   return [
     ...staticRoutes,
+    ...categories.map((c) => ({ url: `${site}/shop?collection=${c.slug}`, changeFrequency: "weekly" as const, priority: 0.8 })),
     ...products.map((p) => ({
       url: `${site}/products/${p.slug}`,
       lastModified: p.updated_at,
       changeFrequency: "weekly" as const,
       priority: 0.9,
-      images: p.images.slice(0, 3).map((i) => (i.url.startsWith("http") ? i.url : `${site}${i.url}`)),
+      images: p.images.filter((i) => !i.kind.endsWith("_label")).slice(0, 5).map((i) => (i.url.startsWith("http") ? i.url : `${site}${i.url}`)),
     })),
     ...posts.map((p) => ({ url: `${site}/blog/${p.slug}`, lastModified: p.updated_at, changeFrequency: "monthly" as const, priority: 0.6 })),
     ...policies.map((p) => ({ url: `${site}/policies/${p.slug}`, lastModified: p.updated_at, changeFrequency: "yearly" as const, priority: 0.3 })),
