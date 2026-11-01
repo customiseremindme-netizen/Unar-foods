@@ -46,11 +46,19 @@ local copy of the shop — never the live website.
    SMTP_PASSWORD=test
    EMAIL_FROM=UNAR <orders@unar.local>
    ```
-3. `npm run dev` (or `npm run build` then `UNAR_ALLOW_TEST_OVERRIDES=1 npm start`).
+3. `npx next dev --webpack` (or `npm run build` then `UNAR_ALLOW_TEST_OVERRIDES=1 npm start`).
+   The Turbopack dev server (`npm run dev`) was seen reloading pages in a
+   loop, which breaks the browser tests.
 4. `node tests/e2e/support/seed-test-db.mjs` — publishes the products with
    **demo** stock, turns on demo shipping and COD, and creates the test owner
    `owner@unar.local` / `OwnerPass123`. It refuses to run against anything
    but a local/private database.
 5. `E2E_MAILPIT_URL=http://127.0.0.1:8025 npm run test:e2e`
+   (`tests/e2e/scenarios.spec.ts` = the owner's 22 acceptance scenarios. The
+   tests clear the rate-limit counters of the local test database before each
+   scenario so repeated runs aren't blocked by the sign-up limits.)
+
+Docker images that avoid docker.io rate limits: `mirror.gcr.io/library/mysql:8.0`,
+`mirror.gcr.io/library/mariadb:11.4`, `mirror.gcr.io/axllent/mailpit`.
 
 Set `PLAYWRIGHT_CHROMIUM_PATH` if Chromium is installed somewhere custom.

@@ -18,7 +18,11 @@ Copied from your packaging; please confirm each one:
 - [ ] Then tick **"I have checked these details"**.
 
 ## 2. Products — Dashboard → Products → (product)
-Both products start as **drafts with 0 stock and price = MRP**.
+Both products are **published** (visible in the shop) as soon as the
+database is connected, with **0 stock** (shown as *Sold out*) and price = MRP.
+Names: "UNAR Dehydrated Banana Chewy — With Dry Fruits & Seeds" and
+"UNAR Dehydrated Banana Chewy — Fresh Raw Banana". If you would rather keep
+a product hidden while you check it, set its status to *Draft*.
 
 **Prices**
 - [ ] Selling price for each pack (currently equal to the MRP printed on the
@@ -53,13 +57,24 @@ only what you can support (lab report / ingredient evidence):
   pack visuals, not photographs. They are labelled "Product image" (not
   "photograph") in the dashboard. Replace them with real photos when you
   have them.
-- [ ] Fresh Raw Banana images **01** and **02** show nuts as props even
-  though the product contains no nuts. They are placed last in the gallery
-  and described honestly; consider replacing or removing them (an allergy
-  sufferer might be confused).
+- [ ] **Your decision:** the gallery now follows your brief's order 01 → 05
+  for both products. Fresh Raw Banana images **01** and **02** show nuts as
+  props although the product contains no nuts (their descriptions say so).
+  If you prefer them further back or removed, use the arrows in
+  **Products → Fresh Raw Banana → Images** and press Save.
+- [ ] Pack-label scans (front/back) are not in the photo strip; customers
+  open them with **"Read the pack label"** under the photos.
 - [ ] Every image has a description (alt text) — required before publishing.
 
-- [ ] **Publish** each product when everything above is done.
+- [ ] Homepage sections **Ingredients** (shows the ingredients from each
+  product), **How to enjoy** (serving ideas — edit the wording to your taste)
+  and **Verified benefits** (shows only the claims/benefits you approve;
+  hidden until then) — Dashboard → Content → Homepage.
+
+**Reviews** — Dashboard → Reviews
+- [ ] Customers can add up to 5 photos and one short video. Nothing appears
+  until you approve; you can remove a single photo/video from a review.
+  Switch photos/video off in Settings → Reviews if you prefer.
 
 ## 3. Stock — Dashboard → Inventory
 - [ ] Enter your real stock for each pack (*Set to* → *Opening stock*).

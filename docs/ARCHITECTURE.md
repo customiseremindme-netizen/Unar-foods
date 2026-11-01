@@ -29,6 +29,7 @@ business-facing value must stay editable in the dashboard, never hard-coded.
 ```
 schema.ts        every table: columns, keys, CHECK rules, relationships  ← single source of truth
 install.ts       creates/updates tables from schema.ts on first use (lock + fingerprint), loads starter data once
+data-migrations.ts versioned one-time data fixes for databases set up earlier (see "Changing starter data")
 ddl.ts           schema.ts → MySQL CREATE/ALTER statements
 pool.ts          connection settings (DB_HOST… or DATABASE_URL), UTC, strict mode
 values.ts        value conversion (booleans, JSON, UTC date-times)
@@ -141,6 +142,32 @@ the `counters` table (`UNAR-001001`, …; failed checkouts leave gaps).
   `media_assets.data`, served from `/media/<id>.webp` (cached forever; a new
   upload gets a new address).
 
+## Changing starter data (initial-data.json)
+Starter data is loaded only into a brand-new database. To change something
+for databases that already exist, edit initial-data.json **and** append a
+step to `DATA_MIGRATIONS` in `src/lib/db/data-migrations.ts` with a new id.
+Each step runs once (id stored in `schema_meta` as `data_migration:<id>`),
+inside a transaction, and must only change values that are still exactly
+the old starter value (so owner edits survive) and never duplicate rows.
+Add a test in tests/integration/mysql-schema.test.ts.
+
+## Review photos and videos
+`/api/reviews/media` (signed-in customers, rate limited) stores uploads in
+`review_media` (photos re-encoded to WebP by sharp; videos sniffed as
+MP4/MOV/WebM, max 25 MB, split into 1 MB rows in `review_media_chunks`).
+`submitReviewAction` attaches the customer's own unattached uploads.
+`/review-media/<id>.webp|.video` serves them — publicly only when the review
+is approved, otherwise only to the uploader and review moderators; videos
+support HTTP Range. The daily cron deletes uploads never attached.
+
+## Accounts and email
+With email configured, new accounts must confirm by the emailed link
+(signing in to an unconfirmed account resends it). Without email,
+accounts are confirmed at creation. Re-registering an unconfirmed email
+replaces the earlier password (`replaceUnconfirmedSignup`). Changing a
+password needs the current one, unless the browser just opened a reset link
+(short-lived `unar_reset` cookie backed by an `auth_tokens` row).
+
 ## Settings
 `src/lib/settings/schema.ts` defines every settings group with defaults.
 The dashboard form (`SettingsForm`) and the server action
@@ -165,6 +192,10 @@ fall back to defaults so a bad edit can't break the site. Private groups
   Verified on MySQL 8.0 and MariaDB 10.6, 10.11 and 11.4.
 - `npm run test:e2e` — Playwright against a local site with the mock
   Razorpay server and a mail catcher (`tests/README.md`).
+  `tests/e2e/scenarios.spec.ts` covers the owner's 22 acceptance scenarios.
+  Note: run the local site with `npx next dev --webpack` or the production
+  build — the Turbopack dev server (`npm run dev`) reloaded pages in a loop
+  in the Nov 2026 session (production uses webpack, so it is unaffected).
 - `npm run check` — lint + typecheck + unit tests. Run before every commit.
 
 ## Adding another payment provider (e.g. PhonePe PG, Cashfree, PayU)

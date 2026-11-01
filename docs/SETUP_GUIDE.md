@@ -82,10 +82,11 @@ images you upload in the dashboard. Hostinger's daily backups include it
 
 ## Part 3 — Email (Hostinger mailbox)
 
-Email is needed for order emails **and** for customer accounts (the
-confirmation link and password-reset link are sent by email). Without
-email the shop still works for guests — customers see their order on
-screen — but no emails are sent and new customers can't create accounts.
+Email is needed for order emails, email confirmation of new accounts and
+"Forgot password" links. Without email the shop still works: customers can
+order as guests **and can create accounts** (the account works straight
+away, without a confirmation email). Once email is set up, new accounts
+must confirm their address by the emailed link, and password reset works.
 
 1. hPanel → **Emails** → choose your domain → **Create email account** →
    `orders@your-domain` (e.g. `orders@unarfoods.in`) with a strong password
@@ -152,7 +153,7 @@ Hostinger. **After adding or changing any value, redeploy.**
 | `DB_USER` | the full database username from Part 2, e.g. `u123456789_unar` |
 | `DB_PASSWORD` | the database password from Part 2 (**SECRET**) |
 | `SETUP_KEY` | a long secret phrase you make up (at least 12 characters, e.g. four random words). It unlocks the one-time page that creates your owner account (Part 7.1). **SECRET** |
-| `NEXT_PUBLIC_SITE_URL` | `none` while you only have the temporary hosting address (the site then uses whatever address it is opened on). Once your own domain works, change it to e.g. `https://www.unarfoods.in` (no `/` at the end) and redeploy. |
+| `NEXT_PUBLIC_SITE_URL` | the address your shop is opened on, e.g. `https://seashell-donkey-270999.hostingersite.com` today and `https://www.unarfoods.in` once your own domain works (no `/` at the end). Recommended: it makes links in emails always point at your own site. `none` also works — the site then uses whatever address it is opened on. Change it and redeploy whenever the address changes. |
 | `RAZORPAY_KEY_ID` | from Part 4 |
 | `RAZORPAY_KEY_SECRET` | from Part 4 (**SECRET**) |
 | `RAZORPAY_WEBHOOK_SECRET` | from Part 4 (**SECRET**) |
@@ -241,14 +242,16 @@ minutes (sometimes up to 24 h).
 This page works only once — as soon as an owner exists it is locked. (You
 can then delete `SETUP_KEY` from the environment variables if you like.)
 Add other staff later from **Dashboard → Staff** (they first create a
-customer account on the website and confirm their email).
+customer account on the website, and confirm their email if email is set up).
 
 ### 7.2 Work through the launch checklist
 The **Overview** page shows a checklist until everything is done. In short:
 1. **Settings → Business details** — confirm address, phone, email, FSSAI, tick "checked".
-2. **Products** — for each product: check every text against the pack,
-   set the **selling price**, decide which **claims** to approve, approve the
-   shelf life, then publish. See [OWNER_CHECKLIST.md](OWNER_CHECKLIST.md).
+2. **Products** — both products are already **published** (visible in the
+   shop, shown as *Sold out* until you add stock). For each product: check
+   every text against the pack, check the **selling price** (₹149 / ₹120 =
+   MRP), decide which **claims and benefits** to approve and approve the
+   shelf life — nothing unapproved is shown. See [OWNER_CHECKLIST.md](OWNER_CHECKLIST.md).
 3. **Inventory** — enter your real stock (*Set to* → reason *Opening stock*).
 4. **Shipping** — edit "All India — Standard": enter your real charge,
    free-shipping amount (if any), tick **Active**. Add state or PIN-code
@@ -355,14 +358,23 @@ Open `https://YOUR-SITE/api/health`. It shows one of these:
 `SETUP_KEY` is missing or shorter than 12 characters. Add it (Part 5) and redeploy.
 
 ### Products don't appear in the shop
-That's expected at first: both products start as **drafts with 0 stock**.
-Sign in, open **/admin → Products**, check each product and **Publish** it,
-then set stock in **Inventory** (Part 7).
+1. Open `/api/health`. If it says `"database":"not configured"`, the
+   database settings are missing (Part 2 and Part 5) — products are stored
+   in the database, so nothing can be shown without it.
+2. With the database connected, both products appear automatically
+   (published, shown as *Sold out* while stock is 0). If one is missing,
+   check **/admin → Products**: it may have been set to *Draft* or
+   *Archived* — open it and choose *Published*.
+3. To make them buyable, enter stock in **Inventory** (Part 7).
 
 ### Checkout says delivery isn't available
 Activate a shipping zone: **/admin → Shipping** → edit *All India —
 Standard* → enter your charge → tick **Active** → Save.
 
-### "Creating an account isn't available yet"
-Email isn't set up. Add the `SMTP_…` settings from Part 3 and redeploy.
-Guests can still order meanwhile.
+### "Accounts are not available yet"
+The database isn't connected yet (see "Products don't appear" above).
+
+### A customer says the confirmation email never arrived
+Ask them to sign in with their email and password — the site sends a fresh
+confirmation link (at most 3 per hour). If none arrive, check Part 3 and the
+**Integrations → Send test email** button.

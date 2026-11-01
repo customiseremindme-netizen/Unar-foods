@@ -1,8 +1,30 @@
 # Project status
 
-Status as of the move to Hostinger MySQL (October 2026). "Tested" means it
+Status as of the website upgrade (1 November 2026). "Tested" means it
 was run for real — in a browser against a local MySQL/MariaDB database, or
-by the automated tests in `tests/` — not just written.
+by the automated tests in `tests/` — not just written. The live Hostinger
+site itself could not be opened or tested from the development session.
+
+## New in the November 2026 upgrade (all tested)
+- Both products appear as soon as the database is connected (published,
+  shown as *Sold out* until stock is entered), with the full names
+  "UNAR Dehydrated Banana Chewy — With Dry Fruits & Seeds" (₹149) and
+  "— Fresh Raw Banana" (₹120). Databases set up earlier are repaired
+  automatically without touching your own edits.
+- Accounts work without email (active at once); with email set up the
+  confirmation link is used. Account-takeover fix, current password needed
+  to change it, forms keep what was typed after a mistake.
+- Product gallery: the 5 photos in order 01–05, crossfade, swipe, arrows,
+  keyboard, full-screen viewer with zoom/pan, separate "Read the pack label".
+- Product page: Key benefits (approved only), net weight, PIN-code delivery
+  check, share buttons, sticky Add to cart bar on phones, ratings breakdown.
+- Reviews with up to 5 photos and one video, moderated.
+- Homepage: new sections Ingredients, How to enjoy, Verified benefits;
+  hero entrance, floating pouch, mask reveals, icon animations, all off for
+  "reduce motion" visitors.
+- Dashboard overview: all-time orders, customer accounts, products on sale.
+- Security updates (Next.js 16.4.3 and others); SEO addresses fixed.
+- Not built (optional in the brief): wishlist and product quick view.
 
 ## ✅ Built and tested
 
@@ -82,10 +104,10 @@ by the automated tests in `tests/` — not just written.
   checkout, scrypt password hashing, hashed session tokens, security headers
   + Content Security Policy, CSV formula-injection guard, test-only settings
   ignored in production.
-- 61 unit tests, 33 browser tests (desktop + phone, run on both the
-  development server and the production build), 17 database tests, lint and
-  type checks pass; the production build succeeds without database access
-  (as on Hostinger's build servers).
+- 61 unit tests, 54 browser tests (desktop + phone, production build, run
+  against both MySQL 8.0 and MariaDB 11.4), 18 database tests (MySQL 8.0 and
+  MariaDB 11.4), lint and type checks pass; the production build succeeds
+  without database access (as on Hostinger's build servers).
 
 ## ⏳ Waiting for your accounts / credentials
 These are fully built but can only be switched on with your own accounts
@@ -96,8 +118,9 @@ These are fully built but can only be switched on with your own accounts
 - **Emails** (order confirmations, shipping updates, admin alerts, account
   confirmation and password-reset emails) — needs your Hostinger mailbox
   (SMTP) or a Resend account. SMTP sending was tested end-to-end against a
-  local mail server. Until then order emails are logged as "skipped" and new
-  customers can't create accounts (guest checkout still works).
+  local mail server. Until then order emails are logged as "skipped",
+  accounts are activated without a confirmation email, and "Forgot
+  password" can't send links.
 - **Shiprocket** — needs a Shiprocket API user. The integration has not been
   tested against the real Shiprocket service.
 - **Live database, hosting and domain** — a MySQL database and a Node.js
@@ -106,7 +129,7 @@ These are fully built but can only be switched on with your own accounts
   API provider; not built).
 
 ## 📝 Needs your approval or information
-See `OWNER_CHECKLIST.md`. In short: confirm business details; set selling
+See `OWNER_CHECKLIST.md`. In short: confirm business details; check selling
 prices; approve or remove each product claim and the shelf life; enter real
 stock; set shipping charges; complete and approve the five policies; GST
 details if registered; replace AI-generated product images with real photos

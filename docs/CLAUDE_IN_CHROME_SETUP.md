@@ -27,6 +27,7 @@ PART B — Put the database details into the app
    - DB_PASSWORD = STOP and say: "Please type the database password into the DB_PASSWORD value and reply done." Wait.
    - SETUP_KEY: look at its value WITHOUT telling me what it is. If it is "none", empty, or starts with "PASTE_", STOP and say: "Please type your own secret phrase (at least 12 characters, saved in your password manager) into the SETUP_KEY value and reply done." Wait.
    - CRON_SECRET: same check as SETUP_KEY. If it is "none", empty, or starts with "PASTE_", STOP and say: "Please type a long random password (40+ characters, saved in your password manager) into the CRON_SECRET value and reply done." Wait.
+   - NEXT_PUBLIC_SITE_URL = https://seashell-donkey-270999.hostingersite.com (not a secret; no "/" at the end)
    If you see old rows named NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY or SUPABASE_SECRET_KEY, delete those three rows.
 3. Make sure "Node version" is 22.x and the branch is claude/gifted-dirac-rkndzu.
 4. Click "Save and redeploy" and wait until the deployment finishes. If it fails, open the build log and tell me the last 20 lines (they contain no secrets).
@@ -38,6 +39,7 @@ PART C — Check it worked
 4. If it says "unreachable" and Part A showed a MySQL host other than localhost: set DB_HOST to that host, Save and redeploy, then check again.
 5. If it says the database "refused the user name or password": STOP and ask me to re-type DB_PASSWORD (and check DB_USER is the full username with the u123456789_ prefix), then Save and redeploy and check again.
 6. If "setup_key" does not say "set", tell me what it says (it never shows the key itself).
-7. Open https://seashell-donkey-270999.hostingersite.com and tell me whether you see the full UNAR homepage.
+7. Open https://seashell-donkey-270999.hostingersite.com and tell me whether you see the full UNAR homepage, and whether both products appear under "Shop the Goodness" (they will say "Sold out" until stock is entered — that is expected).
+8. Open https://seashell-donkey-270999.hostingersite.com/shop and confirm both products are listed.
 
-Then stop. I will open /setup myself to create my owner account (it asks for the SETUP_KEY), and publish products from the dashboard.
+Then stop. I will open /setup myself to create my owner account (it asks for the SETUP_KEY), and enter stock and shipping charges from the dashboard.

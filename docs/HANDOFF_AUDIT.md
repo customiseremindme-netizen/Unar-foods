@@ -318,16 +318,88 @@ _Notes:_ Read-only audit; no files were modified. Files inspected: src/app/(stor
 
 _Notes:_ Overall: the section and motion system is well built. It has a Zod-validated registry, an admin draft/preview/publish editor, a LazyMotion+m setup with reduced-motion config, and reusable Reveal, Stagger and Parallax components. The site is broken at runtime mostly because of data and environment, not code: no DB on live, and products in draft. Motion package: motion@14.0.0 (framer-motion@14.0.0, motion-dom@14.0.0). It uses LazyMotion with domAnimation in strict mode, so only m.* components are allowed. domAnimation is statically imported, not code-split, so it ships in the store layout's client bundle on every storefront page, at an estimated 20-25 KB gzipped. Every homepage section is wrapped in client motion components (sections.tsx itself is a server component that passes children through). DrawOnView (motion.tsx:111-149) is unused. In preview mode, getHomeSections still filters out hidden sections (content.ts:42), so hidden sections cannot be previewed. The botanical SVG decorations are absent below lg in the hero. Reduced-motion users still see opacity fades and SVG line-draws. Recommended fixes, roughly in priority order: connect the DB and publish the products; add data-scroll-behavior; add the missing section types (how-to-enjoy, ingredients, verified-benefits) and seed them; add data-reveal or a visible-by-default fallback for the hero; add a pouch float, mask reveals and quick view; set botanical pathLength instantly under reduced motion.
 
-## Not audited yet (session ran out) — audit these first
-- Reviews & customer features: reviews need photo (max 5) and video uploads
-  with moderation, size/type limits, spam prevention; search page, filters,
-  newsletter, FAQ accordion, contact, order tracking, account dashboard.
-- Admin dashboard completeness (overview metrics + sales chart, 5-image
-  gallery management, featured selection, content, marketing), server-side
-  role checks on every admin page/action.
-- Commerce journey + performance/security/SEO (cart → checkout → Razorpay
-  verify/webhook → confirmation → account → admin).
-- Dead buttons / placeholders / fake data sweep.
+## Audit: reviews & customer features, admin, commerce/security/SEO, dead buttons (2026-11-01)
+
+Read from the code at commit 02d9fc2 (before the fixes below).
+
+**Reviews & customer features**
+- [missing] Review photos/video: the `reviews` table had no media
+  (src/lib/db/schema.ts reviews table); ReviewForm had text fields only
+  (src/components/product/review-form.tsx). → Added (see "Done").
+- [ok] Spam prevention: sign-in required, honeypot, 5 reviews/hour/user
+  (src/lib/security/rate-limit.ts:15), one review per product per user
+  (unique product_id+user_id), every review waits for approval
+  (engagement.ts submitReviewAction). Verified-purchase badge only from paid
+  orders (engagement.ts, order_items join).
+- [broken] Newsletter form emptied the email after a failed submit (React 19
+  form reset; newsletter-form.tsx had no defaultValue). Found by the new
+  e2e test. → Fixed.
+- [ok] FAQ accordion, contact form (stored + emailed to the owner),
+  order tracking (/track-order, rate limited), order confirmation page,
+  account dashboard, cart drawer, shop filters/sorting.
+- [missing] Wishlist and quick view: not present anywhere in src. Not built
+  (optional in the brief; see STATUS.md).
+
+**Admin dashboard**
+- [ok] Every admin page calls requireStaffPage(permission) and every admin
+  server action runs through runAdminAction(permission) (src/lib/admin/action.ts:27);
+  the CSV export routes check getStaffAccess() (src/app/admin/export/*/route.ts:10-11).
+  Customers get /admin/no-access. Covered by tests/e2e/security.spec.ts.
+- [ok] Products (prices/MRP, variants, categories, featured, SEO, status,
+  duplicate/archive/delete), image upload/reorder/alt/kind
+  (product-editor.tsx ImagesCard), inventory with history, orders
+  (fulfilment, tracking, refunds, cancellations, invoices, notes, export),
+  customers, messages, reviews, homepage editor with draft/preview/publish,
+  pages/policies/journal, FAQs, banners, Instagram, media library, coupons,
+  subscribers, abandoned carts, reports with a chart of real sales,
+  shipping zones, settings, staff, activity log.
+- [partial] Overview lacked all-time orders, customer count and product
+  count (src/app/admin/page.tsx). → Added. Review moderation could not show
+  or remove review media. → Added.
+
+**Commerce / security / SEO**
+- [ok] Prices, stock and coupons decided on the server in one transaction
+  (rpc/orders.ts create_order); payment confirmed only by verified Razorpay
+  signature + server fetch or a signed webhook (api/payments/razorpay/verify,
+  api/webhooks/razorpay); covered by tests/e2e/checkout.spec.ts.
+- [broken] Dependency advisories: next 16.4.0 (critical, GHSA-2464-fhr4-w9xw
+  and others), nodemailer 10.0.10, zod 4.6.5 (`npm audit`). → Updated to
+  16.4.3 / 10.3.1 / 4.6.7; production dependencies audit clean.
+- [broken] With NEXT_PUBLIC_SITE_URL unset or "none" (the owner's Hostinger
+  template), getSiteUrl() fell back to http://localhost:3000
+  (src/lib/env.ts:45-53), so canonical links, the sitemap, robots.txt,
+  Open Graph images and structured data pointed at localhost
+  (layout.tsx:34, sitemap.ts:10, robots.ts:9, products/[slug]/page.tsx:66).
+  → They now use the address the site is opened on.
+- [partial] Sitemap had no collection URL and listed label scans as product
+  images; JSON-LD listed label scans and used gtin13 for any length. → Fixed.
+- [partial] Login limit keyed on a spoofable first X-Forwarded-For entry
+  (src/lib/security/request.ts:7). → Added a per-account limit (20/hour)
+  that doesn't depend on the IP.
+- [ok] Security headers incl. CSP (next.config.ts), rate limits on every
+  public form, uploads re-encoded with sharp, SVG checks, secrets server-only.
+- [risk, unverified] Reset/confirm links use X-Forwarded-Host when
+  NEXT_PUBLIC_SITE_URL is unset (src/lib/site-url.ts:13-27). Recommendation
+  in SETUP_GUIDE: set NEXT_PUBLIC_SITE_URL to the real address.
+
+**Dead buttons / placeholders / invented data**
+- No href="#" or empty handlers found (grep). "Price coming soon" on cards
+  → "Currently unavailable". Placeholder copy remaining only as honest empty
+  states (no products / no journal posts yet). No invented reviews, ratings,
+  counts or claims: claims/benefits/shelf life still require approval.
+
+## Done in the 2026-11-01 session (all on branch claude/gifted-dirac-rkndzu)
+1. Versioned, idempotent data migrations (src/lib/db/data-migrations.ts):
+   publish the never-published starter products, full UNAR names, 01–05
+   photo order, three new homepage sections. Only values still equal to the
+   old starter data are changed. Tested on MySQL 8 and MariaDB 11.4.
+2. Accounts: sign-up without email (active immediately), email confirmation
+   when email is set up (resend on sign-in), pre-hijacking fix, current
+   password required to change it, forms keep typed values, 16px inputs.
+3. Gallery, product page, reviews with photos/video, homepage sections and
+   animation, dashboard figures, SEO address fix, dependency updates.
+4. tests/e2e/scenarios.spec.ts covers the 22 scenarios; 54/54 browser tests
+   pass on a production build with MySQL 8 and with MariaDB 11.4.
 
 ## Work plan (from the brief, in order)
 1. Phase 2–3 fixes above (data migration + published products + gallery
