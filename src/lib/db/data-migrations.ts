@@ -1,4 +1,7 @@
 import type { PoolConnection, RowDataPacket } from "mysql2/promise";
+import initialData from "./data/initial-data.json";
+import { prepareInsertRow } from "./rows";
+import { TABLES } from "./schema";
 
 /**
  * Versioned data fixes for databases that were set up earlier.
@@ -98,6 +101,23 @@ export const DATA_MIGRATIONS: DataMigration[] = [
         for (const [imageId, [, , order, kind]] of Object.entries(images)) {
           await conn.query("UPDATE product_images SET sort_order = ?, kind = ? WHERE id = ?", [order, kind, imageId]);
         }
+      }
+    },
+  },
+  {
+    id: "2026-11-01-home-sections",
+    description: "Add the homepage sections Ingredients, How to enjoy and Verified benefits",
+    async run(conn) {
+      // Copied from the starter data; a section the database already has (same page/key/state) is left alone.
+      const keys = new Set(["ingredients", "enjoy", "benefits"]);
+      const rows = (initialData.cms_sections as Record<string, unknown>[]).filter((r) => keys.has(String(r.key)));
+      for (const input of rows) {
+        const row = prepareInsertRow("cms_sections", TABLES.cms_sections!, input);
+        const cols = Object.keys(row);
+        await conn.query(
+          `INSERT INTO cms_sections (${cols.map((c) => `\`${c}\``).join(", ")}) VALUES (${cols.map(() => "?").join(", ")}) ON DUPLICATE KEY UPDATE id = id`,
+          cols.map((c) => row[c]),
+        );
       }
     },
   },

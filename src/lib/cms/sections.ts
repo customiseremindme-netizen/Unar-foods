@@ -187,6 +187,73 @@ export const SECTION_TYPES = {
         .default([]),
     }),
   },
+  ingredients: {
+    label: "Ingredients & natural goodness",
+    description: "Shows each product's ingredients and allergen advice exactly as entered on the product (from the pack). Nothing is invented.",
+    fields: [
+      { name: "eyebrow", label: "Small text above the heading", type: "text", max: 60 },
+      { name: "heading", label: "Heading", type: "text", max: 120 },
+      { name: "description", label: "Description", type: "textarea", max: 400 },
+      { name: "image_url", label: "Image", type: "image" },
+      { name: "image_alt", label: "Image description", type: "text", max: 160 },
+    ],
+    schema: z.object({
+      eyebrow: text(60).default(""),
+      heading: text(120).default("What's inside"),
+      description: text(400).default(""),
+      image_url: imageUrl.default(""),
+      image_alt: text(160).default(""),
+    }),
+  },
+  how_to_enjoy: {
+    label: "How to enjoy",
+    description: "Serving ideas. Keep them simple and avoid health claims.",
+    fields: [
+      { name: "eyebrow", label: "Small text above the heading", type: "text", max: 60 },
+      { name: "heading", label: "Heading", type: "text", max: 120 },
+      { name: "description", label: "Description", type: "textarea", max: 300 },
+      { name: "image_url", label: "Image (optional)", type: "image" },
+      { name: "image_alt", label: "Image description", type: "text", max: 160 },
+      {
+        name: "items",
+        label: "Ideas",
+        type: "list",
+        itemLabel: "Idea",
+        max: 6,
+        fields: [
+          { name: "icon", label: "Icon", type: "icon" },
+          { name: "title", label: "Title", type: "text", max: 60 },
+          { name: "body", label: "Text", type: "textarea", max: 240 },
+        ],
+      },
+    ],
+    schema: z.object({
+      eyebrow: text(60).default(""),
+      heading: text(120).default("How to enjoy Banana Chewy"),
+      description: text(300).default(""),
+      image_url: imageUrl.default(""),
+      image_alt: text(160).default(""),
+      items: z
+        .array(z.object({ icon, title: text(60), body: text(240) }))
+        .max(6)
+        .catch([])
+        .default([]),
+    }),
+  },
+  verified_benefits: {
+    label: "Verified product benefits",
+    description: "Lists only the claims and benefits you have approved on each product (Products → Claims & benefits). Hidden until at least one is approved.",
+    fields: [
+      { name: "eyebrow", label: "Small text above the heading", type: "text", max: 60 },
+      { name: "heading", label: "Heading", type: "text", max: 120 },
+      { name: "description", label: "Description", type: "textarea", max: 300 },
+    ],
+    schema: z.object({
+      eyebrow: text(60).default(""),
+      heading: text(120).default("Goodness you can check"),
+      description: text(300).default(""),
+    }),
+  },
   comparison: {
     label: "Product comparison",
     description: "Compares ingredients, allergen advice and nutrition of your published products automatically.",

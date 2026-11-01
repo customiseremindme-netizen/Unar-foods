@@ -1,6 +1,6 @@
 "use client";
 
-import { m } from "motion/react";
+import { m, useReducedMotion } from "motion/react";
 import { cn } from "@/lib/utils";
 
 /**
@@ -35,13 +35,14 @@ const SPRIG_LEAVES: [number, number, number, number][] = [
 ];
 
 export function LeafSprig({ className, strokeWidth = 1.1 }: { className?: string; strokeWidth?: number }) {
+  const reduce = useReducedMotion();
   return (
     <m.svg
       viewBox="0 0 120 200"
       fill="none"
       className={cn("pointer-events-none", className)}
       aria-hidden="true"
-      initial="hidden"
+      initial={reduce ? "show" : "hidden"}
       whileInView="show"
       viewport={{ once: true }}
     >
@@ -100,13 +101,14 @@ function bananaLeafPaths() {
 const BANANA = bananaLeafPaths();
 
 export function BananaLeaf({ className, strokeWidth = 1 }: { className?: string; strokeWidth?: number }) {
+  const reduce = useReducedMotion();
   return (
     <m.svg
       viewBox="0 0 260 420"
       fill="none"
       className={cn("pointer-events-none", className)}
       aria-hidden="true"
-      initial="hidden"
+      initial={reduce ? "show" : "hidden"}
       whileInView="show"
       viewport={{ once: true }}
     >

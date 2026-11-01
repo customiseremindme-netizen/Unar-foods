@@ -13,7 +13,7 @@ import { EmptyState, SectionHeading, Stars } from "@/components/ui/misc";
 import { Markdown } from "@/components/ui/markdown";
 import { CmsIcon } from "@/components/brand/icons";
 import { BananaLeaf, LeafDivider, LeafSprig } from "@/components/brand/botanical";
-import { Parallax, Reveal, Stagger, StaggerItem } from "@/components/motion/motion";
+import { IconPop, MaskReveal, Parallax, Reveal, Stagger, StaggerItem } from "@/components/motion/motion";
 import { ProductCard } from "@/components/product/product-card";
 import { NewsletterForm } from "./newsletter-form";
 
@@ -26,9 +26,9 @@ export function TrustStrip({ content }: { content: SectionContent<"trust_strip">
         <Stagger className="flex snap-x gap-8 overflow-x-auto py-6 [scrollbar-width:none] sm:justify-center sm:gap-12 lg:gap-16">
           {items.map((item) => (
             <StaggerItem key={item.label} className="flex shrink-0 snap-start items-center gap-3">
-              <span className="grid size-10 place-items-center rounded-full bg-sage-soft text-forest">
+              <IconPop className="grid size-10 place-items-center rounded-full bg-sage-soft text-forest">
                 <CmsIcon name={item.icon} className="size-[1.1rem]" />
-              </span>
+              </IconPop>
               <span className="text-[0.85rem] font-semibold tracking-[0.02em] text-forest">{item.label}</span>
             </StaggerItem>
           ))}
@@ -94,14 +94,14 @@ export function StorySplit({ content }: { content: SectionContent<"story_split">
     <section aria-labelledby="story-heading" className="paper relative overflow-hidden bg-paper py-24 lg:py-32">
       <LeafSprig className="absolute right-[6%] top-10 hidden h-44 w-28 text-sage lg:block" />
       <div className="container-site grid items-center gap-14 lg:grid-cols-12 lg:gap-20">
-        <div className="relative lg:col-span-6">
+        <div className="relative isolate lg:col-span-6">
           {content.image_url ? (
             <Parallax distance={30}>
-              <Reveal y={30}>
+              <MaskReveal>
                 <div className="relative aspect-[4/5] overflow-hidden rounded-[2.5rem] shadow-lift sm:aspect-square">
                   <Image src={content.image_url} alt={content.image_alt} fill sizes="(min-width: 1024px) 45vw, 100vw" className="object-cover" />
                 </div>
-              </Reveal>
+              </MaskReveal>
             </Parallax>
           ) : (
             <div className="grid aspect-square place-items-center rounded-[2.5rem] bg-sage-soft/60">
@@ -147,9 +147,9 @@ export function PromiseSection({ content }: { content: SectionContent<"promise">
           {items.map((item) => (
             <StaggerItem key={item.title}>
               <div className="h-full rounded-[2rem] bg-cream/[0.06] p-8 ring-1 ring-cream/10 transition-colors duration-500 hover:bg-cream/[0.1] lg:p-10">
-                <span className="grid size-12 place-items-center rounded-full bg-cream/10 text-banana-soft">
+                <IconPop className="grid size-12 place-items-center rounded-full bg-cream/10 text-banana-soft">
                   <CmsIcon name={item.icon} className="size-5" />
-                </span>
+                </IconPop>
                 <h3 className="mt-6 text-[1.45rem] !text-cream">{item.title}</h3>
                 <p className="mt-3 text-[0.95rem] leading-relaxed text-cream/80">{item.body}</p>
               </div>
@@ -482,6 +482,139 @@ export function HomePromo({ banner }: { banner: Banner }) {
           ) : null}
         </div>
       </Reveal>
+    </section>
+  );
+}
+
+/** Ingredients exactly as entered on each product (copied from the pack), with allergen advice. */
+export function IngredientsSection({ content, products }: { content: SectionContent<"ingredients">; products: Product[] }) {
+  const withIngredients = products.filter((p) => p.ingredients?.trim());
+  if (withIngredients.length === 0) return null;
+  return (
+    <section id="ingredients" aria-labelledby="ingredients-heading" className="relative overflow-hidden py-24 lg:py-32">
+      <LeafSprig className="absolute -left-4 bottom-10 hidden h-48 w-28 text-sage lg:block" />
+      <div className="container-site grid items-center gap-14 lg:grid-cols-12 lg:gap-20">
+        <div className="lg:col-span-6">
+          <Reveal>
+            <SectionHeading id="ingredients-heading" eyebrow={content.eyebrow} title={content.heading} description={content.description} />
+          </Reveal>
+          <Stagger className="mt-10 space-y-5" gap={0.12}>
+            {withIngredients.map((p) => (
+              <StaggerItem key={p.id}>
+                <article className="rounded-[1.75rem] border border-line bg-paper p-6 transition-shadow duration-500 hover:shadow-soft">
+                  <h3 className="text-[1.25rem]">
+                    <Link href={`/products/${p.slug}`} className="hover:text-forest-deep">
+                      {p.short_title ?? p.title}
+                    </Link>
+                  </h3>
+                  <p className="mt-3 text-[0.95rem] leading-relaxed">
+                    <span className="font-semibold text-forest">Ingredients: </span>
+                    {p.ingredients}
+                  </p>
+                  <p className="mt-2 text-[0.85rem] text-muted">
+                    <span className="font-semibold">Allergen advice: </span>
+                    {p.allergens ?? "No allergen statement is printed on this pack."}
+                  </p>
+                </article>
+              </StaggerItem>
+            ))}
+          </Stagger>
+          <p className="mt-4 text-[0.78rem] text-muted">As printed on each pack.</p>
+        </div>
+        <div className="lg:col-span-6">
+          {content.image_url ? (
+            <MaskReveal>
+              <div className="relative aspect-square overflow-hidden rounded-[2.5rem] bg-paper shadow-lift">
+                <Image src={content.image_url} alt={content.image_alt} fill sizes="(min-width: 1024px) 45vw, 100vw" className="object-cover" />
+              </div>
+            </MaskReveal>
+          ) : null}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/** Serving ideas written by the owner. */
+export function HowToEnjoySection({ content }: { content: SectionContent<"how_to_enjoy"> }) {
+  const items = content.items.filter((i) => i.title.trim());
+  if (items.length === 0) return null;
+  return (
+    <section id="how-to-enjoy" aria-labelledby="enjoy-heading" className="relative overflow-hidden bg-sage-soft/50 py-24 lg:py-32">
+      <Parallax distance={40} className="pointer-events-none absolute -right-20 top-0 hidden h-[28rem] w-64 text-sage lg:block">
+        <BananaLeaf className="size-full rotate-[200deg]" />
+      </Parallax>
+      <div className="container-site relative">
+        <Reveal className="mx-auto max-w-2xl text-center">
+          <SectionHeading id="enjoy-heading" eyebrow={content.eyebrow} title={content.heading} description={content.description} align="center" />
+        </Reveal>
+        <div className={content.image_url ? "mt-14 grid items-center gap-12 lg:grid-cols-12" : "mt-14"}>
+          {content.image_url ? (
+            <div className="lg:col-span-5">
+              <MaskReveal>
+                <div className="relative aspect-[4/5] overflow-hidden rounded-[2.5rem] shadow-lift">
+                  <Image src={content.image_url} alt={content.image_alt} fill sizes="(min-width: 1024px) 38vw, 100vw" className="object-cover" />
+                </div>
+              </MaskReveal>
+            </div>
+          ) : null}
+          <Stagger className={content.image_url ? "grid gap-5 sm:grid-cols-2 lg:col-span-7" : "grid gap-5 sm:grid-cols-2 lg:grid-cols-4"} gap={0.1}>
+            {items.map((item, i) => (
+              <StaggerItem key={item.title}>
+                <div className="h-full rounded-[1.75rem] bg-paper p-7 ring-1 ring-line transition-all duration-500 hover:-translate-y-1 hover:shadow-soft">
+                  <div className="flex items-center gap-3">
+                    <IconPop className="grid size-11 place-items-center rounded-full bg-sage-soft text-forest">
+                      <CmsIcon name={item.icon} className="size-5" />
+                    </IconPop>
+                    <span className="font-display text-[1.6rem] leading-none text-sage" aria-hidden="true">
+                      {String(i + 1).padStart(2, "0")}
+                    </span>
+                  </div>
+                  <h3 className="mt-5 text-[1.3rem]">{item.title}</h3>
+                  {item.body ? <p className="mt-2 text-[0.92rem] leading-relaxed text-muted">{item.body}</p> : null}
+                </div>
+              </StaggerItem>
+            ))}
+          </Stagger>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/** Only claims and benefits the owner has approved on a product. Hidden when there are none. */
+export function VerifiedBenefitsSection({ content, products }: { content: SectionContent<"verified_benefits">; products: Product[] }) {
+  const rows = products
+    .map((p) => ({ product: p, items: [...new Set([...p.claims, ...p.benefits])] }))
+    .filter((r) => r.items.length > 0);
+  if (rows.length === 0) return null;
+  return (
+    <section id="benefits" aria-labelledby="benefits-heading" className="py-24 lg:py-32">
+      <div className="container-site">
+        <Reveal>
+          <SectionHeading id="benefits-heading" eyebrow={content.eyebrow} title={content.heading} description={content.description} />
+        </Reveal>
+        <div className={`mt-12 grid gap-6 ${rows.length > 1 ? "lg:grid-cols-2" : ""}`}>
+          {rows.map(({ product, items }) => (
+            <Reveal key={product.id}>
+              <article className="h-full rounded-[2rem] border border-line bg-paper p-7 lg:p-9">
+                <h3 className="text-[1.3rem]">{product.short_title ?? product.title}</h3>
+                <Stagger className="mt-5 grid gap-3 sm:grid-cols-2" gap={0.06}>
+                  {items.map((label) => (
+                    <StaggerItem key={label} className="flex items-center gap-2.5 text-[0.95rem]">
+                      <IconPop className="grid size-7 shrink-0 place-items-center rounded-full bg-sage-soft text-forest">
+                        <BadgeCheck className="size-4" aria-hidden="true" />
+                      </IconPop>
+                      {label}
+                    </StaggerItem>
+                  ))}
+                </Stagger>
+              </article>
+            </Reveal>
+          ))}
+        </div>
+        <p className="mt-5 text-[0.78rem] text-muted">Shown as printed on the pack and confirmed by UNAR.</p>
+      </div>
     </section>
   );
 }

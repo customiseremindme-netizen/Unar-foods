@@ -41,6 +41,9 @@
   --animate-leaf-sway: leaf-sway 9s ease-in-out infinite alternate;
   --animate-fade-in: fade-in 0.5s var(--ease-out-soft) both;
   --animate-shimmer: shimmer 1.6s linear infinite;
+  --animate-float: float 7s ease-in-out infinite;
+  --animate-rise: rise 0.9s var(--ease-leaf) both;
+  --animate-line-up: line-up 1s var(--ease-out-soft) both;
 
   @keyframes leaf-drift {
     0% { transform: translate3d(0, 0, 0) rotate(0deg); }
@@ -52,6 +55,20 @@
   }
   @keyframes fade-in {
     from { opacity: 0; transform: translateY(6px); }
+    to { opacity: 1; transform: none; }
+  }
+  /* Gentle hover for the hero pouch (transform only, GPU friendly). */
+  @keyframes float {
+    0%, 100% { transform: translate3d(0, 0, 0); }
+    50% { transform: translate3d(0, -10px, 0); }
+  }
+  /* Hero text: runs from the first paint, needs no JavaScript. */
+  @keyframes rise {
+    from { opacity: 0; transform: translate3d(0, 18px, 0); }
+    to { opacity: 1; transform: none; }
+  }
+  @keyframes line-up {
+    from { opacity: 0.001; transform: translate3d(0, 0.45em, 0); }
     to { opacity: 1; transform: none; }
   }
   @keyframes shimmer {

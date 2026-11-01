@@ -10,13 +10,9 @@ import type { SectionContent } from "@/lib/cms/sections";
 
 const EASE = [0.22, 0.61, 0.36, 1] as const;
 
-function rise(delay: number) {
-  return {
-    initial: { opacity: 0, y: 18 },
-    animate: { opacity: 1, y: 0 },
-    transition: { duration: 0.9, ease: EASE, delay },
-  };
-}
+/** Entrance done in CSS so it starts with the first paint and never hides text when JavaScript is off. */
+const RISE = "animate-rise motion-reduce:animate-none";
+const delay = (seconds: number) => ({ animationDelay: `${seconds}s` });
 
 /** Splits "Everyday snacking, naturally better." into two editorial lines. */
 function splitHeadline(text: string): [string, string | null] {
@@ -52,21 +48,27 @@ export function Hero({
         <div className="relative lg:col-span-6">
           <LeafSprig className="absolute -left-6 -top-10 hidden h-36 w-24 text-sage animate-leaf-sway lg:block" />
           {content.eyebrow ? (
-            <m.p className="eyebrow flex items-center gap-3" {...rise(0.05)}>
+            <p style={delay(0.05)} className={`eyebrow flex items-center gap-3 ${RISE}`}>
               <span aria-hidden="true" className="h-px w-10 bg-olive" />
               {content.eyebrow}
-            </m.p>
+            </p>
           ) : null}
           <h1 id="hero-heading" className="mt-6 text-[2.75rem] leading-[1.02] sm:text-[3.7rem] lg:text-[4.5rem]">
-            <span className="block">{lineOne}</span>
-            {lineTwo ? <span className="block italic text-olive-ink">{lineTwo}</span> : null}
+            <span className="block animate-line-up motion-reduce:animate-none" style={{ animationDelay: "0.1s" }}>
+              {lineOne}
+            </span>
+            {lineTwo ? (
+              <span className="block animate-line-up italic text-olive-ink motion-reduce:animate-none" style={{ animationDelay: "0.22s" }}>
+                {lineTwo}
+              </span>
+            ) : null}
           </h1>
           {content.subheadline ? (
-            <m.p className="mt-7 max-w-lg text-[1.08rem] leading-relaxed text-muted" {...rise(0.2)}>
+            <p style={delay(0.35)} className={`mt-7 max-w-lg text-[1.08rem] leading-relaxed text-muted ${RISE}`}>
               {content.subheadline}
-            </m.p>
+            </p>
           ) : null}
-          <m.div className="mt-10 flex flex-wrap items-center gap-3" {...rise(0.32)}>
+          <div style={delay(0.48)} className={`mt-10 flex flex-wrap items-center gap-3 ${RISE}`}>
             {content.primary_cta.label && content.primary_cta.href ? (
               <ButtonLink href={content.primary_cta.href} size="lg">
                 {content.primary_cta.label}
@@ -77,7 +79,7 @@ export function Hero({
                 {content.secondary_cta.label}
               </ButtonLink>
             ) : null}
-          </m.div>
+          </div>
         </div>
 
         <div className="relative lg:col-span-6">
@@ -93,7 +95,7 @@ export function Hero({
                 animate={{ scale: 1, y: 0 }}
                 transition={{ duration: 1.4, ease: EASE }}
               >
-                <div className="relative aspect-square overflow-hidden rounded-[2.5rem] shadow-lift ring-1 ring-forest/5">
+                <div className="relative aspect-square animate-float overflow-hidden rounded-[2.5rem] shadow-lift ring-1 ring-forest/5 will-change-transform motion-reduce:animate-none">
                   <Image
                     src={content.image_url}
                     alt={content.image_alt}
@@ -107,6 +109,7 @@ export function Hero({
               {hasSecondary ? (
                 <Parallax distance={26} className="absolute bottom-0 left-0 w-[44%]">
                   <m.div
+                    data-reveal
                     initial={{ opacity: 0, y: 30, rotate: -1 }}
                     animate={{ opacity: 1, y: 0, rotate: -4 }}
                     transition={{ duration: 1.1, ease: EASE, delay: 0.45 }}
@@ -124,6 +127,7 @@ export function Hero({
               ) : null}
               {productCount > 0 ? (
                 <m.div
+                  data-reveal
                   initial={{ opacity: 0, y: 12 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.8, ease: EASE, delay: 0.8 }}

@@ -1219,6 +1219,154 @@
    },
    "updated_by": null,
    "published_at": "2026-10-09T06:31:42.802779+00:00"
+  },
+  {
+   "id": "4c2a9e10-7d3b-4f1a-9c55-1e0b6a7d3c01",
+   "page": "home",
+   "key": "ingredients",
+   "type": "ingredients",
+   "state": "draft",
+   "sort_order": 55,
+   "is_visible": true,
+   "content": {
+    "eyebrow": "Ingredients",
+    "heading": "Simple ingredients, printed on every pack",
+    "description": "Banana comes first. Here is exactly what goes into each Banana Chewy, as printed on the pack.",
+    "image_url": "/images/products/dry-fruits-seeds/03-ingredients-benefits-display.webp",
+    "image_alt": "UNAR Banana Chewy With Dry Fruits & Seeds pouch with bowls of its ingredients"
+   },
+   "updated_by": null,
+   "published_at": null
+  },
+  {
+   "id": "4c2a9e10-7d3b-4f1a-9c55-1e0b6a7d3c02",
+   "page": "home",
+   "key": "ingredients",
+   "type": "ingredients",
+   "state": "published",
+   "sort_order": 55,
+   "is_visible": true,
+   "content": {
+    "eyebrow": "Ingredients",
+    "heading": "Simple ingredients, printed on every pack",
+    "description": "Banana comes first. Here is exactly what goes into each Banana Chewy, as printed on the pack.",
+    "image_url": "/images/products/dry-fruits-seeds/03-ingredients-benefits-display.webp",
+    "image_alt": "UNAR Banana Chewy With Dry Fruits & Seeds pouch with bowls of its ingredients"
+   },
+   "updated_by": null,
+   "published_at": "2026-10-09T06:31:42.802779+00:00"
+  },
+  {
+   "id": "4c2a9e10-7d3b-4f1a-9c55-1e0b6a7d3c03",
+   "page": "home",
+   "key": "enjoy",
+   "type": "how_to_enjoy",
+   "state": "draft",
+   "sort_order": 65,
+   "is_visible": true,
+   "content": {
+    "eyebrow": "Snack time",
+    "heading": "How to enjoy Banana Chewy",
+    "description": "A few simple ways to make it part of your day.",
+    "image_url": "/images/products/fresh-raw-banana/05-lifestyle-support-image.webp",
+    "image_alt": "UNAR Banana Chewy Fresh Raw Banana served in a bowl next to the pouch",
+    "items": [
+     {
+      "icon": "banana",
+      "title": "Straight from the pack",
+      "body": "Open the pack and enjoy — no preparation needed."
+     },
+     {
+      "icon": "clock",
+      "title": "With your tea or coffee",
+      "body": "A chewy companion for your evening cup."
+     },
+     {
+      "icon": "package",
+      "title": "Pack it for later",
+      "body": "Take a few pieces to work, college or on a journey."
+     },
+     {
+      "icon": "hand-heart",
+      "title": "Share it",
+      "body": "Put out a bowl when friends and family drop by."
+     }
+    ]
+   },
+   "updated_by": null,
+   "published_at": null
+  },
+  {
+   "id": "4c2a9e10-7d3b-4f1a-9c55-1e0b6a7d3c04",
+   "page": "home",
+   "key": "enjoy",
+   "type": "how_to_enjoy",
+   "state": "published",
+   "sort_order": 65,
+   "is_visible": true,
+   "content": {
+    "eyebrow": "Snack time",
+    "heading": "How to enjoy Banana Chewy",
+    "description": "A few simple ways to make it part of your day.",
+    "image_url": "/images/products/fresh-raw-banana/05-lifestyle-support-image.webp",
+    "image_alt": "UNAR Banana Chewy Fresh Raw Banana served in a bowl next to the pouch",
+    "items": [
+     {
+      "icon": "banana",
+      "title": "Straight from the pack",
+      "body": "Open the pack and enjoy — no preparation needed."
+     },
+     {
+      "icon": "clock",
+      "title": "With your tea or coffee",
+      "body": "A chewy companion for your evening cup."
+     },
+     {
+      "icon": "package",
+      "title": "Pack it for later",
+      "body": "Take a few pieces to work, college or on a journey."
+     },
+     {
+      "icon": "hand-heart",
+      "title": "Share it",
+      "body": "Put out a bowl when friends and family drop by."
+     }
+    ]
+   },
+   "updated_by": null,
+   "published_at": "2026-10-09T06:31:42.802779+00:00"
+  },
+  {
+   "id": "4c2a9e10-7d3b-4f1a-9c55-1e0b6a7d3c05",
+   "page": "home",
+   "key": "benefits",
+   "type": "verified_benefits",
+   "state": "draft",
+   "sort_order": 75,
+   "is_visible": true,
+   "content": {
+    "eyebrow": "Verified",
+    "heading": "Goodness you can check",
+    "description": "Only statements printed on our packs and confirmed by us appear here."
+   },
+   "updated_by": null,
+   "published_at": null
+  },
+  {
+   "id": "4c2a9e10-7d3b-4f1a-9c55-1e0b6a7d3c06",
+   "page": "home",
+   "key": "benefits",
+   "type": "verified_benefits",
+   "state": "published",
+   "sort_order": 75,
+   "is_visible": true,
+   "content": {
+    "eyebrow": "Verified",
+    "heading": "Goodness you can check",
+    "description": "Only statements printed on our packs and confirmed by us appear here."
+   },
+   "updated_by": null,
+   "published_at": "2026-10-09T06:31:42.802779+00:00"
   }
  ],
  "cms_pages": [

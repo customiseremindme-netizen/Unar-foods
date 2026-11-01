@@ -3,6 +3,7 @@ import { getBanners, getHomeSections, getFaqs, getInstagramPosts } from "@/lib/d
 import { getPublishedProducts } from "@/lib/data/catalog";
 import { getApprovedReviews, reviewStats } from "@/lib/data/reviews";
 import { getPublicSettings } from "@/lib/settings";
+import { isDatabaseConfigured } from "@/lib/db/client";
 import { getRequestSiteUrl } from "@/lib/site-url";
 import type { HomeSection } from "@/lib/cms/sections";
 import { Hero } from "@/components/home/hero";
@@ -13,6 +14,9 @@ import {
   HomePromo,
   FeaturedProducts,
   HowItsMade,
+  HowToEnjoySection,
+  IngredientsSection,
+  VerifiedBenefitsSection,
   InstagramSection,
   NewsletterSection,
   PromiseSection,
@@ -61,6 +65,12 @@ export default async function HomePage() {
         return <StorySplit content={section.content} />;
       case "promise":
         return <PromiseSection content={section.content} />;
+      case "ingredients":
+        return <IngredientsSection content={section.content} products={products} />;
+      case "how_to_enjoy":
+        return <HowToEnjoySection content={section.content} />;
+      case "verified_benefits":
+        return <VerifiedBenefitsSection content={section.content} products={products} />;
       case "comparison":
         return <Comparison content={section.content} products={products} />;
       case "how_its_made":
@@ -91,6 +101,11 @@ export default async function HomePage() {
         <section className="container-site py-32 text-center">
           <h1 className="text-[2.6rem]">{settings.store.name}</h1>
           <p className="mt-3 text-muted">{settings.store.tagline}</p>
+          {!isDatabaseConfigured() ? (
+            <p className="mx-auto mt-8 max-w-md text-[0.95rem] text-muted">
+              Our online shop is being set up and will open shortly. Thank you for your patience.
+            </p>
+          ) : null}
         </section>
       ) : (
         sections.map((section, i) => (

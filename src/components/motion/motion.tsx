@@ -107,6 +107,42 @@ export function Parallax({ children, distance = 60, className }: { children: Rea
   );
 }
 
+/**
+ * Reveals an image through a soft mask that opens from the bottom, once, when
+ * it scrolls into view. Without JavaScript or with reduced motion it is simply shown.
+ */
+export function MaskReveal({ children, className, delay = 0 }: { children: ReactNode; className?: string; delay?: number }) {
+  const reduce = useReducedMotion();
+  if (reduce) return <div className={className}>{children}</div>;
+  return (
+    <m.div
+      data-reveal
+      className={className}
+      initial={{ clipPath: "inset(18% 6% 18% 6% round 2.5rem)", opacity: 0.4 }}
+      whileInView={{ clipPath: "inset(0% 0% 0% 0% round 2.5rem)", opacity: 1 }}
+      viewport={{ once: true, margin: "0px 0px -15% 0px" }}
+      transition={{ duration: 1.1, ease: EASE, delay }}
+    >
+      {children}
+    </m.div>
+  );
+}
+
+/** A small "pop" for icons inside a <Stagger> list. */
+export function IconPop({ children, className }: { children: ReactNode; className?: string }) {
+  return (
+    <m.span
+      className={className}
+      variants={{
+        hidden: { scale: 0.6, rotate: -12, opacity: 0 },
+        show: { scale: 1, rotate: 0, opacity: 1, transition: { type: "spring", stiffness: 260, damping: 16, delay: 0.15 } },
+      }}
+    >
+      {children}
+    </m.span>
+  );
+}
+
 /** Draws an SVG line-art illustration stroke by stroke when it enters view. */
 export function DrawOnView({
   children,
@@ -121,7 +157,10 @@ export function DrawOnView({
   duration?: number;
   label?: string;
 }) {
-  const pathProps = {
+  const reduce = useReducedMotion();
+  const pathProps = reduce
+    ? { variants: { hidden: { pathLength: 1, opacity: 1 }, show: { pathLength: 1, opacity: 1 } } }
+    : {
     variants: {
       hidden: { pathLength: 0, opacity: 0 },
       show: (i: number = 0) => ({

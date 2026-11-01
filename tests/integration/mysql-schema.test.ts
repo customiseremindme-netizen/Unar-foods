@@ -94,11 +94,13 @@ describe.skipIf(!url)("automatic database setup", () => {
     ];
     for (const [id, order, kind] of oldDry) await pool.query("UPDATE product_images SET sort_order = ?, kind = ? WHERE id = ?", [order, kind, id]);
     await pool.query("UPDATE product_images SET sort_order = 9 WHERE id = '92b61a62-d7b3-4d51-816b-20e4ca02aaca'");
+    await pool.query("DELETE FROM cms_sections WHERE `key` IN ('enjoy', 'benefits')");
+    await pool.query("UPDATE cms_sections SET content = JSON_OBJECT('heading', 'Owner heading') WHERE `key` = 'ingredients'");
     await pool.query("DELETE FROM schema_meta WHERE `key` LIKE 'data_migration:%'");
     const [before] = await pool.query<RowDataPacket[]>("SELECT COUNT(*) AS n FROM products");
 
     const results = await Promise.all([installSchema(pool), installSchema(pool)]);
-    expect(results.flatMap((r) => r.dataFixes)).toEqual(["2026-11-01-starter-products"]);
+    expect(results.flatMap((r) => r.dataFixes)).toEqual(["2026-11-01-starter-products", "2026-11-01-home-sections"]);
 
     const [products] = await pool.query<RowDataPacket[]>("SELECT id, title, short_title, status, published_at FROM products ORDER BY sort_order");
     expect(products.length).toBe(Number(before[0].n));
@@ -109,6 +111,11 @@ describe.skipIf(!url)("automatic database setup", () => {
     expect(dryImages.map((i) => String(i.url).split("/").pop()!.slice(0, 2))).toEqual(["01", "02", "03", "04", "05"]);
     const [moved] = await pool.query<RowDataPacket[]>("SELECT sort_order FROM product_images WHERE id = '92b61a62-d7b3-4d51-816b-20e4ca02aaca'");
     expect(Number(moved[0].sort_order)).toBe(9);
+
+    const [sections] = await pool.query<RowDataPacket[]>("SELECT `key`, state, content FROM cms_sections WHERE `key` IN ('ingredients', 'enjoy', 'benefits') ORDER BY `key`, state");
+    expect(sections.map((r) => `${r.key}:${r.state}`)).toEqual(["benefits:draft", "benefits:published", "enjoy:draft", "enjoy:published", "ingredients:draft", "ingredients:published"]);
+    const ingredients = sections.find((r) => r.key === "ingredients")!;
+    expect(typeof ingredients.content === "string" ? JSON.parse(ingredients.content) : ingredients.content).toEqual({ heading: "Owner heading" });
 
     // An owner who later archives a product keeps that choice.
     await pool.query("UPDATE products SET status = 'archived' WHERE id = ?", [raw]);
