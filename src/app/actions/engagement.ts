@@ -34,22 +34,23 @@ const newsletterSchema = z.object({
 });
 
 export async function subscribeNewsletterAction(_prev: FormState, formData: FormData): Promise<FormState> {
+  const values = typed(formData, ["email"]);
   const parsed = newsletterSchema.safeParse({
     email: formData.get("email"),
     consent: flag(formData.get("consent")),
     website: formData.get("website") ?? "",
     source: formData.get("source") ?? "website",
   });
-  if (!parsed.success) return { ok: false, message: null, errors: toFieldErrors(parsed.error) };
+  if (!parsed.success) return { ok: false, message: null, errors: toFieldErrors(parsed.error), values };
   // Honeypot filled → silently pretend success to the bot.
   if (parsed.data.website) return { ok: true, message: "Thank you for subscribing!" };
   if (!(await checkRateLimit("newsletter", await getClientIp()))) {
-    return { ok: false, message: "Too many attempts. Please try again later." };
+    return { ok: false, message: "Too many attempts. Please try again later.", values };
   }
   const admin = getServiceDb();
-  if (!admin) return { ok: false, message: "Sign-ups are not available right now. Please try again later." };
+  if (!admin) return { ok: false, message: "Sign-ups are not available right now. Please try again later.", values };
   const settings = await getAllSettings();
-  if (!settings.newsletter.enabled) return { ok: false, message: "Newsletter sign-ups are currently closed." };
+  if (!settings.newsletter.enabled) return { ok: false, message: "Newsletter sign-ups are currently closed.", values };
 
   const { data: existing } = await admin.from("subscribers").select("id, status").eq("email", parsed.data.email).maybeSingle();
   if (existing?.status === "subscribed") return { ok: true, message: "You're already subscribed — thank you!" };
@@ -67,7 +68,7 @@ export async function subscribeNewsletterAction(_prev: FormState, formData: Form
     : await admin.from("subscribers").insert({ ...record, unsubscribe_token: randomToken(24) });
   if (error) {
     logError("newsletter.subscribe", error);
-    return { ok: false, message: "We couldn't sign you up. Please try again." };
+    return { ok: false, message: "We couldn't sign you up. Please try again.", values };
   }
   return { ok: true, message: "Thank you for subscribing! You can unsubscribe at any time." };
 }

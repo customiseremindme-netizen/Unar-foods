@@ -30,6 +30,7 @@ export function NewsletterForm({ consentText, source }: { consentText: string; s
             type="email"
             autoComplete="email"
             placeholder="you@example.com"
+            defaultValue={state.values?.email}
             required
             aria-invalid={!!state.errors?.email}
             aria-describedby={state.errors?.email ? `newsletter-email-${source}-error` : undefined}

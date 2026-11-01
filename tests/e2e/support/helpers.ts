@@ -74,3 +74,27 @@ export async function latestMockOrder(): Promise<{ id: string; amount: number }>
 export function priceOf(text: string): number {
   return Number(text.replace(/[^\d.]/g, ""));
 }
+
+/**
+ * Clears the shop's rate-limit counters in the LOCAL test database, so a long
+ * test run isn't blocked by the sign-up/newsletter limits. Refuses anything
+ * but a local or private database server.
+ */
+export async function resetRateLimits() {
+  if (fs.existsSync(".env.local")) process.loadEnvFile(".env.local");
+  const host = process.env.DB_HOST ?? "";
+  if (!/^(localhost|127\.|10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.)/.test(host)) return;
+  const mysql = await import("mysql2/promise");
+  const db = await mysql.createConnection({
+    host,
+    port: Number(process.env.DB_PORT ?? 3306),
+    user: process.env.DB_USER,
+    password: process.env.DB_PASSWORD,
+    database: process.env.DB_NAME,
+  });
+  try {
+    await db.query("DELETE FROM rate_limits");
+  } finally {
+    await db.end();
+  }
+}

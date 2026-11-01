@@ -55,6 +55,16 @@ export default async function AdminOverviewPage({ searchParams }: { searchParams
     access.permissions.has("settings.write") ? getLaunchChecklist() : Promise.resolve(null),
   ]);
 
+  // Store at a glance (all time).
+  const head = { count: "exact" as const, head: true };
+  const [ordersAll, customersAll, productsLive] = canReports
+    ? await Promise.all([
+        db.from("orders").select("id", head).eq("status", "placed"),
+        access.permissions.has("customers.read") ? db.from("profiles").select("id", head) : Promise.resolve({ count: null }),
+        db.from("products").select("id", head).eq("status", "published"),
+      ])
+    : [{ count: null }, { count: null }, { count: null }];
+
   let s = (summaryRes.data ?? null) as Summary | null;
   // Staff without report access still need their work queue counts.
   if (!s && canOrders) {
@@ -129,6 +139,14 @@ export default async function AdminOverviewPage({ searchParams }: { searchParams
             Review now
           </Link>
         </Notice>
+      ) : null}
+
+      {canReports ? (
+        <div className="grid grid-cols-3 gap-4">
+          <StatCard label="Orders (all time)" value={ordersAll.count ?? "—"} href="/admin/orders" hint="Placed orders" />
+          <StatCard label="Customer accounts" value={customersAll.count ?? "—"} href="/admin/customers" hint="Registered customers & staff" />
+          <StatCard label="Products on sale" value={productsLive.count ?? "—"} href="/admin/products" hint="Published products" />
+        </div>
       ) : null}
 
       {canReports ? (

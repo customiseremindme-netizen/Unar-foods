@@ -21,6 +21,7 @@ export default async function CheckoutPage() {
   if (cart.lines.length === 0) {
     return (
       <div className="container-site py-20">
+        <h1 className="mb-8 text-[2.4rem] sm:text-[3rem]">Checkout</h1>
         <EmptyState
           title="Your cart is empty"
           description="Add something you love, then come back to check out."
