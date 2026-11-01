@@ -100,6 +100,18 @@ export async function deleteReviewAction(id: string): Promise<ActionResult> {
   });
 }
 
+/** Removes one photo or the video from a review (e.g. it shows something it shouldn't). */
+export async function deleteReviewMediaAction(id: string): Promise<ActionResult> {
+  return runAdminAction("reviews.moderate", async ({ db }) => {
+    z.uuid().parse(id);
+    check(await db.from("review_media").delete().eq("id", id));
+    await logAdminAction({ action: "review.media_delete", entityType: "review_media", entityId: id, summary: "Removed a photo/video from a review" });
+    revalidateStorefront();
+    revalidatePath("/admin/reviews");
+    return { ok: true, message: "Removed from the review." };
+  });
+}
+
 // ---------------------------------------------------------------------------
 // Contact messages
 // ---------------------------------------------------------------------------

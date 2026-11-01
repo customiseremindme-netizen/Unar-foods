@@ -3,7 +3,8 @@ import { requireStaffPage } from "@/lib/auth/session";
 import { getUserDb } from "@/lib/db/client";
 import { formatDateTime } from "@/lib/utils";
 import { PageHeader, Pagination } from "@/components/admin/ui";
-import { ReviewModeration } from "@/components/admin/moderation";
+import { ReviewMediaModeration, ReviewModeration } from "@/components/admin/moderation";
+import { reviewMediaUrl } from "@/lib/reviews/media";
 import { Badge, EmptyState, Stars } from "@/components/ui/misc";
 
 export const metadata = { title: "Reviews" };
@@ -23,7 +24,7 @@ export default async function ReviewsPage({ searchParams }: { searchParams: Prom
   const db = (await getUserDb())!;
   const { data: reviews, count } = await db
     .from("reviews")
-    .select("id, author_name, rating, title, body, status, is_verified_purchase, admin_reply, created_at, products(title, slug)", { count: "exact" })
+    .select("id, author_name, rating, title, body, status, is_verified_purchase, admin_reply, created_at, products(title, slug), review_media(id, kind, sort_order)", { count: "exact" })
     .eq("status", status)
     .order("created_at", { ascending: false })
     .range((page - 1) * PAGE_SIZE, page * PAGE_SIZE - 1);
@@ -66,6 +67,11 @@ export default async function ReviewsPage({ searchParams }: { searchParams: Prom
                 ) : null}
               </p>
               <p className="mt-3 whitespace-pre-wrap text-[0.92rem] leading-relaxed">{r.body}</p>
+              <ReviewMediaModeration
+                media={[...(r.review_media ?? [])]
+                  .sort((a, b) => a.sort_order - b.sort_order)
+                  .map((m) => ({ id: m.id, kind: m.kind, url: reviewMediaUrl(m.id, m.kind as "image" | "video") }))}
+              />
               <ReviewModeration id={r.id} status={r.status as "pending" | "approved" | "rejected" | "spam"} reply={r.admin_reply ?? ""} />
             </li>
           ))}

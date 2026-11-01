@@ -277,6 +277,25 @@ export type Database = {
           { foreignKeyName: "refunds_created_by_fkey"; columns: ["created_by"]; isOneToOne: false; referencedRelation: "auth_users"; referencedColumns: ["id"] },
         ]
       }
+      "review_media": {
+        Row: { "chunk_count": number; "created_at": string; "height": number | null; "id": string; "kind": string; "mime_type": string; "review_id": string | null; "size_bytes": number; "sort_order": number; "user_id": string | null; "width": number | null }
+        ComputedFields: never
+        Insert: { "chunk_count"?: number; "created_at"?: string; "height"?: number | null; "id"?: string; "kind": string; "mime_type": string; "review_id"?: string | null; "size_bytes": number; "sort_order"?: number; "user_id"?: string | null; "width"?: number | null }
+        Update: { "chunk_count"?: number; "created_at"?: string; "height"?: number | null; "id"?: string; "kind"?: string; "mime_type"?: string; "review_id"?: string | null; "size_bytes"?: number; "sort_order"?: number; "user_id"?: string | null; "width"?: number | null }
+        Relationships: [
+          { foreignKeyName: "review_media_review_id_fkey"; columns: ["review_id"]; isOneToOne: false; referencedRelation: "reviews"; referencedColumns: ["id"] },
+          { foreignKeyName: "review_media_user_id_fkey"; columns: ["user_id"]; isOneToOne: false; referencedRelation: "auth_users"; referencedColumns: ["id"] },
+        ]
+      }
+      "review_media_chunks": {
+        Row: { "media_id": string; "seq": number }
+        ComputedFields: never
+        Insert: { "media_id": string; "seq": number }
+        Update: { "media_id"?: string; "seq"?: number }
+        Relationships: [
+          { foreignKeyName: "review_media_chunks_media_id_fkey"; columns: ["media_id"]; isOneToOne: false; referencedRelation: "review_media"; referencedColumns: ["id"] },
+        ]
+      }
       "reviews": {
         Row: { "admin_reply": string | null; "approved_at": string | null; "author_name": string; "body": string; "created_at": string; "id": string; "is_verified_purchase": boolean; "product_id": string; "rating": number; "status": string; "title": string | null; "updated_at": string; "user_id": string | null }
         ComputedFields: never

@@ -11,6 +11,7 @@ import { emailSchema, nameSchema, toFieldErrors, type FieldErrors } from "@/lib/
 import { sendEmail } from "@/lib/email/send";
 import { escapeHtml } from "@/lib/email/templates";
 import { logError } from "@/lib/monitoring";
+import { attachReviewMedia } from "@/lib/reviews/media";
 
 /** `values` returns what the visitor typed (never passwords) so a failed submit doesn't empty the form. */
 export type FormState = { ok: boolean; message: string | null; errors?: FieldErrors; values?: Record<string, string> };
@@ -213,7 +214,7 @@ export async function submitReviewAction(_prev: FormState, formData: FormData): 
     return { ok: false, message: "Only customers who have bought this product can review it.", values };
   }
 
-  const { error } = await admin.from("reviews").insert({
+  const { data: created, error } = await admin.from("reviews").insert({
     product_id: product.id,
     user_id: user.id,
     rating: parsed.data.rating,
@@ -221,12 +222,17 @@ export async function submitReviewAction(_prev: FormState, formData: FormData): 
     body: parsed.data.body,
     author_name: parsed.data.author_name,
     is_verified_purchase: verified,
-    status: "pending",
-  });
+    // Reviews stuffed with links are almost always spam: they go to the Spam tab for a person to check.
+    status: (`${parsed.data.title ?? ""} ${parsed.data.body}`.match(/https?:\/\/|www\./gi) ?? []).length > 1 ? "spam" : "pending",
+  }).select("id").single();
   if (error) {
     if (error.code === "23505") return { ok: false, message: "You have already reviewed this product. Thank you!", values };
     logError("review.insert", error);
     return { ok: false, message: "We couldn't save your review. Please try again.", values };
+  }
+  const mediaIds = formData.getAll("media_id").map(String);
+  if (created && mediaIds.length && (settings.reviews.allow_photos || settings.reviews.allow_video)) {
+    await attachReviewMedia(created.id, user.id, mediaIds).catch((e) => logError("review.media_attach", e));
   }
   return { ok: true, message: "Thank you! Your review will appear once it has been checked." };
 }

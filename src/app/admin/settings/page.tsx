@@ -217,6 +217,8 @@ export default async function SettingsPage() {
           fields={[
             { name: "enabled", label: "Let customers write reviews", type: "boolean", help: "Every review waits for your approval before it appears." },
             { name: "require_verified_purchase", label: "Only customers who bought the product can review", type: "boolean" },
+            { name: "allow_photos", label: "Customers may add up to 5 photos to a review", type: "boolean", help: "Photos are shown only after you approve the review." },
+            { name: "allow_video", label: "Customers may add one short video (up to 25 MB) to a review", type: "boolean" },
           ]}
         />
         <SettingsForm

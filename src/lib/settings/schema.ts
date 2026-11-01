@@ -101,6 +101,8 @@ export const settingsSchemas = {
   reviews: z.object({
     enabled: z.boolean().default(true),
     require_verified_purchase: z.boolean().default(false),
+    allow_photos: z.boolean().default(true),
+    allow_video: z.boolean().default(true),
   }),
   newsletter: z.object({
     enabled: z.boolean().default(true),

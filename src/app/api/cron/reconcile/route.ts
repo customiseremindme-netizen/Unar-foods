@@ -4,7 +4,8 @@ import { getServiceDb } from "@/lib/db/client";
 import { releaseExpiredReservations } from "@/lib/commerce/checkout";
 import { revalidateStorefront } from "@/lib/cache";
 import { safeEqual } from "@/lib/security/tokens";
-import { logInfo } from "@/lib/monitoring";
+import { logError, logInfo } from "@/lib/monitoring";
+import { deleteOrphanReviewMedia } from "@/lib/reviews/media";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
@@ -14,7 +15,8 @@ export const maxDuration = 60;
  * `Authorization: Bearer <CRON_SECRET>` (see docs/SETUP_GUIDE.md, Part 5).
  * - Checks unpaid orders whose payment window expired with Razorpay, marks
  *   them paid if the payment actually succeeded, otherwise releases stock.
- * - Cleans up old rate-limit counters and expired sign-in sessions.
+ * - Cleans up old rate-limit counters, expired sign-in sessions and review
+ *   uploads that were never attached to a review.
  */
 export async function GET(request: Request) {
   const secret = getCronSecret();
@@ -24,6 +26,8 @@ export async function GET(request: Request) {
   }
   const result = await releaseExpiredReservations(50);
   await getServiceDb()?.rpc("cleanup_rate_limits");
+  // Review photos/videos uploaded but never attached to a review.
+  await deleteOrphanReviewMedia().catch((e) => logError("cron.review_media", e));
   if (result.released > 0 || result.paid > 0) revalidateStorefront();
   logInfo("cron.reconcile", "done", result);
   return NextResponse.json({ ok: true, ...result });

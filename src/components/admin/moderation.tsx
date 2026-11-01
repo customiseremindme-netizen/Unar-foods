@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { deleteMessageAction, deleteReviewAction, replyToReviewAction, setMessageStatusAction, setReviewStatusAction } from "@/app/admin/_actions/store-ops";
+import { deleteMessageAction, deleteReviewAction, deleteReviewMediaAction, replyToReviewAction, setMessageStatusAction, setReviewStatusAction } from "@/app/admin/_actions/store-ops";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/field";
 import { ActionButton, AdminForm } from "./forms";
@@ -87,5 +87,29 @@ export function ReviewModeration({ id, status, reply }: { id: string; status: "p
         </ActionButton>
       </div>
     </div>
+  );
+}
+
+/** Photos and video a customer attached to a review, with a button to remove each one. */
+export function ReviewMediaModeration({ media }: { media: { id: string; kind: string; url: string }[] }) {
+  if (!media.length) return null;
+  return (
+    <ul className="mt-3 flex flex-wrap gap-3" aria-label="Photos and video in this review">
+      {media.map((m) => (
+        <li key={m.id} className="w-28">
+          <a href={m.url} target="_blank" rel="noreferrer" className="block overflow-hidden rounded-xl bg-cream-deep ring-1 ring-line">
+            {m.kind === "image" ? (
+              // eslint-disable-next-line @next/next/no-img-element -- private upload, served only to staff
+              <img src={m.url} alt="Photo attached by the customer" className="aspect-square w-full object-cover" loading="lazy" />
+            ) : (
+              <video src={m.url} preload="metadata" muted playsInline className="aspect-square w-full bg-forest-deep object-cover" aria-label="Video attached by the customer" />
+            )}
+          </a>
+          <ActionButton size="sm" variant="ghost" className="mt-1 w-full text-danger" action={() => deleteReviewMediaAction(m.id)} confirm="Remove this from the review permanently?">
+            Remove
+          </ActionButton>
+        </li>
+      ))}
+    </ul>
   );
 }

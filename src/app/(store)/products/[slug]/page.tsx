@@ -4,13 +4,16 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { BadgeCheck, Leaf, PackageCheck, ShieldCheck, Truck } from "lucide-react";
 import { getPreviewProductBySlug, getProductBySlug, getPublishedProducts, primaryImage, variantAvailability } from "@/lib/data/catalog";
-import { getProductReviews, reviewStats } from "@/lib/data/reviews";
+import { getApprovedReviews, getProductReviews, reviewStats } from "@/lib/data/reviews";
 import { getPublicSettings } from "@/lib/settings";
+import { getSessionUser } from "@/lib/auth/session";
+import { ButtonLink } from "@/components/ui/button";
 import { getRequestSiteUrl } from "@/lib/site-url";
 import { formatDate } from "@/lib/utils";
 import { Badge, Breadcrumbs, Price, Stars, VegMark } from "@/components/ui/misc";
 import { Markdown } from "@/components/ui/markdown";
-import { ProductGallery } from "@/components/product/gallery";
+import { ProductGallery, ReviewMediaStrip } from "@/components/product/gallery";
+import { DeliveryChecker, ShareButtons, StickyBuyBar } from "@/components/product/product-extras";
 import { BuyBox } from "@/components/product/add-to-cart";
 import { ProductCard } from "@/components/product/product-card";
 import { ReviewForm } from "@/components/product/review-form";
@@ -56,13 +59,26 @@ export default async function ProductPage({ params }: { params: Params }) {
   const product = (await getProductBySlug(slug)) ?? (await getPreviewProductBySlug(slug));
   if (!product) notFound();
 
-  const [settings, reviews, all] = await Promise.all([getPublicSettings(), getProductReviews(product.id), getPublishedProducts()]);
+  const [settings, reviews, all, allReviews, user] = await Promise.all([
+    getPublicSettings(),
+    getProductReviews(product.id),
+    getPublishedProducts(),
+    getApprovedReviews(),
+    getSessionUser(),
+  ]);
   const stats = reviewStats(reviews);
   const variant = product.defaultVariant;
   const availability = variantAvailability(variant);
   const soldOut = availability === "out_of_stock" || availability === "unavailable";
   const maxQuantity = variant ? Math.min(variant.stock, settings.checkout.max_quantity_per_item) : 0;
-  const related = all.filter((p) => p.id !== product.id).slice(0, 3);
+  // Same collection first, then anything else.
+  const related = all
+    .filter((p) => p.id !== product.id)
+    .sort((a, b) => Number(b.categories.some((c) => product.categories.some((pc) => pc.slug === c.slug))) - Number(a.categories.some((c) => product.categories.some((pc) => pc.slug === c.slug))))
+    .slice(0, 3);
+  const photos = product.images.filter((i) => !i.kind.endsWith("_label"));
+  const labels = product.images.filter((i) => i.kind.endsWith("_label"));
+  const toGallery = (i: (typeof product.images)[number]) => ({ id: i.id, url: i.url, alt: i.alt, kind: i.kind, width: i.width, height: i.height });
   const site = await getRequestSiteUrl();
   const name = product.short_title ?? product.title;
   const crumbs = [
@@ -84,10 +100,7 @@ export default async function ProductPage({ params }: { params: Params }) {
       <section className="container-site grid gap-12 lg:grid-cols-12 lg:gap-16" aria-labelledby="product-title">
         <div className="min-w-0 lg:col-span-7">
           <div className="lg:sticky lg:top-28">
-            <ProductGallery
-              productName={name}
-              images={product.images.map((i) => ({ id: i.id, url: i.url, alt: i.alt, kind: i.kind, width: i.width, height: i.height }))}
-            />
+            <ProductGallery productName={product.title} images={photos.map(toGallery)} labels={labels.map(toGallery)} />
           </div>
         </div>
 
@@ -114,10 +127,21 @@ export default async function ProductPage({ params }: { params: Params }) {
           </div>
           {variant ? (
             <p className="mt-2 text-[0.8rem] text-muted">
-              {variant.mrp_paise === variant.price_paise ? "MRP " : ""}
-              {settings.tax.prices_include_tax ? "Inclusive of all taxes" : "GST added at checkout"} · Net weight {variant.title} · SKU{" "}
-              {variant.sku}
+              {variant.mrp_paise === variant.price_paise ? "Price shown is the MRP · " : ""}
+              {settings.tax.prices_include_tax ? "Inclusive of all taxes" : "GST added at checkout"}
             </p>
+          ) : null}
+          {variant ? (
+            <dl className="mt-4 flex flex-wrap gap-x-6 gap-y-1 text-[0.85rem]">
+              <div className="flex gap-1.5">
+                <dt className="text-muted">Net weight:</dt>
+                <dd className="font-semibold text-forest">{variant.weight_grams > 0 ? `${variant.weight_grams} g` : variant.title}</dd>
+              </div>
+              <div className="flex gap-1.5">
+                <dt className="text-muted">SKU:</dt>
+                <dd>{variant.sku}</dd>
+              </div>
+            </dl>
           ) : null}
 
           {product.short_description ? <p className="mt-6 text-[1.02rem] leading-relaxed text-muted">{product.short_description}</p> : null}
@@ -137,8 +161,8 @@ export default async function ProductPage({ params }: { params: Params }) {
             </ul>
           ) : null}
 
-          <div className="mt-8 rounded-[1.75rem] border border-line bg-paper p-5 sm:p-6">
-            <BuyBox variantId={variant?.id ?? null} maxQuantity={maxQuantity} productName={name} soldOut={soldOut} />
+          <div id="buy-box" className="mt-8 rounded-[1.75rem] border border-line bg-paper p-5 sm:p-6">
+            <BuyBox variantId={variant?.id ?? null} maxQuantity={maxQuantity} productName={product.title} soldOut={soldOut} />
             <ul className="mt-5 grid gap-2.5 border-t border-line pt-5 text-[0.82rem] text-muted">
               <li className="flex items-center gap-2.5">
                 <ShieldCheck className="size-4 text-olive" aria-hidden="true" /> Secure checkout
@@ -150,7 +174,26 @@ export default async function ProductPage({ params }: { params: Params }) {
                 <PackageCheck className="size-4 text-olive" aria-hidden="true" /> Track your order from your account or the Track Order page
               </li>
             </ul>
+            <DeliveryChecker />
           </div>
+          <div className="mt-5">
+            <ShareButtons url={`${site}/products/${product.slug}`} title={product.title} />
+          </div>
+
+          {product.benefits.length > 0 ? (
+            <section aria-labelledby="benefits-title" className="mt-8">
+              <h2 id="benefits-title" className="font-sans text-[1rem] font-semibold tracking-normal text-forest">
+                Key benefits
+              </h2>
+              <ul className="mt-3 grid gap-2 sm:grid-cols-2">
+                {product.benefits.map((b) => (
+                  <li key={b} className="flex items-center gap-2 text-[0.92rem] text-graphite">
+                    <BadgeCheck className="size-4 shrink-0 text-olive" aria-hidden="true" /> {b}
+                  </li>
+                ))}
+              </ul>
+            </section>
+          ) : null}
 
           <div className="mt-8 border-t border-line">
             {product.description_md ? (
@@ -167,15 +210,7 @@ export default async function ProductPage({ params }: { params: Params }) {
                 <span className="font-semibold text-forest">Allergen advice: </span>
                 {product.allergens ?? "No allergen statement is printed on this pack. If you have a food allergy, please contact us before ordering."}
               </p>
-              {product.benefits.length > 0 ? (
-                <ul className="mt-4 grid gap-1.5 sm:grid-cols-2">
-                  {product.benefits.map((b) => (
-                    <li key={b} className="flex items-center gap-2 text-muted">
-                      <BadgeCheck className="size-4 text-olive" aria-hidden="true" /> {b}
-                    </li>
-                  ))}
-                </ul>
-              ) : null}
+              {labels.length ? <p className="mt-3 text-[0.82rem] text-muted">Use “Read the pack label” under the photos to see the printed label.</p> : null}
             </DetailBlock>
             {product.nutrition.length > 0 ? (
               <DetailBlock title="Nutritional information">
@@ -234,16 +269,40 @@ export default async function ProductPage({ params }: { params: Params }) {
             Customer reviews
           </h2>
           {stats ? (
-            <p className="mt-3 flex items-center gap-3 text-muted">
-              <Stars rating={stats.average} /> {stats.average} out of 5 · {stats.count} review{stats.count === 1 ? "" : "s"}
-            </p>
+            <>
+              <p className="mt-3 flex items-center gap-3 text-muted">
+                <Stars rating={stats.average} /> {stats.average} out of 5 · {stats.count} review{stats.count === 1 ? "" : "s"}
+              </p>
+              <dl className="mt-5 max-w-xs space-y-1.5 text-[0.8rem]" aria-label="Ratings breakdown">
+                {stats.distribution.map((n, i) => (
+                  <div key={i} className="flex items-center gap-3">
+                    <dt className="w-12 shrink-0 text-muted">{5 - i} star</dt>
+                    <dd className="flex flex-1 items-center gap-2">
+                      <span className="h-2 flex-1 overflow-hidden rounded-full bg-cream-deep">
+                        <span className="block h-full rounded-full bg-banana" style={{ width: `${(n / stats.count) * 100}%` }} />
+                      </span>
+                      <span className="w-6 text-right tabular-nums text-muted">{n}</span>
+                    </dd>
+                  </div>
+                ))}
+              </dl>
+            </>
           ) : (
             <p className="mt-3 text-muted">No reviews yet. Tried it? We&apos;d love to hear what you think.</p>
           )}
           {settings.reviews.enabled ? (
             <div className="mt-8 rounded-[1.75rem] border border-line bg-paper p-6">
               <h3 className="mb-5 font-sans text-[1rem] font-semibold tracking-normal">Write a review</h3>
-              <ReviewForm productId={product.id} productSlug={product.slug} />
+              {user ? (
+                <ReviewForm productId={product.id} productSlug={product.slug} allowPhotos={settings.reviews.allow_photos} allowVideo={settings.reviews.allow_video} />
+              ) : (
+                <div className="space-y-4">
+                  <p className="text-[0.9rem] text-muted">Please sign in to write a review. You can add up to 5 photos and a short video. Reviews are checked before they appear.</p>
+                  <ButtonLink href={`/login?next=${encodeURIComponent(`/products/${product.slug}#reviews`)}`} variant="secondary">
+                    Sign in to write a review
+                  </ButtonLink>
+                </div>
+              )}
             </div>
           ) : null}
         </div>
@@ -257,6 +316,7 @@ export default async function ProductPage({ params }: { params: Params }) {
                     {r.title ? <p className="font-semibold text-forest">{r.title}</p> : null}
                   </div>
                   <p className="mt-3 whitespace-pre-line leading-relaxed">{r.body}</p>
+                  <ReviewMediaStrip media={r.media} author={r.author_name} />
                   <p className="mt-3 text-[0.8rem] text-muted">
                     {r.author_name} · {formatDate(r.created_at)}
                     {r.is_verified_purchase ? (
@@ -283,6 +343,15 @@ export default async function ProductPage({ params }: { params: Params }) {
         </div>
       </section>
 
+      <StickyBuyBar
+        targetId="buy-box"
+        variantId={variant?.id ?? null}
+        soldOut={soldOut || maxQuantity < 1}
+        pricePaise={variant?.price_paise ?? null}
+        mrpPaise={variant?.mrp_paise ?? null}
+        productName={product.title}
+      />
+
       {related.length > 0 ? (
         <section aria-labelledby="related-title" className="container-site mt-28">
           <Reveal>
@@ -292,7 +361,7 @@ export default async function ProductPage({ params }: { params: Params }) {
           </Reveal>
           <div className="mt-10 grid gap-x-10 gap-y-14 sm:grid-cols-2 lg:grid-cols-3">
             {related.map((p) => (
-              <ProductCard key={p.id} product={p} />
+              <ProductCard key={p.id} product={p} stats={reviewStats(allReviews.filter((r) => r.product_id === p.id))} />
             ))}
           </div>
           <p className="mt-10 text-center">

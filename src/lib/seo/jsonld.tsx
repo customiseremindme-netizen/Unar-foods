@@ -86,9 +86,9 @@ export function productJsonLd(input: {
     name: product.title,
     description: product.seo_description || product.short_description || undefined,
     sku: variant?.sku,
-    ...(variant?.barcode && /^\d{8,14}$/.test(variant.barcode) ? { gtin13: variant.barcode } : {}),
+    ...(variant?.barcode && /^\d{8,14}$/.test(variant.barcode) ? { gtin: variant.barcode } : {}),
     brand: { "@type": "Brand", name: input.brand },
-    image: product.images.map((i) => absolute(site, i.url)),
+    image: product.images.filter((i) => !i.kind.endsWith("_label")).map((i) => absolute(site, i.url)),
     url: `${site}/products/${product.slug}`,
     ...(variant
       ? {

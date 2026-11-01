@@ -147,6 +147,17 @@ export const RULES: Record<string, TableRules> = {
     update: (ctx) => perm(ctx, "reviews.moderate"),
     delete: (ctx) => perm(ctx, "reviews.moderate"),
   },
+  // Uploaded by trusted server code only; visible once the review is approved.
+  review_media: {
+    read: (ctx, a) =>
+      anyOf(
+        c(`EXISTS (SELECT 1 FROM reviews rr WHERE rr.id = ${a}.review_id AND rr.status = 'approved')`),
+        own(ctx, a),
+        perm(ctx, "reviews.moderate"),
+      ),
+    delete: (ctx) => perm(ctx, "reviews.moderate"),
+  },
+  review_media_chunks: {},
   cms_sections: managedBy("content.write", (_ctx, a) => c(`${a}.state = 'published' AND ${a}.is_visible = 1`)),
   cms_pages: managedBy("content.write", (_ctx, a) => c(`${a}.state = 'published'`)),
   faqs: managedBy("content.write", (_ctx, a) => c(`${a}.is_published = 1`)),
@@ -178,6 +189,7 @@ export const PUBLIC_TABLES = new Set([
   "product_variants",
   "product_images",
   "reviews",
+  "review_media",
   "cms_sections",
   "cms_pages",
   "faqs",

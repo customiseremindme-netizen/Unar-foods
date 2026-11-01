@@ -648,6 +648,39 @@ export const TABLES: Record<string, Table> = {
     unique: [["product_id", "user_id"]],
     indexes: [["product_id", "status", "created_at"]],
   },
+  /**
+   * Photos (up to 5) and one video attached to a review by the customer.
+   * Bytes live in the database (images re-encoded to WebP; videos split into
+   * 1 MB pieces in review_media_chunks so they fit any MySQL packet limit).
+   * Shown publicly only once the review is approved.
+   */
+  review_media: {
+    columns: {
+      id: pk(),
+      review_id: ref("reviews", "cascade", true),
+      user_id: ref("auth_users", "cascade", true),
+      kind: str(10),
+      mime_type: str(60),
+      size_bytes: int(),
+      width: int({ nullable: true }),
+      height: int({ nullable: true }),
+      sort_order: int({ default: 0 }),
+      chunk_count: int({ default: 0 }),
+      data: { type: "blob", nullable: true, hidden: true },
+      created_at: createdAt(),
+    },
+    primaryKey: ["id"],
+    checks: ["`kind` IN ('image','video')", "`size_bytes` >= 0"],
+    indexes: [["review_id", "sort_order"], ["user_id", "created_at"]],
+  },
+  review_media_chunks: {
+    columns: {
+      media_id: ref("review_media"),
+      seq: int(),
+      data: { type: "blob", hidden: true },
+    },
+    primaryKey: ["media_id", "seq"],
+  },
   cms_sections: {
     columns: {
       id: pk(),

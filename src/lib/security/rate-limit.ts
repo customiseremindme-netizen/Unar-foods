@@ -16,9 +16,11 @@ export const RATE_LIMITS = {
   contact: { limit: 5, windowSeconds: 3600 },
   newsletter: { limit: 5, windowSeconds: 3600 },
   review: { limit: 5, windowSeconds: 3600 },
+  reviewMedia: { limit: 20, windowSeconds: 3600 },
   checkout: { limit: 15, windowSeconds: 600 },
   paymentVerify: { limit: 30, windowSeconds: 600 },
   trackOrder: { limit: 15, windowSeconds: 600 },
+  deliveryCheck: { limit: 30, windowSeconds: 600 },
   coupon: { limit: 20, windowSeconds: 600 },
   cart: { limit: 120, windowSeconds: 60 },
 } satisfies Record<string, RateLimitRule>;
