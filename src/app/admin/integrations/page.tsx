@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 import { requireStaffPage } from "@/lib/auth/session";
 import { getUserDb } from "@/lib/db/client";
 import { getRequestSiteUrl } from "@/lib/site-url";
-import { getCronSecret, getEmailEnv, getGoogleEnv, getPhonePeEnv, getRazorpayEnv, getConfiguredSiteUrl, getShiprocketEnv, maskSecret } from "@/lib/env";
+import { getCronSecret, getEmailEnv, getGoogleEnv, getPhonePeEnv, getRazorpayEnv, getShiprocketWebhookToken, getWhatsAppEnv, getConfiguredSiteUrl, getShiprocketEnv, maskSecret } from "@/lib/env";
 import { checkDatabase } from "@/lib/db/health";
 import { getDbConfig } from "@/lib/db/pool";
 import { formatDateTime } from "@/lib/utils";
@@ -33,6 +33,7 @@ export default async function IntegrationsPage() {
   const shiprocket = getShiprocketEnv();
   const google = getGoogleEnv();
   const phonepe = getPhonePeEnv();
+  const whatsapp = getWhatsAppEnv();
   const [dbHealth, dbConfig] = [await checkDatabase(), getDbConfig()];
   const site = await getRequestSiteUrl();
   const siteConfigured = !!getConfiguredSiteUrl();
@@ -81,6 +82,16 @@ export default async function IntegrationsPage() {
           <p className="mt-3 text-[0.78rem] text-muted">
             Use Resend, or your Hostinger email (SMTP). Without email, orders still work — customers see their order on screen, but no emails are sent.
           </p>
+          {email?.provider === "smtp" && !email.from.toLowerCase().includes(email.smtp.user.toLowerCase()) ? (
+            <p className="mt-3 text-[0.78rem] font-semibold text-danger">
+              The sender address ({email.from}) is not the mailbox you log in with ({email.smtp.user}). Make EMAIL_FROM use the same address, or emails are
+              more likely to land in spam.
+            </p>
+          ) : null}
+          <p className="mt-3 text-[0.78rem] text-muted">
+            Emails in spam? Ask customers to press “Not spam” once, and move to your own domain with Hostinger email (its SPF, DKIM and DMARC records are added
+            for you) — emails linking to a temporary *.hostingersite.com address are often filtered.
+          </p>
         </Card>
 
         <Card title="Google sign-in (optional)" actions={<Status ok={!!google} noText="Not used" />}>
@@ -92,10 +103,24 @@ export default async function IntegrationsPage() {
           </p>
         </Card>
 
+        <Card title="WhatsApp order updates (optional)" actions={<Status ok={!!whatsapp} noText="Not used" />}>
+          <Row label="Phone number ID" value={whatsapp ? whatsapp.phoneNumberId : "not set"} />
+          <Row label="Access token" value={maskSecret(whatsapp?.accessToken)} />
+          <p className="mt-3 text-[0.78rem] text-muted">
+            Meta&apos;s WhatsApp Cloud API. Choose which messages to send under Settings → Emails. Messages go only to customers who tick “order updates on
+            WhatsApp” at checkout. Without this, use the “Message on WhatsApp” button on each order.
+          </p>
+        </Card>
+
         <Card title="Shiprocket (optional)" actions={<Status ok={!!shiprocket} noText="Not used" />}>
           <Row label="Login email" value={shiprocket ? shiprocket.email.replace(/^(.).*(@.*)$/, "$1•••$2") : "not set"} />
           <Row label="Password" value={maskSecret(shiprocket?.password)} />
-          <p className="mt-3 text-[0.78rem] text-muted">Use a separate Shiprocket API user (Shiprocket → Settings → API), not your main login.</p>
+          <Row label="Tracking webhook token" value={getShiprocketWebhookToken() ? "set" : <span className="text-muted">not set (tracking still updates daily)</span>} />
+          <Row label="Tracking webhook URL to paste in Shiprocket" value={`${site}/api/webhooks/courier`} />
+          <p className="mt-3 text-[0.78rem] text-muted">
+            Use a separate Shiprocket API user (Shiprocket → Settings → API), not your main login. With the webhook, orders move to “Shipped” and “Delivered”
+            automatically and the customer is emailed (and sent a WhatsApp message if connected).
+          </p>
         </Card>
 
         <Card title="Database & scheduled jobs" actions={<Status ok={dbHealth.ok} />}>

@@ -5,6 +5,9 @@ import { getRequestSiteUrl } from "@/lib/site-url";
 import { sendEmail } from "@/lib/email/send";
 import { escapeHtml, fillTemplate, renderOrderEmail, type EmailOrder } from "@/lib/email/templates";
 import { logError } from "@/lib/monitoring";
+import { getWhatsAppEnv } from "@/lib/env";
+import { sendWhatsAppTemplate, whatsappNumber } from "./whatsapp";
+import type { AllSettings } from "@/lib/settings/schema";
 import { isInvoiceable, renderInvoicePdf, type InvoiceOrder } from "@/lib/invoices/pdf";
 import type { EmailAttachment } from "@/lib/email/send";
 
@@ -57,6 +60,7 @@ export async function notifyOrder(
         .select("id", { count: "exact", head: true })
         .eq("order_id", orderId)
         .eq("template", template)
+        .eq("channel", "email")
         .in("status", ["sent", "skipped"]);
       if ((count ?? 0) > 0) return;
     }
@@ -64,7 +68,7 @@ export async function notifyOrder(
     const { data: order } = await admin
       .from("orders")
       .select(
-        "id, order_number, user_id, customer_name, email, phone, payment_method, payment_status, subtotal_paise, discount_paise, shipping_paise, cod_fee_paise, tax_paise, prices_include_tax, tax_breakdown, total_paise, refunded_paise, coupon_code, shipping_address, billing_address, placed_at, paid_at, created_at, order_items ( title, variant_title, sku, hsn_code, gst_rate, quantity, unit_price_paise, line_total_paise )",
+        "id, order_number, user_id, customer_name, email, phone, whatsapp_updates, payment_method, payment_status, subtotal_paise, discount_paise, shipping_paise, cod_fee_paise, tax_paise, prices_include_tax, tax_breakdown, total_paise, refunded_paise, coupon_code, shipping_address, billing_address, placed_at, paid_at, created_at, order_items ( title, variant_title, sku, hsn_code, gst_rate, quantity, unit_price_paise, line_total_paise )",
       )
       .eq("id", orderId)
       .maybeSingle();
@@ -159,9 +163,78 @@ export async function notifyOrder(
       provider_message_id: result.id ?? null,
       error: result.error ?? null,
     });
+
+    if (template !== "admin_new_order" && template !== "invoice" && order.whatsapp_updates) {
+      await notifyWhatsApp({ orderId, template, order, orderUrl, settings });
+    }
   } catch (error) {
     logError("notifications.order", error, { orderId, template });
   }
+}
+
+const WHATSAPP_TEMPLATE_SETTING: Partial<Record<OrderTemplate, keyof AllSettings["notifications"]>> = {
+  order_placed: "whatsapp_tpl_order_placed",
+  payment_confirmed: "whatsapp_tpl_payment_confirmed",
+  order_shipped: "whatsapp_tpl_order_shipped",
+  order_delivered: "whatsapp_tpl_order_delivered",
+  order_cancelled: "whatsapp_tpl_order_cancelled",
+};
+
+/**
+ * Automatic WhatsApp message for an order event — only when WhatsApp is
+ * connected and switched on, a template is chosen for this event, and the
+ * customer agreed at checkout. Template body: {{1}} first name,
+ * {{2}} order number, {{3}} link (tracking link for "shipped", otherwise the order page).
+ */
+async function notifyWhatsApp(input: {
+  orderId: string;
+  template: OrderTemplate;
+  order: { order_number: string; customer_name: string; phone: string };
+  orderUrl: string;
+  settings: AllSettings;
+}) {
+  const { notifications } = input.settings;
+  const key = WHATSAPP_TEMPLATE_SETTING[input.template];
+  const name = key ? String(notifications[key] ?? "") : "";
+  const to = whatsappNumber(input.order.phone);
+  if (!notifications.whatsapp_enabled || !name || !to || !getWhatsAppEnv()) return;
+  const admin = getServiceDb()!;
+  if (ONCE_ONLY.includes(input.template)) {
+    const { count } = await admin
+      .from("notification_log")
+      .select("id", { count: "exact", head: true })
+      .eq("order_id", input.orderId)
+      .eq("template", input.template)
+      .eq("channel", "whatsapp")
+      .eq("status", "sent");
+    if ((count ?? 0) > 0) return;
+  }
+  let link = input.orderUrl;
+  if (input.template === "order_shipped") {
+    const { data: shipment } = await admin
+      .from("shipments")
+      .select("tracking_url")
+      .eq("order_id", input.orderId)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (shipment?.tracking_url) link = shipment.tracking_url;
+  }
+  const result = await sendWhatsAppTemplate({
+    to,
+    template: name,
+    language: notifications.whatsapp_language,
+    params: [input.order.customer_name.split(" ")[0] || input.order.customer_name, input.order.order_number, link],
+  });
+  await admin.from("notification_log").insert({
+    order_id: input.orderId,
+    template: input.template,
+    recipient: `+${to.slice(0, 4)}••••${to.slice(-3)}`,
+    channel: "whatsapp",
+    status: result.status,
+    provider_message_id: result.id ?? null,
+    error: result.error ?? null,
+  });
 }
 
 /** Helper for shipment emails: tracking details block. */
@@ -179,13 +252,4 @@ export function trackingExtra(input: { carrier?: string | null; trackingNumber?:
     }</p>`,
     text: [...parts, input.trackingUrl ? `Track: ${input.trackingUrl}` : ""].filter(Boolean).join("\n"),
   };
-}
-
-/**
- * WhatsApp notifications are intentionally NOT active. They need an approved
- * WhatsApp Business provider and message templates. This hook exists so a
- * provider can be connected later without changing the order flow.
- */
-export async function notifyWhatsApp(_orderId: string, _template: OrderTemplate): Promise<"skipped"> {
-  return "skipped";
 }

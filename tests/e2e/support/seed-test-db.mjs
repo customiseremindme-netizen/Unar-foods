@@ -65,6 +65,11 @@ await db.query(
 );
 await db.query("UPDATE cms_sections SET is_visible = 1 WHERE `key` = 'trust'");
 await db.query("UPDATE settings SET value = JSON_SET(value, '$.cod_enabled', true) WHERE `key` = 'checkout'");
+// Test-only courier and WhatsApp settings (they talk to the local stand-ins only).
+await db.query("UPDATE settings SET value = JSON_SET(value, '$.enabled', true, '$.pickup_location', 'Home') WHERE `key` = 'shiprocket'");
+await db.query(
+  "UPDATE settings SET value = JSON_SET(value, '$.whatsapp_enabled', true, '$.whatsapp_tpl_order_placed', 'order_received', '$.whatsapp_tpl_payment_confirmed', 'order_confirmed', '$.whatsapp_tpl_order_shipped', 'order_shipped', '$.whatsapp_tpl_order_delivered', 'order_delivered') WHERE `key` = 'notifications'",
+);
 // Test-only UPI ID for the "Pay by UPI to our UPI ID" option (no real account).
 await db.query(
   "UPDATE settings SET value = JSON_SET(value, '$.upi_enabled', true, '$.upi_id', 'unar.test@okaxis', '$.upi_payee_name', 'UNAR TEST') WHERE `key` = 'checkout'",

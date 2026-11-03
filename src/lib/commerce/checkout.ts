@@ -24,6 +24,7 @@ export const checkoutSchema = z
       .transform((v) => v || undefined),
     terms: z.literal(true, { error: "Please accept the terms and policies to continue" }),
     marketing_consent: z.boolean(),
+    whatsapp_updates: z.boolean().optional(),
     save_address: z.boolean(),
     recovery_consent: z.boolean().optional(),
     // Honeypot: real customers never fill this hidden field.

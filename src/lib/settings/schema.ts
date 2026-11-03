@@ -135,6 +135,14 @@ export const settingsSchemas = {
     /** Attach the PDF invoice to the "payment confirmed" email and email it when cash on delivery is collected. */
     send_invoice: z.boolean().default(true),
     whatsapp_enabled: z.boolean().default(false),
+    /** Language code of the approved WhatsApp templates (e.g. en, en_US, ta). */
+    whatsapp_language: z.string().trim().regex(/^[a-z]{2,3}(_[A-Z]{2})?$/, "Use a code like en, en_US or ta").default("en"),
+    /** Approved WhatsApp template name per order event; empty = don't send that one. */
+    whatsapp_tpl_order_placed: z.string().trim().max(60).regex(/^[a-z0-9_]*$/, "Use the template name exactly as in WhatsApp Manager (lowercase, digits, _)").default(""),
+    whatsapp_tpl_payment_confirmed: z.string().trim().max(60).regex(/^[a-z0-9_]*$/, "Use the template name exactly as in WhatsApp Manager (lowercase, digits, _)").default(""),
+    whatsapp_tpl_order_shipped: z.string().trim().max(60).regex(/^[a-z0-9_]*$/, "Use the template name exactly as in WhatsApp Manager (lowercase, digits, _)").default(""),
+    whatsapp_tpl_order_delivered: z.string().trim().max(60).regex(/^[a-z0-9_]*$/, "Use the template name exactly as in WhatsApp Manager (lowercase, digits, _)").default(""),
+    whatsapp_tpl_order_cancelled: z.string().trim().max(60).regex(/^[a-z0-9_]*$/, "Use the template name exactly as in WhatsApp Manager (lowercase, digits, _)").default(""),
     templates: z
       .record(
         z.string(),

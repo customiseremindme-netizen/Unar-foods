@@ -450,6 +450,8 @@ export const TABLES: Record<string, Table> = {
       access_token_hash: str(128),
       reservation_expires_at: ts(),
       marketing_consent: bool(false),
+      /** The customer agreed to order updates on WhatsApp at checkout. */
+      whatsapp_updates: bool(false),
       terms_accepted_at: ts(),
       placed_at: ts(),
       paid_at: ts(),

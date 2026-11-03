@@ -21,6 +21,8 @@ import {
   UpiConfirmPanel,
 } from "@/components/admin/order-panels";
 import { paymentMethodLabel } from "@/lib/orders/labels";
+import { whatsappNumber } from "@/lib/notifications/whatsapp";
+import { WhatsappIcon } from "@/components/brand/icons";
 import { getAllSettings } from "@/lib/settings";
 
 export const metadata = { title: "Order" };
@@ -45,6 +47,11 @@ export default async function AdminOrderPage({ params }: { params: Promise<{ id:
   if (!order) notFound();
 
   const canWrite = access.permissions.has("orders.write");
+  // Opens WhatsApp (app or web) with a ready-written message to the customer — no setup needed.
+  const waTo = whatsappNumber(order.phone);
+  const waLink = waTo
+    ? `https://wa.me/${waTo}?text=${encodeURIComponent(`Hi ${String(order.customer_name).split(" ")[0]}, this is UNAR about your order ${order.order_number}. `)}`
+    : null;
   const upiId = order.payment_method === "upi_manual" ? (await getAllSettings()).checkout.upi_id : "";
   const canCancel = access.permissions.has("orders.cancel");
   const canRefund = access.permissions.has("orders.refund");
@@ -72,6 +79,11 @@ export default async function AdminOrderPage({ params }: { params: Promise<{ id:
             <Link href={`/admin/orders/${order.id}/packing-slip`} target="_blank" className="inline-flex h-10 items-center gap-2 rounded-full border border-line bg-paper px-4 text-[0.85rem] font-semibold text-forest hover:border-forest">
               <Printer className="size-4" aria-hidden="true" /> Packing slip
             </Link>
+            {waLink ? (
+              <a href={waLink} target="_blank" rel="noopener noreferrer" className="inline-flex h-10 items-center gap-2 rounded-full border border-line bg-paper px-4 text-[0.85rem] font-semibold text-forest hover:border-forest">
+                <WhatsappIcon className="size-4" /> Message on WhatsApp
+              </a>
+            ) : null}
             {paid || order.payment_status === "refunded" ? (
               <Link href={`/invoice/${order.order_number}`} target="_blank" className="inline-flex h-10 items-center gap-2 rounded-full border border-line bg-paper px-4 text-[0.85rem] font-semibold text-forest hover:border-forest">
                 <FileText className="size-4" aria-hidden="true" /> Invoice

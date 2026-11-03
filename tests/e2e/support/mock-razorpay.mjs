@@ -3,6 +3,8 @@
 // - Razorpay REST API (RAZORPAY_API_BASE_URL=http://127.0.0.1:4010/v1)
 // - Google sign-in (GOOGLE_OAUTH_BASE_URL=http://127.0.0.1:4010/google)
 // - PhonePe Payment Gateway (PHONEPE_API_BASE_URL=http://127.0.0.1:4010/phonepe)
+// - WhatsApp Cloud API (WHATSAPP_API_BASE_URL=http://127.0.0.1:4010/whatsapp)
+// - Shiprocket (SHIPROCKET_API_BASE_URL=http://127.0.0.1:4010/shiprocket)
 import http from "node:http";
 import crypto from "node:crypto";
 const KEY_ID = process.env.RAZORPAY_KEY_ID ?? "rzp_test_localmock01";
@@ -21,6 +23,10 @@ const phonepeOrders = new Map();
 const PHONEPE_ID = process.env.PHONEPE_CLIENT_ID ?? "TEST_PHONEPE_CLIENT";
 const PHONEPE_SECRET = process.env.PHONEPE_CLIENT_SECRET ?? "local_phonepe_secret";
 const phonepeTokens = new Set();
+const whatsappMessages = [];
+const WHATSAPP_TOKEN = process.env.WHATSAPP_ACCESS_TOKEN ?? "local_whatsapp_token";
+// Shiprocket: shipments and the courier status the test sets.
+const shiprocketShipments = new Map();
 const json = (res, code, body) => { res.writeHead(code, { "Content-Type": "application/json" }); res.end(JSON.stringify(body)); };
 const rand = (n) => crypto.randomBytes(n).toString("hex").slice(0, n);
 function paymentFor(order) {
@@ -36,6 +42,36 @@ http.createServer((req, res) => {
     const p = url.pathname;
     if (p === "/__scenario") { scenario = JSON.parse(body).status; return json(res, 200, { scenario }); }
     if (p === "/__state") return json(res, 200, { orders: [...orders.values()], payments: [...payments.values()] });
+    if (p === "/__whatsapp_state") return json(res, 200, { messages: whatsappMessages });
+    let wm;
+    if (req.method === "POST" && (wm = p.match(/^\/whatsapp\/(\d+)\/messages$/))) {
+      if (req.headers.authorization !== `Bearer ${WHATSAPP_TOKEN}`) return json(res, 401, { error: { message: "Invalid OAuth access token" } });
+      const b = JSON.parse(body);
+      if (b.messaging_product !== "whatsapp" || b.type !== "template" || !/^\d{12}$/.test(b.to)) return json(res, 400, { error: { message: "bad request" } });
+      const id = "wamid." + rand(20);
+      whatsappMessages.push({ id, phoneNumberId: wm[1], to: b.to, template: b.template.name, language: b.template.language.code, params: (b.template.components?.[0]?.parameters ?? []).map((x) => x.text) });
+      return json(res, 200, { messaging_product: "whatsapp", contacts: [{ input: b.to, wa_id: b.to }], messages: [{ id }] });
+    }
+    if (p === "/__shiprocket") { const b = JSON.parse(body); const s = shiprocketShipments.get(String(b.shipment_id)); if (s) s.status = b.status; return json(res, 200, { ok: !!s }); }
+    if (p === "/__shiprocket_state") return json(res, 200, { shipments: [...shiprocketShipments.values()] });
+    if (p.startsWith("/shiprocket/")) {
+      const sp = p.slice("/shiprocket".length);
+      if (sp === "/auth/login" && req.method === "POST") return json(res, 200, { token: "sr_mock_token" });
+      if (req.headers.authorization !== "Bearer sr_mock_token") return json(res, 401, { message: "Unauthenticated." });
+      if (sp === "/orders/create/adhoc" && req.method === "POST") {
+        const b = JSON.parse(body);
+        const shipment = { order_id: Math.floor(Math.random() * 1e8), shipment_id: Math.floor(Math.random() * 1e8), awb: "SRAWB" + rand(8).toUpperCase(), status: "NEW", ref: b.order_id };
+        shiprocketShipments.set(String(shipment.shipment_id), shipment);
+        return json(res, 200, { order_id: shipment.order_id, shipment_id: shipment.shipment_id, status: "NEW" });
+      }
+      let sm;
+      if (req.method === "GET" && (sm = sp.match(/^\/courier\/track\/shipment\/(\d+)$/))) {
+        const s = shiprocketShipments.get(sm[1]);
+        if (!s) return json(res, 404, { message: "not found" });
+        return json(res, 200, { tracking_data: { track_url: `https://shiprocket.co/tracking/${s.awb}`, shipment_track: [{ awb_code: s.awb, courier_name: "Delhivery Surface", current_status: s.status }], shipment_track_activities: s.status === "NEW" ? [] : [{ date: new Date().toISOString(), activity: s.status, location: "Coimbatore", "sr-status-label": s.status }] } });
+      }
+      return json(res, 404, { message: `mock shiprocket: no route ${req.method} ${sp}` });
+    }
     if (p === "/__phonepe") { phonepeScenario = JSON.parse(body).scenario; return json(res, 200, { phonepeScenario }); }
     if (p === "/__phonepe_state") return json(res, 200, { orders: [...phonepeOrders.values()] });
     if (p.startsWith("/phonepe/")) {

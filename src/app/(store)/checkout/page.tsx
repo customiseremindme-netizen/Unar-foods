@@ -3,8 +3,9 @@ import { redirect } from "next/navigation";
 import { Lock } from "lucide-react";
 import { getSessionUser } from "@/lib/auth/session";
 import { getUserDb } from "@/lib/db/client";
-import { getPublicSettings } from "@/lib/settings";
+import { getAllSettings, getPublicSettings } from "@/lib/settings";
 import { getCartView } from "@/lib/commerce/cart";
+import { getWhatsAppEnv } from "@/lib/env";
 import { availablePaymentMethods } from "@/lib/commerce/payment-methods";
 import { CheckoutForm, type SavedAddress } from "@/components/checkout/checkout-form";
 import { EmptyState } from "@/components/ui/misc";
@@ -70,6 +71,7 @@ export default async function CheckoutPage() {
         savedAddresses={addresses}
         signedIn={!!user}
         methods={methods}
+        whatsappUpdates={(await getAllSettings()).notifications.whatsapp_enabled && getWhatsAppEnv() !== null}
         newsletterConsentText={settings.newsletter.consent_text}
         themeColor={settings.theme.forest}
         pricesIncludeTax={settings.tax.prices_include_tax}

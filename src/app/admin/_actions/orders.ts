@@ -11,11 +11,11 @@ import { isPhonePeConfigured, PhonePeError, refundPhonePePayment } from "@/lib/p
 import { confirmManualUpiPayment, reconcileOrderPayment } from "@/lib/commerce/payments";
 import { notifyOrder, trackingExtra, type OrderTemplate } from "@/lib/notifications/order-notifications";
 import { getAllSettings } from "@/lib/settings";
+import { syncShiprocketShipment } from "@/lib/shipping/tracking-sync";
 import {
   createShiprocketOrder,
   isShiprocketConfigured,
   ShiprocketError,
-  trackShiprocketShipment,
 } from "@/lib/shipping/shiprocket";
 import { requireServiceDb } from "@/lib/db/client";
 
@@ -443,43 +443,7 @@ export async function syncShiprocketAction(shipmentId: string): Promise<ActionRe
     const { data: shipment } = check(await db.from("shipments").select("id, order_id, provider_shipment_id").eq("id", id.parse(shipmentId)).single());
     if (!shipment?.provider_shipment_id) throw new UserFacingError("This shipment isn't linked to Shiprocket.");
     try {
-      const tracking = await trackShiprocketShipment(shipment.provider_shipment_id);
-      const t = tracking.tracking_data;
-      const track = t?.shipment_track?.[0];
-      const current = (track?.current_status ?? "").toLowerCase();
-      const status = current.includes("deliver") && !current.includes("out")
-        ? "delivered"
-        : current.includes("out for")
-          ? "out_for_delivery"
-          : current.includes("transit") || current.includes("shipped") || current.includes("picked")
-            ? "in_transit"
-            : null;
-      check(
-        await db
-          .from("shipments")
-          .update({
-            awb_code: track?.awb_code ?? undefined,
-            tracking_number: track?.awb_code ?? undefined,
-            carrier: track?.courier_name ?? undefined,
-            tracking_url: t?.track_url && /^https:\/\//.test(t.track_url) ? t.track_url : undefined,
-            ...(status ? { status } : {}),
-          })
-          .eq("id", shipment.id),
-      );
-      const activities = (t?.shipment_track_activities ?? []).slice(0, 20);
-      if (activities.length > 0) {
-        await db.from("shipment_events").delete().eq("shipment_id", shipment.id).eq("source", "shiprocket");
-        await db.from("shipment_events").insert(
-          activities.map((a) => ({
-            shipment_id: shipment.id,
-            status: (a["sr-status-label"] ?? "update").slice(0, 60),
-            description: a.activity?.slice(0, 300) ?? null,
-            location: a.location?.slice(0, 120) ?? null,
-            occurred_at: new Date(a.date).toString() === "Invalid Date" ? new Date().toISOString() : new Date(a.date).toISOString(),
-            source: "shiprocket" as const,
-          })),
-        );
-      }
+      await syncShiprocketShipment(shipment.id);
     } catch (e) {
       if (e instanceof ShiprocketError) throw new UserFacingError(`Shiprocket: ${e.message}`);
       throw e;

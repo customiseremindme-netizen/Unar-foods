@@ -210,6 +210,18 @@ export default async function SettingsPage() {
           },
           { name: "admin_recipients", label: "Send new-order emails to (one email per line)", type: "lines", rows: 2 },
           {
+            name: "whatsapp_enabled",
+            label: "Send automatic WhatsApp order updates (needs WhatsApp connected under Integrations)",
+            type: "boolean",
+            help: "Only to customers who tick “Send me order updates on WhatsApp” at checkout. Each message must be a template approved by WhatsApp: {{1}} = first name, {{2}} = order number, {{3}} = link.",
+          },
+          { name: "whatsapp_language", label: "WhatsApp template language code", type: "text", max: 10, help: "As in WhatsApp Manager, e.g. en, en_US or ta." },
+          { name: "whatsapp_tpl_order_placed", label: "WhatsApp template: order received", type: "text", max: 60 },
+          { name: "whatsapp_tpl_payment_confirmed", label: "WhatsApp template: payment confirmed", type: "text", max: 60 },
+          { name: "whatsapp_tpl_order_shipped", label: "WhatsApp template: order shipped ({{3}} = tracking link)", type: "text", max: 60 },
+          { name: "whatsapp_tpl_order_delivered", label: "WhatsApp template: order delivered", type: "text", max: 60 },
+          { name: "whatsapp_tpl_order_cancelled", label: "WhatsApp template: order cancelled", type: "text", max: 60 },
+          {
             name: "templates",
             label: "Customer emails",
             type: "templates",

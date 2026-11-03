@@ -207,6 +207,29 @@ export function getPhonePeEnv(): PhonePeEnv | null {
   };
 }
 
+/**
+ * Token Shiprocket sends with tracking updates (Shiprocket → Settings → API →
+ * Webhooks: "Token"). Any long random text you choose.
+ */
+export function getShiprocketWebhookToken(): string | null {
+  const token = read("SHIPROCKET_WEBHOOK_TOKEN");
+  return token && token.length >= 16 ? token : null;
+}
+
+export type WhatsAppEnv = { accessToken: string; phoneNumberId: string; apiBaseUrl: string };
+
+/**
+ * WhatsApp Cloud API (Meta) for automatic order messages. Needs a permanent
+ * access token (WHATSAPP_ACCESS_TOKEN, SECRET) and the sending number's
+ * Phone number ID (WHATSAPP_PHONE_NUMBER_ID) from Meta's WhatsApp Manager.
+ */
+export function getWhatsAppEnv(): WhatsAppEnv | null {
+  const accessToken = read("WHATSAPP_ACCESS_TOKEN");
+  const phoneNumberId = read("WHATSAPP_PHONE_NUMBER_ID");
+  if (!accessToken || !phoneNumberId || !/^\d{6,20}$/.test(phoneNumberId)) return null;
+  return { accessToken, phoneNumberId, apiBaseUrl: (testOverride("WHATSAPP_API_BASE_URL") ?? "https://graph.facebook.com/v21.0").replace(/\/+$/, "") };
+}
+
 export function getCronSecret(): string | null {
   return read("CRON_SECRET") ?? null;
 }

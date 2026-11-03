@@ -180,6 +180,7 @@ export function CheckoutForm({
   savedAddresses,
   signedIn,
   methods,
+  whatsappUpdates = false,
   newsletterConsentText,
   themeColor,
   pricesIncludeTax,
@@ -191,6 +192,8 @@ export function CheckoutForm({
   signedIn: boolean;
   /** Ways to pay that are switched on and set up, in display order. */
   methods: PaymentMethod[];
+  /** Offer the "order updates on WhatsApp" tick box (WhatsApp connected and switched on). */
+  whatsappUpdates?: boolean;
   newsletterConsentText: string;
   themeColor: string;
   pricesIncludeTax: boolean;
@@ -214,6 +217,7 @@ export function CheckoutForm({
   const [note, setNote] = useState("");
   const [terms, setTerms] = useState(false);
   const [marketing, setMarketing] = useState(false);
+  const [whatsapp, setWhatsapp] = useState(false);
   const [saveAddress, setSaveAddress] = useState(savedAddresses.length === 0);
   const [recovery, setRecovery] = useState(false);
   const [website, setWebsite] = useState("");
@@ -270,11 +274,12 @@ export function CheckoutForm({
       customer_note: note,
       terms,
       marketing_consent: marketing,
+      whatsapp_updates: whatsappUpdates && whatsapp,
       save_address: signedIn && selectedAddress === "new" && saveAddress,
       recovery_consent: recovery,
       website,
     }),
-    [email, phone, shipping, billingSame, billing, paymentMethod, note, terms, marketing, signedIn, selectedAddress, saveAddress, recovery, website],
+    [email, phone, shipping, billingSame, billing, paymentMethod, note, terms, marketing, whatsapp, whatsappUpdates, signedIn, selectedAddress, saveAddress, recovery, website],
   );
 
   async function startPayment(options: RazorpayCheckoutOptions) {
@@ -534,6 +539,13 @@ export function CheckoutForm({
             <Textarea id="customer_note" rows={3} maxLength={500} value={note} onChange={(e) => setNote(e.target.value)} />
           </Field>
           <Checkbox checked={marketing} onChange={(e) => setMarketing(e.target.checked)} label={newsletterConsentText} />
+          {whatsappUpdates ? (
+            <Checkbox
+              checked={whatsapp}
+              onChange={(e) => setWhatsapp(e.target.checked)}
+              label="Send me order updates on WhatsApp (order confirmed, shipped, delivered) to this mobile number"
+            />
+          ) : null}
           <div>
             <Checkbox
               id="terms"

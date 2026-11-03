@@ -53,9 +53,16 @@ local copy of the shop — never the live website.
    PHONEPE_API_BASE_URL=http://127.0.0.1:4010/phonepe
    PHONEPE_WEBHOOK_USERNAME=unar_hook
    PHONEPE_WEBHOOK_PASSWORD=local_hook_password
+   WHATSAPP_ACCESS_TOKEN=local_whatsapp_token
+   WHATSAPP_PHONE_NUMBER_ID=123456789012
+   WHATSAPP_API_BASE_URL=http://127.0.0.1:4010/whatsapp
+   SHIPROCKET_EMAIL=api@unar.local
+   SHIPROCKET_PASSWORD=local_shiprocket_pw
+   SHIPROCKET_API_BASE_URL=http://127.0.0.1:4010/shiprocket
+   SHIPROCKET_WEBHOOK_TOKEN=local_courier_token_0123456789
    ```
    (The local stand-in in `tests/e2e/support/mock-razorpay.mjs` also plays
-   Google sign-in and PhonePe.)
+   Google sign-in, PhonePe, WhatsApp and Shiprocket.)
 3. `npx next dev --webpack` (or `npm run build` then `UNAR_ALLOW_TEST_OVERRIDES=1 npm start`).
    The Turbopack dev server (`npm run dev`) was seen reloading pages in a
    loop, which breaks the browser tests.

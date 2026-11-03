@@ -6,6 +6,8 @@ import { revalidateStorefront } from "@/lib/cache";
 import { safeEqual } from "@/lib/security/tokens";
 import { logError, logInfo } from "@/lib/monitoring";
 import { deleteOrphanReviewMedia } from "@/lib/reviews/media";
+import { isShiprocketConfigured } from "@/lib/shipping/shiprocket";
+import { syncOpenShiprocketShipments } from "@/lib/shipping/tracking-sync";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
@@ -17,6 +19,7 @@ export const maxDuration = 60;
  *   them paid if the payment actually succeeded, otherwise releases stock.
  * - Cleans up old rate-limit counters, expired sign-in sessions and review
  *   uploads that were never attached to a review.
+ * - Refreshes courier tracking (Shiprocket) for shipments on the way.
  */
 export async function GET(request: Request) {
   const secret = getCronSecret();
@@ -28,7 +31,9 @@ export async function GET(request: Request) {
   await getServiceDb()?.rpc("cleanup_rate_limits");
   // Review photos/videos uploaded but never attached to a review.
   await deleteOrphanReviewMedia().catch((e) => logError("cron.review_media", e));
+  // Courier tracking for shipments not yet delivered (Shiprocket).
+  const tracked = isShiprocketConfigured() ? await syncOpenShiprocketShipments(30).catch((e) => (logError("cron.tracking", e), 0)) : 0;
   if (result.released > 0 || result.paid > 0) revalidateStorefront();
-  logInfo("cron.reconcile", "done", result);
-  return NextResponse.json({ ok: true, ...result });
+  logInfo("cron.reconcile", "done", { ...result, tracked });
+  return NextResponse.json({ ok: true, ...result, tracked });
 }

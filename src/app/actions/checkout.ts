@@ -216,6 +216,7 @@ export async function placeOrderAction(payload: unknown): Promise<PlaceOrderResu
     access_token_hash: sha256Hex(accessToken),
     reservation_minutes: input.payment_method === "upi_manual" ? settings.checkout.upi_hold_hours * 60 : settings.checkout.reservation_minutes,
     marketing_consent: input.marketing_consent,
+    whatsapp_updates: input.whatsapp_updates === true,
     terms_accepted: input.terms,
   };
   const items = quote.lines.map((l) => ({ variant_id: l.variantId, quantity: l.quantity, unit_price_paise: l.unitPricePaise }));

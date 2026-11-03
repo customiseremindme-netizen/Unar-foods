@@ -200,6 +200,45 @@ The trade-off is that **you confirm each payment yourself**.
    into `GOOGLE_CLIENT_SECRET` (**SECRET**) in Hostinger, and redeploy.
    Sign-in and sign-up pages then show **Continue with Google**.
 
+### 4.7 WhatsApp order updates (optional)
+**Without any setup:** every order in the dashboard has a **Message on
+WhatsApp** button that opens WhatsApp with a ready-written message to the
+customer.
+
+**Automatic messages** (order received, payment confirmed, shipped with the
+tracking link, delivered, cancelled) use Meta's official WhatsApp Cloud API:
+1. At business.facebook.com create/verify your business, then in **WhatsApp
+   Manager** add a phone number that is **not** already used in the normal
+   WhatsApp or WhatsApp Business app.
+2. Create message **templates** (category *Utility*) and wait for approval.
+   Use these placeholders in the body: `{{1}}` = customer's first name,
+   `{{2}}` = order number, `{{3}}` = link (tracking link for "shipped",
+   otherwise the order page). Example: *Hi {{1}}, your UNAR order {{2}} is on
+   its way! Track it here: {{3}}*.
+3. Create a **permanent access token** (System user → Generate token, with
+   whatsapp_business_messaging permission) and note the **Phone number ID**.
+4. In Hostinger add `WHATSAPP_ACCESS_TOKEN` (**SECRET**) and
+   `WHATSAPP_PHONE_NUMBER_ID`, and redeploy.
+5. Dashboard → **Settings → Emails**: tick **Send automatic WhatsApp order
+   updates**, enter the language code and the template names, save.
+Checkout then offers "Send me order updates on WhatsApp"; only customers who
+tick it get messages. Meta charges per message (see Meta's pricing).
+
+### 4.8 Courier (Shiprocket) with automatic tracking (optional)
+1. Shiprocket → Settings → API → **Create an API user** (a separate email).
+   Put it into `SHIPROCKET_EMAIL` / `SHIPROCKET_PASSWORD` (**SECRET**).
+2. Dashboard → Settings → Shipping: enter your Shiprocket **pickup location
+   name** exactly as in Shiprocket and the default box size.
+3. Automatic tracking: choose a long random text (24+ characters) as a token,
+   put it into `SHIPROCKET_WEBHOOK_TOKEN` (**SECRET**), and in Shiprocket →
+   Settings → API → **Webhooks** add the URL shown on Dashboard →
+   Integrations (ends in `/api/webhooks/courier`) with the same token.
+4. Redeploy. On an order: **Create in Shiprocket** → assign the courier/AWB
+   in Shiprocket. From then on the order changes to *Shipped* and
+   *Delivered* by itself and the customer gets the email (and WhatsApp
+   message). Without the webhook, tracking still refreshes with the daily job
+   and the **Sync tracking** button.
+
 ---
 
 ## Part 5 — Publishing the website on Hostinger
@@ -225,13 +264,15 @@ Hostinger. **After adding or changing any value, redeploy.**
 | `SHIPROCKET_EMAIL` / `SHIPROCKET_PASSWORD` | only if you use Shiprocket (create an **API user** in Shiprocket → Settings → API) |
 | `PHONEPE_CLIENT_ID`, `PHONEPE_CLIENT_SECRET`, `PHONEPE_CLIENT_VERSION`, `PHONEPE_ENV`, `PHONEPE_WEBHOOK_USERNAME`, `PHONEPE_WEBHOOK_PASSWORD` | only for PhonePe's gateway (Part 4.4); otherwise `none`. The secret and webhook password are **SECRET** |
 | `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` | only for "Continue with Google" (Part 4.6); otherwise `none`. The secret is **SECRET** |
+| `WHATSAPP_ACCESS_TOKEN`, `WHATSAPP_PHONE_NUMBER_ID` | only for automatic WhatsApp messages (Part 4.7); otherwise `none`. The token is **SECRET** |
+| `SHIPROCKET_WEBHOOK_TOKEN` | only for automatic courier tracking (Part 4.8); otherwise `none` (**SECRET**) |
 
 **About `DB_HOST`:** on Hostinger the website and the database are on the
 same account, so `localhost` normally works. If `/api/health` says the
 database is *unreachable*, use the **MySQL host** shown next to your
 database in hPanel → Databases instead, and redeploy.
 
-Never add `RAZORPAY_API_BASE_URL`, `PHONEPE_API_BASE_URL` or `GOOGLE_OAUTH_BASE_URL` — they exist only for automated tests (and
+Never add `RAZORPAY_API_BASE_URL`, `PHONEPE_API_BASE_URL`, `GOOGLE_OAUTH_BASE_URL`, `WHATSAPP_API_BASE_URL` or `SHIPROCKET_API_BASE_URL` — they exist only for automated tests (and
 is ignored on the live site anyway). The file `.env.example` in the code
 lists the same names.
 
@@ -444,6 +485,16 @@ Standard* → enter your charge → tick **Active** → Save.
 
 ### "Accounts are not available yet"
 The database isn't connected yet (see "Products don't appear" above).
+
+### Emails land in the spam folder
+- `EMAIL_FROM` must use the same address as `SMTP_USER` (Dashboard →
+  Integrations warns you if not).
+- New senders are often filtered at first: ask the first customers (and
+  yourself) to open the spam folder and press **Not spam**.
+- Best fix: your own domain with Hostinger email. Hostinger adds the SPF,
+  DKIM and DMARC records when the domain uses Hostinger's nameservers
+  (check hPanel → Emails → your domain → DNS / Deliverability). Emails that
+  link to a temporary *.hostingersite.com address are filtered more often.
 
 ### A customer says the confirmation email never arrived
 Ask them to sign in with their email and password — the site sends a fresh

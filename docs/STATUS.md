@@ -39,8 +39,16 @@ site itself could not be opened or tested from the development session.
   Google. Needs a Google Cloud OAuth client.
 - Browser tests: 68 (desktop + phone), all passing on the production build
   with MySQL 8.0 and with MariaDB 11.4; 19 database tests on both.
-- Not built: automatic WhatsApp/SMS messages (needs a WhatsApp Business API
-  provider account).
+- **Phone layout fix** for account pages and dashboard tables.
+- **Dashboard reports**: sales by payment method, state, city, new vs
+  returning customers (CSV too); customers sortable/filterable; orders
+  filterable by payment method.
+- **WhatsApp**: "Message on WhatsApp" button on every order; automatic
+  template messages via Meta's WhatsApp Cloud API for customers who opt in —
+  tested only against a local stand-in for Meta.
+- **Courier**: Shiprocket tracking now updates by itself (webhook + daily
+  job), moving orders to Shipped/Delivered and notifying the customer —
+  tested only against a local stand-in for Shiprocket.
 
 ## ✅ Built and tested
 

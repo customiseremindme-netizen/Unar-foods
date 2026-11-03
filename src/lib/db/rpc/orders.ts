@@ -92,6 +92,7 @@ export async function create_order(ctx: DbContext, args: Record<string, unknown>
       access_token_hash: order.access_token_hash,
       reservation_expires_at: isCod ? null : new Date(Date.now() + minutes * 60_000).toISOString(),
       marketing_consent: bool(order.marketing_consent),
+      whatsapp_updates: bool(order.whatsapp_updates),
       terms_accepted_at: bool(order.terms_accepted) ? now : null,
       placed_at: isCod ? now : null,
     })) as string;
