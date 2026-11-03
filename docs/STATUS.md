@@ -24,7 +24,7 @@ site itself could not be opened or tested from the development session.
   "reduce motion" visitors.
 - Dashboard overview: all-time orders, customer accounts, products on sale.
 - Security updates (Next.js 16.4.3 and others); SEO addresses fixed.
-- Not built (optional in the brief): wishlist and product quick view.
+- Wishlist (guests and accounts) and product quick view — added 3 Nov 2026.
 
 ## New on 3 November 2026 (all tested locally)
 - **Invoices emailed automatically** as a PDF once money is received
@@ -37,7 +37,7 @@ site itself could not be opened or tested from the development session.
   and "Open my UPI app" link; you confirm each payment in the dashboard.
 - **Continue with Google** sign-in — tested against a local stand-in for
   Google. Needs a Google Cloud OAuth client.
-- Browser tests: 68 (desktop + phone), all passing on the production build
+- Browser tests: 74 (desktop + phone), all passing on the production build
   with MySQL 8.0 and with MariaDB 11.4; 19 database tests on both.
 - **Phone layout fix** for account pages and dashboard tables.
 - **Dashboard reports**: sales by payment method, state, city, new vs
