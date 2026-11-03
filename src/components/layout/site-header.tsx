@@ -4,12 +4,13 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
-import { Menu, Search, ShoppingBag, User } from "lucide-react";
+import { Menu, Search, ShoppingBag, User, Heart } from "lucide-react";
 import { Logo, type LogoConfig } from "@/components/brand/logo";
 import { Sheet } from "@/components/ui/sheet";
 import { useCart } from "@/components/cart/cart-context";
 import { formatINR } from "@/lib/money";
 import { cn } from "@/lib/utils";
+import { WishlistLink } from "@/components/wishlist/wishlist";
 
 export type NavLink = { label: string; href: string };
 export type SearchItem = {
@@ -112,6 +113,7 @@ export function SiteHeader({
             <button type="button" className={cn(iconBtn, "hidden sm:grid")} onClick={() => setSearchOpen(true)} aria-label="Search products">
               <Search className="size-[1.15rem]" aria-hidden="true" />
             </button>
+            <WishlistLink className={iconBtn} />
             <Link href="/account" className={cn(iconBtn, "hidden sm:grid")} aria-label="My account">
               <User className="size-[1.15rem]" aria-hidden="true" />
             </Link>
@@ -166,6 +168,9 @@ export function SiteHeader({
             </button>
             <Link href="/account" onClick={() => setMenuOpen(false)} className="flex items-center gap-3 rounded-xl px-3 py-3 text-[0.95rem] text-graphite hover:bg-forest/[0.05]">
               <User className="size-4 text-forest" aria-hidden="true" /> My account
+            </Link>
+            <Link href="/wishlist" onClick={() => setMenuOpen(false)} className="flex items-center gap-3 rounded-xl px-3 py-3 text-[0.95rem] text-graphite hover:bg-forest/[0.05]">
+              <Heart className="size-4 text-forest" aria-hidden="true" /> My wishlist
             </Link>
             <Link href="/track-order" onClick={() => setMenuOpen(false)} className="flex items-center gap-3 rounded-xl px-3 py-3 text-[0.95rem] text-graphite hover:bg-forest/[0.05]">
               <ShoppingBag className="size-4 text-forest" aria-hidden="true" /> Track an order

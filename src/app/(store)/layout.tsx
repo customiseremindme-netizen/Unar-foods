@@ -1,6 +1,8 @@
 import { getPublicSettings } from "@/lib/settings";
 import { defaultSettings } from "@/lib/settings/schema";
 import { getBanners, isPreview, listCmsPages } from "@/lib/data/content";
+import { getWishlistIds } from "@/lib/wishlist";
+import { WishlistProvider } from "@/components/wishlist/wishlist";
 import { getPublishedProducts, primaryImage } from "@/lib/data/catalog";
 import { isRazorpayConfigured } from "@/lib/payments/razorpay";
 import { ToastProvider } from "@/components/ui/toast";
@@ -21,12 +23,13 @@ function themeCss(theme: Record<string, string>) {
 }
 
 export default async function StoreLayout({ children }: { children: React.ReactNode }) {
-  const [settings, announcements, products, policies, preview] = await Promise.all([
+  const [settings, announcements, products, policies, preview, wishlistIds] = await Promise.all([
     getPublicSettings(),
     getBanners("announcement"),
     getPublishedProducts(),
     listCmsPages("policy"),
     isPreview(),
+    getWishlistIds(),
   ]);
 
   const logo = {
@@ -58,6 +61,7 @@ export default async function StoreLayout({ children }: { children: React.ReactN
     <ToastProvider>
       <MotionProvider>
         <CartProvider>
+          <WishlistProvider initialIds={wishlistIds}>
           {css ? <style>{css}</style> : null}
           <noscript>
             <style>{"[data-reveal]{opacity:1!important;transform:none!important}"}</style>
@@ -115,6 +119,7 @@ export default async function StoreLayout({ children }: { children: React.ReactN
             }}
           />
           <CartDrawer />
+          </WishlistProvider>
         </CartProvider>
       </MotionProvider>
     </ToastProvider>

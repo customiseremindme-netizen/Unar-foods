@@ -1,11 +1,12 @@
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowUpRight } from "lucide-react";
 import { Badge, Price, Stars } from "@/components/ui/misc";
 import { NoImage } from "@/components/layout/site-header";
 import { primaryImage, variantAvailability, type Product } from "@/lib/data/catalog";
 import type { ReviewStats } from "@/lib/data/reviews";
 import { AddToCartButton } from "./add-to-cart";
+import { QuickView } from "./quick-view";
+import { WishlistButton } from "@/components/wishlist/wishlist";
 import { cn } from "@/lib/utils";
 
 export function AvailabilityBadge({ product }: { product: Product }) {
@@ -66,10 +67,28 @@ export function ProductCard({
         <span className="absolute left-4 top-4 flex flex-wrap gap-2">
           <AvailabilityBadge product={product} />
         </span>
-        <span className="absolute bottom-4 right-4 grid size-11 translate-y-2 place-items-center rounded-full bg-paper/90 text-forest opacity-0 shadow-soft backdrop-blur transition-all duration-500 group-hover:translate-y-0 group-hover:opacity-100">
-          <ArrowUpRight className="size-4" aria-hidden="true" />
-        </span>
       </Link>
+      <WishlistButton productId={product.id} productName={name} size="sm" className="absolute right-4 top-4" />
+      <div className="pointer-events-none absolute left-0 right-0 top-0 flex aspect-square items-end justify-end p-4">
+        <div className="pointer-events-auto translate-y-1 opacity-100 transition-all duration-500 lg:translate-y-2 lg:opacity-0 lg:group-hover:translate-y-0 lg:group-hover:opacity-100 lg:group-focus-within:translate-y-0 lg:group-focus-within:opacity-100">
+          <QuickView
+            product={{
+              id: product.id,
+              slug: product.slug,
+              title: name,
+              subtitle: product.subtitle,
+              shortDescription: product.short_description,
+              image: image ? { url: image.url, alt: image.alt } : null,
+              variantId: variant?.id ?? null,
+              variantTitle: variant?.title ?? null,
+              pricePaise: variant?.price_paise ?? null,
+              mrpPaise: variant?.mrp_paise ?? null,
+              maxQuantity: variant ? Math.min(variant.stock, 10) : 0,
+              soldOut,
+            }}
+          />
+        </div>
+      </div>
       <div className="mt-5 flex flex-1 flex-col">
         {product.subtitle ? <p className="eyebrow">{product.subtitle}</p> : null}
         <h3 className="mt-2 text-[1.3rem] leading-snug">

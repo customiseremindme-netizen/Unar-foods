@@ -666,6 +666,16 @@ export const TABLES: Record<string, Table> = {
     unique: [["product_id", "user_id"]],
     indexes: [["product_id", "status", "created_at"]],
   },
+  /** Products a signed-in customer saved for later. */
+  wishlist_items: {
+    columns: {
+      user_id: ref("auth_users"),
+      product_id: ref("products"),
+      created_at: createdAt(),
+    },
+    primaryKey: ["user_id", "product_id"],
+    indexes: [["product_id"]],
+  },
   /**
    * Photos (up to 5) and one video attached to a review by the customer.
    * Bytes live in the database (images re-encoded to WebP; videos split into

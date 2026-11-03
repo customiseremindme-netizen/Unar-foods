@@ -3,13 +3,14 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef } from "react";
-import { LayoutDashboard, MapPin, Package, Settings, User } from "lucide-react";
+import { Heart, LayoutDashboard, MapPin, Package, Settings, User } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const LINKS = [
   { href: "/account", label: "Overview", icon: User },
   { href: "/account/orders", label: "Orders", icon: Package },
   { href: "/account/addresses", label: "Addresses", icon: MapPin },
+  { href: "/wishlist", label: "Wishlist", icon: Heart },
   { href: "/account/profile", label: "Profile & password", icon: Settings },
 ];
 

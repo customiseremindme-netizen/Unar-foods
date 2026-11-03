@@ -8,6 +8,7 @@ import { getApprovedReviews, getProductReviews, reviewStats } from "@/lib/data/r
 import { getPublicSettings } from "@/lib/settings";
 import { getSessionUser } from "@/lib/auth/session";
 import { ButtonLink } from "@/components/ui/button";
+import { WishlistButton } from "@/components/wishlist/wishlist";
 import { getRequestSiteUrl } from "@/lib/site-url";
 import { formatDate } from "@/lib/utils";
 import { Badge, Breadcrumbs, Price, Stars, VegMark } from "@/components/ui/misc";
@@ -176,7 +177,8 @@ export default async function ProductPage({ params }: { params: Params }) {
             </ul>
             <DeliveryChecker />
           </div>
-          <div className="mt-5">
+          <div className="mt-5 flex flex-wrap items-center gap-4">
+            <WishlistButton productId={product.id} productName={product.title} size="sm" />
             <ShareButtons url={`${site}/products/${product.slug}`} title={product.title} />
           </div>
 

@@ -380,6 +380,16 @@ export type Database = {
         Update: { "error"?: string | null; "event_id"?: string; "event_type"?: string | null; "id"?: string; "payload"?: Json | null; "processed_at"?: string | null; "provider"?: string; "received_at"?: string; "status"?: string }
         Relationships: []
       }
+      "wishlist_items": {
+        Row: { "created_at": string; "product_id": string; "user_id": string }
+        ComputedFields: never
+        Insert: { "created_at"?: string; "product_id": string; "user_id": string }
+        Update: { "created_at"?: string; "product_id"?: string; "user_id"?: string }
+        Relationships: [
+          { foreignKeyName: "wishlist_items_user_id_fkey"; columns: ["user_id"]; isOneToOne: false; referencedRelation: "auth_users"; referencedColumns: ["id"] },
+          { foreignKeyName: "wishlist_items_product_id_fkey"; columns: ["product_id"]; isOneToOne: false; referencedRelation: "products"; referencedColumns: ["id"] },
+        ]
+      }
     }
     Views: { [_ in never]: never }
     Functions: {

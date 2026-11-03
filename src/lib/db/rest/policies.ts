@@ -159,6 +159,11 @@ export const RULES: Record<string, TableRules> = {
     delete: (ctx) => perm(ctx, "reviews.moderate"),
   },
   review_media_chunks: {},
+  wishlist_items: {
+    read: (ctx, a) => anyOf(own(ctx, a), perm(ctx, "customers.read")),
+    insert: (ctx, row) => isUser(ctx) && row.user_id === uid(ctx),
+    delete: (ctx, a) => own(ctx, a),
+  },
   cms_sections: managedBy("content.write", (_ctx, a) => c(`${a}.state = 'published' AND ${a}.is_visible = 1`)),
   cms_pages: managedBy("content.write", (_ctx, a) => c(`${a}.state = 'published'`)),
   faqs: managedBy("content.write", (_ctx, a) => c(`${a}.is_published = 1`)),

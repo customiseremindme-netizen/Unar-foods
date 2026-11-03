@@ -24,6 +24,7 @@ export const RATE_LIMITS = {
   deliveryCheck: { limit: 30, windowSeconds: 600 },
   coupon: { limit: 20, windowSeconds: 600 },
   cart: { limit: 120, windowSeconds: 60 },
+  wishlist: { limit: 60, windowSeconds: 60 },
 } satisfies Record<string, RateLimitRule>;
 
 /**
