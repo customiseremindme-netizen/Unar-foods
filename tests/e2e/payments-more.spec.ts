@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
 import { expect, test, type Page } from "@playwright/test";
-import { addProductToCart, fillCheckout, loginAsAdmin, MOCK_RAZORPAY, resetRateLimits } from "./support/helpers";
+import { addProductToCart, loginAsAdmin, MOCK_RAZORPAY, resetRateLimits } from "./support/helpers";
 
 /**
  * PhonePe Payment Gateway (against the local PhonePe stand-in) and
