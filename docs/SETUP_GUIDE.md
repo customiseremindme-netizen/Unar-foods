@@ -88,6 +88,12 @@ order as guests **and can create accounts** (the account works straight
 away, without a confirmation email). Once email is set up, new accounts
 must confirm their address by the emailed link, and password reset works.
 
+**No domain yet?** Hostinger mailboxes need your own domain. Until you have
+one, use your Gmail: turn on 2-Step Verification, create an **App password**
+at myaccount.google.com/apppasswords, and set `SMTP_HOST=smtp.gmail.com`,
+`SMTP_PORT=465`, `SMTP_USER` = your Gmail address, `SMTP_PASSWORD` = the app
+password (**SECRET**), `EMAIL_FROM=UNAR <your Gmail address>`.
+
 1. hPanel → **Emails** → choose your domain → **Create email account** →
    `orders@your-domain` (e.g. `orders@unarfoods.in`) with a strong password
    (**SECRET**, save it).

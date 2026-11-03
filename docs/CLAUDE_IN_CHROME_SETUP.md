@@ -1,45 +1,61 @@
-Task: connect my UNAR online shop (a Node.js app on Hostinger at https://seashell-donkey-270999.hostingersite.com) to a new MySQL database in the same Hostinger account, using my Chrome where I am already signed in to Hostinger.
+Task: finish setting up my UNAR online shop, a Node.js app on Hostinger at https://coral-seahorse-181020.hostingersite.com. Use my Chrome, where I am signed in to Hostinger (hpanel.hostinger.com) and to my Google account. Work through Parts A–F in order.
 
 Ground rules — follow these strictly:
-- Never type, show, summarise or repeat any password or secret in your replies to me, in notes, or anywhere except the exact Hostinger field named below. Whenever a password or secret must be entered, STOP and ask me to type it myself into that field, then wait for my "done".
-- Never enter payment details, upgrade a plan, or delete anything (except the old variables named in Part B).
-- Do not change any Hostinger setting other than the ones listed below.
-- If a page looks different from these steps, or anything asks for payment or verification, stop and ask me.
-- After each part, tell me in one line that it is done and what you saw (without secrets).
+- Never type, show, summarise or repeat any password, secret, key or code in your replies, notes or anywhere except the exact field named below. Whenever a password or secret must be created, copied or entered, STOP and ask me to do it myself in that field, then wait for my "done".
+- Never enter payment details, buy or upgrade anything, create a new website, or delete anything.
+- In Hostinger's environment variables, change only the rows named below; leave every other row exactly as it is.
+- If a page looks different from these steps, asks for payment or identity verification, or you are unsure, stop and ask me.
+- After each part, tell me in one or two lines what you did and saw (without secrets).
 
-PART A — Create the MySQL database
-1. Open https://hpanel.hostinger.com → Websites → seashell-donkey-270999.hostingersite.com → Dashboard → Databases → Management. (If you can't find it, type "Databases" in hPanel's search box.)
-2. If a database whose name ends in "_unar" already exists in the list, do not create another one — skip to step 5.
-3. Under "Create a new MySQL database":
-   - Database name: unar
-   - Username: unar
-   - Password: STOP and say: "Please type a strong new database password into the Password field, save it in your password manager, and reply done." Wait for my "done".
-4. Click Create.
-5. Tell me the FULL database name and FULL username exactly as shown in the list (they start with something like u123456789_). These are not secrets. Also tell me the MySQL host shown for it, if one is shown.
+PART A — Read the database details (fixes "refused the user name or password")
+1. Open https://coral-seahorse-181020.hostingersite.com/api/health and tell me what it says. If it already says "database":"ok", skip Parts A and B.
+2. If it shows a "login_check" part, tell me db_user_used, db_name_used, db_host_used and password_length (these are not secrets).
+3. Open hPanel → Websites → coral-seahorse-181020.hostingersite.com → Databases → Management (or type "Databases" in hPanel's search).
+4. Tell me the FULL database name and FULL username exactly as listed (they start with u381419490_), and the MySQL host if one is shown. If there is no database, STOP and tell me.
+5. Compare them with db_name_used and db_user_used from step 2 and tell me whether they match letter for letter.
 
-PART B — Put the database details into the app
-1. hPanel → Websites → seashell-donkey-270999.hostingersite.com → open the Node.js app → Deployments → "Settings and redeploy" → Environment variables.
-2. Edit ONLY these rows (leave every other variable exactly as it is):
+PART B — New database password, and put the details into the app
+1. In the database list, open the menu (⋮ or "Change password") for that database user.
+2. STOP and say: "Please type a new password for the database user — letters and numbers only, at least 16 characters, no symbols or spaces — save it in your password manager, and reply done." Wait, then save.
+3. Open hPanel → Websites → coral-seahorse-181020.hostingersite.com → the Node.js app → Settings / "Settings and redeploy" → Environment variables. Set ONLY:
+   - DB_NAME = the full database name from Part A (copy exactly)
+   - DB_USER = the full username from Part A (copy exactly; NOT my Hostinger login email)
    - DB_HOST = localhost
    - DB_PORT = 3306
-   - DB_NAME = the full database name from Part A
-   - DB_USER = the full username from Part A
-   - DB_PASSWORD = STOP and say: "Please type the database password into the DB_PASSWORD value and reply done." Wait.
-   - SETUP_KEY: look at its value WITHOUT telling me what it is. If it is "none", empty, or starts with "PASTE_", STOP and say: "Please type your own secret phrase (at least 12 characters, saved in your password manager) into the SETUP_KEY value and reply done." Wait.
-   - CRON_SECRET: same check as SETUP_KEY. If it is "none", empty, or starts with "PASTE_", STOP and say: "Please type a long random password (40+ characters, saved in your password manager) into the CRON_SECRET value and reply done." Wait.
-   - NEXT_PUBLIC_SITE_URL = https://seashell-donkey-270999.hostingersite.com (not a secret; no "/" at the end)
-   If you see old rows named NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY or SUPABASE_SECRET_KEY, delete those three rows.
-3. Make sure "Node version" is 22.x and the branch is claude/gifted-dirac-rkndzu.
-4. Click "Save and redeploy" and wait until the deployment finishes. If it fails, open the build log and tell me the last 20 lines (they contain no secrets).
+   - DB_PASSWORD = STOP and say: "Please type the new database password into the DB_PASSWORD value and reply done." Wait.
+   - NEXT_PUBLIC_SITE_URL = https://coral-seahorse-181020.hostingersite.com (if not already)
+4. Do NOT redeploy yet — continue with Part C (one redeploy at the end saves time).
 
-PART C — Check it worked
-1. Open https://seashell-donkey-270999.hostingersite.com/api/health (the first load can take a few seconds) and tell me exactly what it says.
-2. Success looks like: "ok":true and "database":"ok".
-3. If it says "not configured": read the "database_settings" part. Every DB_ setting should say "set". For any that says "none", "missing" or "still the PASTE_ template text", go back to Part B, fix that row (asking me to type it if it's DB_PASSWORD), Save and redeploy, and check again.
-4. If it says "unreachable" and Part A showed a MySQL host other than localhost: set DB_HOST to that host, Save and redeploy, then check again.
-5. If it says the database "refused the user name or password": STOP and ask me to re-type DB_PASSWORD (and check DB_USER is the full username with the u123456789_ prefix), then Save and redeploy and check again.
-6. If "setup_key" does not say "set", tell me what it says (it never shows the key itself).
-7. Open https://seashell-donkey-270999.hostingersite.com and tell me whether you see the full UNAR homepage, and whether both products appear under "Shop the Goodness" (they will say "Sold out" until stock is entered — that is expected).
-8. Open https://seashell-donkey-270999.hostingersite.com/shop and confirm both products are listed.
+PART C — Email for order emails, invoices, account confirmation and password reset
+1. In hPanel, check whether I own a domain with email (hPanel → Emails). Tell me what you find.
+2. IF I have a domain with Hostinger Email:
+   a. Create a mailbox orders@<my domain>. STOP and ask me to type its password myself and reply done.
+   b. In the Node.js app's environment variables set: EMAIL_FROM = UNAR <orders@<my domain>>, SMTP_HOST = smtp.hostinger.com, SMTP_PORT = 465, SMTP_USER = orders@<my domain>. For SMTP_PASSWORD, STOP and ask me to type the mailbox password into it and reply done.
+3. IF I have no domain (only the temporary hostingersite.com address): a Hostinger mailbox isn't possible yet, so use my Gmail instead:
+   a. Open https://myaccount.google.com/security and tell me whether 2-Step Verification is on. If it is off, STOP and ask me to turn it on myself.
+   b. Open https://myaccount.google.com/apppasswords. STOP and say: "Please create an app password named 'UNAR shop', keep the page open, and reply done." Wait.
+   c. In the Node.js app's environment variables set: EMAIL_FROM = UNAR <the Gmail address I use for the shop>, SMTP_HOST = smtp.gmail.com, SMTP_PORT = 465, SMTP_USER = that Gmail address. For SMTP_PASSWORD, STOP and say: "Please copy the 16-letter app password into SMTP_PASSWORD (without spaces) and reply done." Wait.
+4. Leave RESEND_API_KEY as it is.
 
-Then stop. I will open /setup myself to create my owner account (it asks for the SETUP_KEY), and enter stock and shipping charges from the dashboard.
+PART D — "Continue with Google" sign-in
+1. Open https://console.cloud.google.com. Create a project named "UNAR shop" (or select it if it exists). If Google asks for billing or payment, STOP and tell me.
+2. Go to APIs & Services → OAuth consent screen (it may be called "Google Auth Platform → Branding/Audience"). Choose External. App name: UNAR. User support email and developer contact: my Gmail address. Save. Under Audience/Publishing status, choose "Publish app" / "In production" (only the basic profile and email permissions are used, so no Google review should be needed — if Google says verification is required, tell me and continue).
+3. Go to APIs & Services → Credentials → Create credentials → OAuth client ID → Application type: Web application → Name: UNAR website.
+   - Authorised JavaScript origins: https://coral-seahorse-181020.hostingersite.com
+   - Authorised redirect URIs: https://coral-seahorse-181020.hostingersite.com/auth/google/callback
+   - Click Create. If Google refuses the hostingersite.com address, STOP and tell me the exact message (Google sign-in will then wait until my own domain is connected) and skip to Part E.
+4. Copy the Client ID (it ends in .apps.googleusercontent.com — not a secret) into the Node.js app's environment variable GOOGLE_CLIENT_ID.
+5. For GOOGLE_CLIENT_SECRET, STOP and say: "Please copy the Client secret from Google into GOOGLE_CLIENT_SECRET and reply done." Wait.
+6. If the environment variables list has no rows for PHONEPE_CLIENT_ID, PHONEPE_CLIENT_SECRET, PHONEPE_ENV, PHONEPE_WEBHOOK_USERNAME, PHONEPE_WEBHOOK_PASSWORD, add each with the value none, and PHONEPE_CLIENT_VERSION with the value 1.
+
+PART E — Redeploy and check
+1. Check the branch is claude/gifted-dirac-rkndzu and the Node version is 22.x. Click "Save and redeploy" and wait until it finishes. If it fails, tell me the last 20 lines of the build log (no secrets in them).
+2. Open https://coral-seahorse-181020.hostingersite.com/api/health and tell me exactly what it says.
+   - "database":"ok" → continue.
+   - Still "refused the user name or password": go back to the environment variables, change ONLY DB_HOST to 127.0.0.1, Save and redeploy, check again. If it still fails and Part A showed a different MySQL host, try that host the same way. If it still fails, stop and tell me the full /api/health text.
+   - "email" should say "smtp" and "google_sign_in" should say "set up".
+3. Open https://coral-seahorse-181020.hostingersite.com and tell me whether both products appear under "Shop the Goodness" (they say "Sold out" until stock is entered — that's expected).
+4. Open https://coral-seahorse-181020.hostingersite.com/login and tell me whether a "Continue with Google" button is shown.
+
+PART F — Stop here
+Tell me everything is ready. I will open /setup myself to create my owner account (it asks for my SETUP_KEY), then enter stock, shipping charges and my UPI ID in the dashboard.
