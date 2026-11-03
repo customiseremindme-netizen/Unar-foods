@@ -103,3 +103,23 @@ test.describe("admin dashboard", () => {
     await admin.close();
   });
 });
+
+test.describe("sales reports and customer filters", () => {
+  test("every report tab, customer filter and CSV export works", async ({ browser }) => {
+    const admin = await loginAsAdmin(browser);
+    const page = await admin.newPage();
+    for (const tab of ["daily", "products", "payment", "state", "city", "customers", "coupons", "tax", "refunds"]) {
+      const res = await page.goto(`/admin/reports?range=90d&tab=${tab}`);
+      expect(res?.status(), tab).toBe(200);
+      const csv = await page.request.get(`/admin/export/report?type=${tab}&range=90d`);
+      expect(csv.status(), `${tab} csv`).toBe(200);
+    }
+    await page.goto("/admin/reports?range=90d&tab=payment");
+    await expect(page.locator("thead")).toContainText("Payment method");
+    for (const qs of ["filter=buyers&sort=spent", "filter=guests&sort=orders", "filter=subscribed&sort=name", "sort=constructor&filter=__proto__"]) {
+      expect((await page.goto(`/admin/customers?${qs}`))?.status(), qs).toBe(200);
+    }
+    expect((await page.goto("/admin/orders?method=cod"))?.status()).toBe(200);
+    await admin.close();
+  });
+});

@@ -118,6 +118,70 @@ export async function report_coupon_usage(ctx: DbContext, args: Record<string, u
   return rows.map((r) => ({ code: r.code, uses: Number(r.uses), discount_paise: Number(r.discount_paise), revenue_paise: Number(r.revenue_paise) }));
 }
 
+const CUSTOMER_SORTS = {
+  recent: "f.last_order_at IS NULL, f.last_order_at DESC, f.created_at DESC",
+  spent: "f.spent DESC, f.last_order_at DESC",
+  orders: "f.paid_orders DESC, f.spent DESC",
+  newest: "f.created_at DESC",
+  name: "f.full_name IS NULL, f.full_name ASC",
+} as const;
+
+const CUSTOMER_FILTERS = {
+  all: "1 = 1",
+  buyers: "f.paid_orders > 0",
+  repeat: "f.paid_orders > 1",
+  no_orders: "f.paid_orders = 0",
+  registered: "f.is_registered = 1",
+  guests: "f.is_registered = 0",
+  subscribed: "f.marketing_consent = 1",
+} as const;
+
+/**
+ * Paid sales grouped by payment method, state or city (shipping address).
+ * Only fixed grouping expressions are used — never text from the request.
+ */
+export async function report_breakdown(ctx: DbContext, args: Record<string, unknown>, pool: Pool) {
+  requirePerm(ctx, "reports.view");
+  const [from, to] = range(args);
+  const groups = {
+    payment_method: "payment_method",
+    state: "JSON_UNQUOTE(JSON_EXTRACT(shipping_address, '$.state'))",
+    city: "CONCAT(JSON_UNQUOTE(JSON_EXTRACT(shipping_address, '$.city')), ', ', JSON_UNQUOTE(JSON_EXTRACT(shipping_address, '$.state')))",
+  } as const;
+  const by = Object.hasOwn(groups, String(args.p_by)) ? (String(args.p_by) as keyof typeof groups) : "payment_method";
+  const rows = await all(
+    pool,
+    `SELECT ${groups[by]} AS label, COUNT(*) AS orders, COUNT(DISTINCT LOWER(email)) AS customers,
+            SUM(total_paise) AS revenue_paise, SUM(refunded_paise) AS refunded_paise
+       FROM orders WHERE paid_at >= ? AND paid_at < ? AND payment_status IN ${PAID}
+      GROUP BY label ORDER BY revenue_paise DESC`,
+    [from, to],
+  );
+  return rows.map((r) => ({
+    label: String(r.label ?? "—"),
+    orders: Number(r.orders),
+    customers: Number(r.customers),
+    revenue_paise: Number(r.revenue_paise),
+    refunded_paise: Number(r.refunded_paise),
+  }));
+}
+
+/** New vs returning customers among the period's paid orders (by email). */
+export async function report_customer_mix(ctx: DbContext, args: Record<string, unknown>, pool: Pool) {
+  requirePerm(ctx, "reports.view");
+  const [from, to] = range(args);
+  const rows = await all(
+    pool,
+    `SELECT IF(EXISTS (SELECT 1 FROM orders p WHERE LOWER(p.email) = LOWER(o.email) AND p.payment_status IN ${PAID} AND p.paid_at < ?), 'Returning', 'New') AS kind,
+            COUNT(*) AS orders, COUNT(DISTINCT LOWER(o.email)) AS customers, SUM(o.total_paise) AS revenue_paise
+       FROM orders o
+      WHERE o.paid_at >= ? AND o.paid_at < ? AND o.payment_status IN ${PAID}
+      GROUP BY kind ORDER BY kind`,
+    [from, from, to],
+  );
+  return rows.map((r) => ({ kind: String(r.kind), orders: Number(r.orders), customers: Number(r.customers), revenue_paise: Number(r.revenue_paise) }));
+}
+
 /** Customers: registered accounts and guest checkouts, with spend totals. */
 export async function admin_customers(ctx: DbContext, args: Record<string, unknown>, pool: Pool) {
   requirePerm(ctx, "customers.read");
@@ -125,6 +189,9 @@ export async function admin_customers(ctx: DbContext, args: Record<string, unkno
   const like = `%${search}%`;
   const limit = Math.max(1, Math.min(int(args.p_limit) ?? 50, 200));
   const offset = Math.max(0, int(args.p_offset) ?? 0);
+  // Only fixed, known SQL fragments are used for sorting and filtering.
+  const sort = Object.hasOwn(CUSTOMER_SORTS, String(args.p_sort)) ? (String(args.p_sort) as keyof typeof CUSTOMER_SORTS) : "recent";
+  const filter = Object.hasOwn(CUSTOMER_FILTERS, String(args.p_filter)) ? (String(args.p_filter) as keyof typeof CUSTOMER_FILTERS) : "all";
   const rows = await all(
     pool,
     `WITH guests AS (
@@ -152,11 +219,12 @@ export async function admin_customers(ctx: DbContext, args: Record<string, unkno
               COALESCE(s.orders_count, 0) AS orders_count, COALESCE(s.paid_orders, 0) AS paid_orders,
               COALESCE(s.spent, 0) AS spent, s.last_order_at
          FROM people pe LEFT JOIN stats s ON s.email = pe.email
-        WHERE ? = '' OR pe.email LIKE ? OR pe.full_name LIKE ? OR pe.phone LIKE ?
+        WHERE (? = '' OR pe.email LIKE ? OR pe.full_name LIKE ? OR pe.phone LIKE ?)
      )
      SELECT f.*, COUNT(*) OVER () AS total_count
        FROM filtered f
-      ORDER BY f.last_order_at IS NULL, f.last_order_at DESC, f.created_at DESC
+      WHERE ${CUSTOMER_FILTERS[filter]}
+      ORDER BY ${CUSTOMER_SORTS[sort]}
       LIMIT ? OFFSET ?`,
     [search, like, like, like, limit, offset],
   );

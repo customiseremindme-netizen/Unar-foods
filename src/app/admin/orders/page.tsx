@@ -30,6 +30,7 @@ export default async function AdminOrdersPage({ searchParams }: { searchParams: 
 
   if (params.status) query = query.eq("status", params.status);
   if (params.payment) query = query.eq("payment_status", params.payment);
+  if (params.method && ["razorpay", "phonepe", "upi_manual", "cod"].includes(params.method)) query = query.eq("payment_method", params.method);
   if (params.fulfillment) query = query.eq("fulfillment_status", params.fulfillment);
   if (params.attention === "1") query = query.eq("needs_attention", true);
   if (params.view === "to_fulfil") {
@@ -89,6 +90,16 @@ export default async function AdminOrdersPage({ searchParams }: { searchParams: 
               <option value="partially_refunded">Partly refunded</option>
               <option value="refunded">Refunded</option>
               <option value="failed">Failed</option>
+            </select>
+          </label>
+          <label className="text-[0.75rem] text-muted">
+            Paid with
+            <select name="method" defaultValue={params.method ?? ""} className={`${smallInput} mt-1 block`}>
+              <option value="">All</option>
+              <option value="razorpay">Razorpay</option>
+              <option value="phonepe">PhonePe</option>
+              <option value="upi_manual">UPI to our UPI ID</option>
+              <option value="cod">Cash on Delivery</option>
             </select>
           </label>
           <label className="text-[0.75rem] text-muted">

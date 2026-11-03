@@ -10,13 +10,33 @@ import { Badge, EmptyState } from "@/components/ui/misc";
 export const metadata = { title: "Customers" };
 const PAGE_SIZE = 30;
 
-export default async function CustomersPage({ searchParams }: { searchParams: Promise<{ q?: string; page?: string }> }) {
+const SORTS = [
+  ["recent", "Latest order"],
+  ["spent", "Most spent"],
+  ["orders", "Most orders"],
+  ["newest", "Newest customers"],
+  ["name", "Name A–Z"],
+] as const;
+const FILTERS = [
+  ["all", "Everyone"],
+  ["buyers", "Has bought"],
+  ["repeat", "Bought more than once"],
+  ["no_orders", "Hasn't bought yet"],
+  ["registered", "Has an account"],
+  ["guests", "Guest checkout only"],
+  ["subscribed", "Agreed to marketing emails"],
+] as const;
+
+export default async function CustomersPage({ searchParams }: { searchParams: Promise<{ q?: string; page?: string; sort?: string; filter?: string }> }) {
   await requireStaffPage("customers.read");
   const params = await searchParams;
   const q = (params.q ?? "").trim().slice(0, 80);
   const page = Math.max(1, Number(params.page) || 1);
   const db = (await getUserDb())!;
-  const { data: customers } = await db.rpc("admin_customers", { p_search: q, p_limit: PAGE_SIZE, p_offset: (page - 1) * PAGE_SIZE });
+  const sort = SORTS.some(([v]) => v === params.sort) ? params.sort! : "recent";
+  const filter = FILTERS.some(([v]) => v === params.filter) ? params.filter! : "all";
+  const { data: customers } = await db.rpc("admin_customers", { p_search: q, p_sort: sort, p_filter: filter, p_limit: PAGE_SIZE, p_offset: (page - 1) * PAGE_SIZE });
+  const qs = (extra: Record<string, string>) => new URLSearchParams({ ...(q ? { q } : {}), ...(sort !== "recent" ? { sort } : {}), ...(filter !== "all" ? { filter } : {}), ...extra }).toString();
   const total = Number(customers?.[0]?.total_count ?? 0);
 
   return (
@@ -25,7 +45,7 @@ export default async function CustomersPage({ searchParams }: { searchParams: Pr
         title="Customers"
         description="People who created an account or placed an order. Guest shoppers appear here once they order."
         actions={
-          <a href={`/admin/export/customers?q=${encodeURIComponent(q)}`} className="inline-flex h-10 items-center gap-2 rounded-full border border-line bg-paper px-4 text-[0.85rem] font-semibold text-forest hover:border-forest">
+          <a href={`/admin/export/customers?${qs({})}`} className="inline-flex h-10 items-center gap-2 rounded-full border border-line bg-paper px-4 text-[0.85rem] font-semibold text-forest hover:border-forest">
             <Download className="size-4" aria-hidden="true" /> Export CSV
           </a>
         }
@@ -34,10 +54,30 @@ export default async function CustomersPage({ searchParams }: { searchParams: Pr
         <form action="/admin/customers" className="flex flex-wrap items-end gap-3">
           <label className="text-[0.75rem] text-muted">
             Search
-            <input name="q" defaultValue={q} placeholder="Name, email or phone" className={`${smallInput} mt-1 block w-72`} />
+            <input name="q" defaultValue={q} placeholder="Name, email or phone" className={`${smallInput} mt-1 block w-full sm:w-72`} />
           </label>
-          <button className="h-10 rounded-full bg-forest px-5 text-[0.85rem] font-semibold text-cream">Search</button>
-          {q ? (
+          <label className="text-[0.75rem] text-muted">
+            Show
+            <select name="filter" defaultValue={filter} className={`${smallInput} mt-1 block`}>
+              {FILTERS.map(([v, l]) => (
+                <option key={v} value={v}>
+                  {l}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="text-[0.75rem] text-muted">
+            Sort by
+            <select name="sort" defaultValue={sort} className={`${smallInput} mt-1 block`}>
+              {SORTS.map(([v, l]) => (
+                <option key={v} value={v}>
+                  {l}
+                </option>
+              ))}
+            </select>
+          </label>
+          <button className="h-10 rounded-full bg-forest px-5 text-[0.85rem] font-semibold text-cream">Apply</button>
+          {q || sort !== "recent" || filter !== "all" ? (
             <Link href="/admin/customers" className="h-10 content-center text-[0.82rem] text-forest underline">
               Clear
             </Link>
@@ -83,7 +123,7 @@ export default async function CustomersPage({ searchParams }: { searchParams: Pr
       <Pagination
         page={page}
         pages={Math.ceil(total / PAGE_SIZE)}
-        makeHref={(p) => `/admin/customers?${new URLSearchParams({ ...(q ? { q } : {}), page: String(p) }).toString()}`}
+        makeHref={(p) => `/admin/customers?${qs({ page: String(p) })}`}
       />
     </div>
   );

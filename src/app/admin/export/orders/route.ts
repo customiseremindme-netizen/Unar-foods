@@ -18,6 +18,11 @@ export async function GET(request: Request) {
     .limit(10000);
   if (params.status) query = query.eq("status", params.status);
   if (params.payment) query = query.eq("payment_status", params.payment);
+  if (params.method && ["razorpay", "phonepe", "upi_manual", "cod"].includes(params.method)) query = query.eq("payment_method", params.method);
+  if (params.q) {
+    const safe = params.q.replace(/[^a-zA-Z0-9@._+ -]/g, "").slice(0, 80);
+    if (safe) query = query.or(`order_number.ilike.%${safe}%,email.ilike.%${safe}%,phone.ilike.%${safe}%,customer_name.ilike.%${safe}%`);
+  }
   if (params.fulfillment) query = query.eq("fulfillment_status", params.fulfillment);
   if (params.from && params.to) {
     const range = resolveRange({ range: "custom", from: params.from, to: params.to });

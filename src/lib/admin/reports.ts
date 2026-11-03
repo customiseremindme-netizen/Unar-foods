@@ -2,13 +2,18 @@ import "server-only";
 import { type Db } from "@/lib/db/client";
 import type { DateRange } from "./date-range";
 import type { TaxBreakdown } from "@/lib/commerce/types";
+import { paymentMethodLabel } from "@/lib/orders/labels";
 
 const PAID = ["paid", "partially_refunded", "refunded", "cod_collected"];
 
-export type ReportType = "daily" | "products" | "coupons" | "tax" | "refunds";
+export type ReportType = "daily" | "products" | "payment" | "state" | "city" | "customers" | "coupons" | "tax" | "refunds";
 export const REPORT_TABS: { key: ReportType; label: string }[] = [
   { key: "daily", label: "Sales by day" },
   { key: "products", label: "Products" },
+  { key: "payment", label: "Payment methods" },
+  { key: "state", label: "States" },
+  { key: "city", label: "Cities" },
+  { key: "customers", label: "New vs returning" },
   { key: "coupons", label: "Coupons" },
   { key: "tax", label: "GST" },
   { key: "refunds", label: "Refunds" },
@@ -31,6 +36,35 @@ export async function loadReport(db: Db, type: ReportType, range: DateRange): Pr
       return {
         headers: ["Product", "SKU", "Units sold", "Revenue (before order discounts)"],
         rows: (data ?? []).map((d) => [d.title, d.sku, Number(d.units), Number(d.revenue_paise)]),
+        money: [3],
+      };
+    }
+    case "payment":
+    case "state":
+    case "city": {
+      const { data } = await db.rpc("report_breakdown", { ...args, p_by: type === "payment" ? "payment_method" : type });
+      return {
+        headers: [type === "payment" ? "Payment method" : type === "state" ? "State" : "City", "Paid orders", "Customers", "Revenue", "Refunded", "Share of revenue"],
+        rows: (() => {
+          const list = data ?? [];
+          const total = list.reduce((sum, d) => sum + Number(d.revenue_paise), 0) || 1;
+          return list.map((d) => [
+            type === "payment" ? paymentMethodLabel(d.label) : d.label,
+            Number(d.orders),
+            Number(d.customers),
+            Number(d.revenue_paise),
+            Number(d.refunded_paise),
+            `${Math.round((Number(d.revenue_paise) / total) * 1000) / 10}%`,
+          ]);
+        })(),
+        money: [3, 4],
+      };
+    }
+    case "customers": {
+      const { data } = await db.rpc("report_customer_mix", args);
+      return {
+        headers: ["Customers", "Paid orders", "People", "Revenue"],
+        rows: (data ?? []).map((d) => [d.kind === "New" ? "New (first paid order)" : "Returning (ordered before)", Number(d.orders), Number(d.customers), Number(d.revenue_paise)]),
         money: [3],
       };
     }
