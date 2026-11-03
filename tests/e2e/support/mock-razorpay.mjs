@@ -1,5 +1,7 @@
-// Minimal local stand-in for the Razorpay REST API — used ONLY by the
-// automated tests (point RAZORPAY_API_BASE_URL at it). Never used in production.
+// Minimal local stand-ins for outside services — used ONLY by the automated
+// tests, never in production:
+// - Razorpay REST API (RAZORPAY_API_BASE_URL=http://127.0.0.1:4010/v1)
+// - Google sign-in (GOOGLE_OAUTH_BASE_URL=http://127.0.0.1:4010/google)
 import http from "node:http";
 import crypto from "node:crypto";
 const KEY_ID = process.env.RAZORPAY_KEY_ID ?? "rzp_test_localmock01";
@@ -7,6 +9,11 @@ const KEY_SECRET = process.env.RAZORPAY_KEY_SECRET ?? "local_mock_secret_123";
 const orders = new Map();
 const payments = new Map();
 let scenario = "captured"; // captured | authorized | failed
+// Google sign-in: the next person who "chooses an account" (set by the test).
+let googleUser = { sub: "100000000000000000001", email: "google.user@example.com", name: "Google User", email_verified: true };
+const googleCodes = new Map();
+const GOOGLE_SECRET = process.env.GOOGLE_CLIENT_SECRET ?? "local_google_secret";
+const b64url = (o) => Buffer.from(JSON.stringify(o)).toString("base64url");
 const json = (res, code, body) => { res.writeHead(code, { "Content-Type": "application/json" }); res.end(JSON.stringify(body)); };
 const rand = (n) => crypto.randomBytes(n).toString("hex").slice(0, n);
 function paymentFor(order) {
@@ -22,6 +29,29 @@ http.createServer((req, res) => {
     const p = url.pathname;
     if (p === "/__scenario") { scenario = JSON.parse(body).status; return json(res, 200, { scenario }); }
     if (p === "/__state") return json(res, 200, { orders: [...orders.values()], payments: [...payments.values()] });
+    if (p === "/__google") { googleUser = { ...googleUser, ...JSON.parse(body) }; return json(res, 200, googleUser); }
+    if (p === "/google/auth") {
+      // Pretend the person picked their Google account: go straight back with a one-time code.
+      const code = rand(20);
+      googleCodes.set(code, { user: googleUser, nonce: url.searchParams.get("nonce"), clientId: url.searchParams.get("client_id"), challenge: url.searchParams.get("code_challenge"), redirect: url.searchParams.get("redirect_uri") });
+      const back = new URL(url.searchParams.get("redirect_uri"));
+      back.searchParams.set("code", code);
+      back.searchParams.set("state", url.searchParams.get("state") ?? "");
+      res.writeHead(302, { Location: back.toString() });
+      return res.end();
+    }
+    if (p === "/google/token" && req.method === "POST") {
+      const f = new URLSearchParams(body);
+      const entry = googleCodes.get(f.get("code"));
+      googleCodes.delete(f.get("code"));
+      const challenge = crypto.createHash("sha256").update(f.get("code_verifier") ?? "").digest("base64url");
+      if (!entry || f.get("client_secret") !== GOOGLE_SECRET || f.get("client_id") !== entry.clientId || challenge !== entry.challenge || f.get("redirect_uri") !== entry.redirect) {
+        return json(res, 400, { error: "invalid_grant" });
+      }
+      const now = Math.floor(Date.now() / 1000);
+      const claims = { iss: "http://127.0.0.1:4010", aud: entry.clientId, sub: entry.user.sub, email: entry.user.email, email_verified: entry.user.email_verified, name: entry.user.name, nonce: entry.nonce, iat: now, exp: now + 300 };
+      return json(res, 200, { access_token: rand(20), id_token: `${b64url({ alg: "RS256" })}.${b64url(claims)}.mock-signature`, token_type: "Bearer", expires_in: 3599 });
+    }
     const auth = Buffer.from((req.headers.authorization ?? "").replace("Basic ", ""), "base64").toString();
     if (auth !== `${KEY_ID}:${KEY_SECRET}`) return json(res, 401, { error: { code: "BAD_REQUEST_ERROR", description: "Authentication failed" } });
     let m;

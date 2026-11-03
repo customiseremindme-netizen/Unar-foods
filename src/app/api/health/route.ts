@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { checkDatabase } from "@/lib/db/health";
-import { describeSetupKey, getConfiguredSiteUrl, getEmailEnv, getRazorpayEnv } from "@/lib/env";
+import { describeSetupKey, getConfiguredSiteUrl, getEmailEnv, getGoogleEnv, getRazorpayEnv } from "@/lib/env";
 import { getRequestSiteUrl } from "@/lib/site-url";
 
 export const dynamic = "force-dynamic";
@@ -19,6 +19,7 @@ export async function GET() {
     setup_key: describeSetupKey(),
     payments: getRazorpayEnv()?.mode ?? "not set up",
     email: getEmailEnv()?.provider ?? "not set up",
+    google_sign_in: getGoogleEnv() ? "set up" : "not set up",
   };
   return NextResponse.json(body, { status: db.ok ? 200 : 503, headers: { "Cache-Control": "no-store" } });
 }

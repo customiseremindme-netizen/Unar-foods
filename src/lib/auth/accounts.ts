@@ -112,6 +112,50 @@ export async function replaceUnconfirmedSignup(input: { userId: string; password
   });
 }
 
+/**
+ * Finds or creates the account for a Google sign-in. Google has verified the
+ * email address, so:
+ * - an account already linked to this Google user signs in;
+ * - an account with the same email is linked (if it was never confirmed, its
+ *   password is cleared — whoever set it never proved they own the address);
+ * - otherwise a new, confirmed customer account is created (no password; the
+ *   customer can add one later with "Forgot password").
+ */
+export async function findOrCreateGoogleUser(input: { subject: string; email: string; name?: string | null }): Promise<string> {
+  const pool = await getReadyPool();
+  const email = normalizeEmail(input.email);
+  return withTransaction(pool, async (conn) => {
+    const [linked] = await conn.query<RowDataPacket[]>(
+      "SELECT user_id FROM auth_identities WHERE provider = 'google' AND subject = ? FOR UPDATE",
+      [input.subject],
+    );
+    let userId = linked[0]?.user_id as string | undefined;
+    if (!userId) {
+      const [existing] = await conn.query<RowDataPacket[]>("SELECT id, email_confirmed_at FROM auth_users WHERE email = ? FOR UPDATE", [email]);
+      if (existing[0]) {
+        userId = String(existing[0].id);
+        if (!existing[0].email_confirmed_at) {
+          await conn.query("UPDATE auth_users SET email_confirmed_at = ?, password_hash = ? WHERE id = ?", [now(), await hashPassword(randomToken(32)), userId]);
+          await conn.query("DELETE FROM auth_sessions WHERE user_id = ?", [userId]);
+          await conn.query("UPDATE auth_tokens SET used_at = ? WHERE user_id = ? AND used_at IS NULL", [now(), userId]);
+        }
+      } else {
+        userId = randomUUID();
+        await conn.query("INSERT INTO auth_users (id, email, password_hash, email_confirmed_at) VALUES (?, ?, ?, ?)", [
+          userId,
+          email,
+          await hashPassword(randomToken(32)),
+          now(),
+        ]);
+        await conn.query("INSERT INTO profiles (id, email, full_name) VALUES (?, ?, ?)", [userId, email, input.name?.trim().slice(0, 120) || null]);
+      }
+      await conn.query("INSERT INTO auth_identities (provider, subject, user_id, email) VALUES ('google', ?, ?, ?)", [input.subject, userId, email]);
+    }
+    await conn.query("UPDATE auth_identities SET last_sign_in_at = ?, email = ? WHERE provider = 'google' AND subject = ?", [now(), email, input.subject]);
+    return userId;
+  });
+}
+
 export type AuthResult = { ok: true; userId: string } | { ok: false; reason: "invalid" } | { ok: false; reason: "email_not_confirmed"; userId: string };
 
 /** Checks an email + password. Takes the same time whether or not the account exists. */

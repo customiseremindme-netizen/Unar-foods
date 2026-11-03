@@ -116,6 +116,20 @@ export const TABLES: Record<string, Table> = {
     indexes: [["user_id", "purpose"]],
   },
 
+  /** Sign-in with another provider (Google) linked to an account. */
+  auth_identities: {
+    columns: {
+      provider: str(20),
+      subject: str(255),
+      user_id: ref("auth_users"),
+      email: str(254, { nullable: true }),
+      created_at: createdAt(),
+      last_sign_in_at: ts(),
+    },
+    primaryKey: ["provider", "subject"],
+    indexes: [["user_id"]],
+  },
+
   // ---------------------------------------------------------------------------
   // People
   // ---------------------------------------------------------------------------

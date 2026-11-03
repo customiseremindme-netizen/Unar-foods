@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 import { requireStaffPage } from "@/lib/auth/session";
 import { getUserDb } from "@/lib/db/client";
 import { getRequestSiteUrl } from "@/lib/site-url";
-import { getCronSecret, getEmailEnv, getRazorpayEnv, getConfiguredSiteUrl, getShiprocketEnv, maskSecret } from "@/lib/env";
+import { getCronSecret, getEmailEnv, getGoogleEnv, getRazorpayEnv, getConfiguredSiteUrl, getShiprocketEnv, maskSecret } from "@/lib/env";
 import { checkDatabase } from "@/lib/db/health";
 import { getDbConfig } from "@/lib/db/pool";
 import { formatDateTime } from "@/lib/utils";
@@ -31,6 +31,7 @@ export default async function IntegrationsPage() {
   const razorpay = getRazorpayEnv();
   const email = getEmailEnv();
   const shiprocket = getShiprocketEnv();
+  const google = getGoogleEnv();
   const [dbHealth, dbConfig] = [await checkDatabase(), getDbConfig()];
   const site = await getRequestSiteUrl();
   const siteConfigured = !!getConfiguredSiteUrl();
@@ -67,6 +68,15 @@ export default async function IntegrationsPage() {
           <Row label={email?.provider === "smtp" ? "Mailbox password" : "API key"} value={maskSecret(email ? (email.provider === "resend" ? email.resendApiKey : email.smtp.password) : null)} />
           <p className="mt-3 text-[0.78rem] text-muted">
             Use Resend, or your Hostinger email (SMTP). Without email, orders still work — customers see their order on screen, but no emails are sent.
+          </p>
+        </Card>
+
+        <Card title="Google sign-in (optional)" actions={<Status ok={!!google} noText="Not used" />}>
+          <Row label="Client ID" value={google ? `${google.clientId.slice(0, 10)}…${google.clientId.slice(-28)}` : "not set"} />
+          <Row label="Client secret" value={maskSecret(google?.clientSecret)} />
+          <Row label="Authorised redirect URI to paste in Google Cloud" value={`${site}/auth/google/callback`} />
+          <p className="mt-3 text-[0.78rem] text-muted">
+            Shows a “Continue with Google” button on sign-in and sign-up. Google confirms the email address, so these customers don&apos;t need a confirmation email.
           </p>
         </Card>
 

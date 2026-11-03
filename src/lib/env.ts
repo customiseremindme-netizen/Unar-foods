@@ -149,6 +149,25 @@ export function getShiprocketEnv(): ShiprocketEnv | null {
   };
 }
 
+export type GoogleEnv = { clientId: string; clientSecret: string; authUrl: string; tokenUrl: string };
+
+/**
+ * "Continue with Google" sign-in. Needs GOOGLE_CLIENT_ID and
+ * GOOGLE_CLIENT_SECRET from a Google Cloud OAuth client (Web application).
+ */
+export function getGoogleEnv(): GoogleEnv | null {
+  const clientId = read("GOOGLE_CLIENT_ID");
+  const clientSecret = read("GOOGLE_CLIENT_SECRET");
+  if (!clientId || !clientSecret) return null;
+  const base = testOverride("GOOGLE_OAUTH_BASE_URL")?.replace(/\/+$/, "");
+  return {
+    clientId,
+    clientSecret,
+    authUrl: base ? `${base}/auth` : "https://accounts.google.com/o/oauth2/v2/auth",
+    tokenUrl: base ? `${base}/token` : "https://oauth2.googleapis.com/token",
+  };
+}
+
 export function getCronSecret(): string | null {
   return read("CRON_SECRET") ?? null;
 }

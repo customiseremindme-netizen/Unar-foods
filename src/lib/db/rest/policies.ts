@@ -70,6 +70,7 @@ export const RULES: Record<string, TableRules> = {
   auth_users: {},
   auth_sessions: {},
   auth_tokens: {},
+  auth_identities: {},
   counters: {},
   schema_meta: {},
   rate_limits: {},
