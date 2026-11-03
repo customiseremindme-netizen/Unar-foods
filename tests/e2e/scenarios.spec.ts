@@ -518,3 +518,33 @@ test.describe("brief scenarios — phone @mobile", () => {
     expect(errors).toEqual([]);
   });
 });
+
+test.describe("phone layouts after sign-in @mobile", () => {
+  test("account and dashboard pages fit the phone screen @mobile", async ({ page }) => {
+    await signIn(page, process.env.E2E_ADMIN_EMAIL ?? "owner@unar.local", process.env.E2E_ADMIN_PASSWORD ?? "OwnerPass123");
+    await page.waitForURL(/\/account/);
+    const pages = [
+      "/account",
+      "/account/orders",
+      "/account/addresses",
+      "/account/profile",
+      "/admin",
+      "/admin/orders",
+      "/admin/products",
+      "/admin/inventory",
+      "/admin/customers",
+      "/admin/reviews",
+      "/admin/marketing/coupons",
+      "/admin/marketing/subscribers",
+      "/admin/reports",
+      "/admin/settings",
+      "/admin/integrations",
+    ];
+    for (const path of pages) {
+      await page.goto(path);
+      const [scroll, inner] = await page.evaluate(() => [document.documentElement.scrollWidth, window.innerWidth]);
+      expect(scroll, path).toBeLessThanOrEqual(inner + 1);
+      expect(inner, `${path} (page zoomed out)`).toBeLessThanOrEqual(420);
+    }
+  });
+});

@@ -11,7 +11,7 @@ const initial: FormState = { ok: false, message: null };
 export function ProfileForm({ profile }: { profile: { full_name: string; phone: string; marketing_consent: boolean; email: string } }) {
   const [state, action, pending] = useActionState(updateProfileAction, initial);
   return (
-    <form action={action} className="grid gap-5 rounded-[1.75rem] border border-line bg-paper p-6 sm:grid-cols-2" noValidate>
+    <form action={action} className="grid gap-5 rounded-[1.75rem] border border-line bg-paper p-5 sm:grid-cols-2 sm:p-6" noValidate>
       {state.message ? (
         <div className="sm:col-span-2">
           <FormMessage tone={state.ok ? "success" : "error"}>{state.message}</FormMessage>

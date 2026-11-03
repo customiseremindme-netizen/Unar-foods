@@ -14,20 +14,20 @@ export default async function AccountLayout({ children }: { children: ReactNode 
   const staff = await getStaffAccess();
   return (
     <div className="container-site py-10 lg:py-14">
-      <div className="flex flex-wrap items-end justify-between gap-4">
+      <div className="flex flex-wrap items-end justify-between gap-x-4 gap-y-2">
         <div>
           <p className="eyebrow">My account</p>
-          <p className="mt-2 text-[0.9rem] text-muted">Signed in as {user.email}</p>
+          <p className="mt-2 break-all text-[0.9rem] text-muted">Signed in as {user.email}</p>
         </div>
         <form action={signOutAction}>
           <button className="text-[0.85rem] font-semibold text-forest underline underline-offset-4">Sign out</button>
         </form>
       </div>
-      <div className="mt-8 grid gap-10 lg:grid-cols-12">
-        <aside className="lg:col-span-3">
+      <div className="mt-8 grid grid-cols-1 gap-8 lg:grid-cols-12 lg:gap-10">
+        <aside className="min-w-0 lg:col-span-3">
           <AccountNav isStaff={!!staff} />
         </aside>
-        <div className="lg:col-span-9">{children}</div>
+        <div className="min-w-0 lg:col-span-9">{children}</div>
       </div>
     </div>
   );

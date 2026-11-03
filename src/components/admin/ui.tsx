@@ -76,7 +76,7 @@ export function StatCard({ label, value, hint, tone = "default", href }: { label
 
 export function Table({ children, className }: { children: ReactNode; className?: string }) {
   return (
-    <div className={cn("overflow-x-auto rounded-[1.25rem] border border-line bg-paper", className)}>
+    <div className={cn("relative overflow-x-auto rounded-[1.25rem] border border-line bg-paper", className)}>
       <table className="w-full min-w-[640px] text-left text-[0.86rem]">{children}</table>
     </div>
   );
