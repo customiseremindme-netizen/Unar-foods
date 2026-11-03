@@ -103,6 +103,16 @@ the website. They are **not** legal advice and were not written by a lawyer.
   code and GST rate on **each** product, as advised by your accountant. The
   website never guesses a rate; GST stays off until every product has one.
 
+## 6b. Ways to pay and sign in (optional)
+- [ ] Decide which payment options to offer (Settings → Checkout & payments):
+  Razorpay (already includes Google Pay/PhonePe UPI), PhonePe gateway,
+  "Pay by UPI to our UPI ID", Cash on Delivery.
+- [ ] If you offer UPI to your own UPI ID: enter it, and check the dashboard
+  daily for orders "waiting for a UPI payment".
+- [ ] Optional: "Continue with Google" (SETUP_GUIDE Part 4.6).
+- [ ] Settings → Emails: keep "Email customers their invoice (PDF)" on, and
+  fill in your legal name for invoices (Settings → Tax).
+
 ## 7. Before taking real money
 - [ ] Razorpay KYC approved and **live** keys in your hosting settings (see SETUP_GUIDE Part 4.3).
 - [ ] A test purchase, refund and shipment completed successfully.

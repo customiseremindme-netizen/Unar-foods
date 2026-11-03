@@ -126,6 +126,34 @@ Checkout (browser) → placeOrderAction → create_order (reserve stock, 30 min)
   ↘ cron /api/cron/reconcile + every checkout: expired reservations are
     checked with Razorpay, then paid or released
 ```
+Other ways to pay (`orders.payment_method`):
+- **phonepe** — `placeOrderAction` creates a PhonePe payment
+  (`src/lib/payments/phonepe.ts`, Standard Checkout v2) and redirects to
+  PhonePe's page; the customer returns to `/api/payments/phonepe/return`,
+  which asks PhonePe for the status (`confirmPhonePePayment`) before
+  `mark_order_paid`. The webhook `/api/webhooks/phonepe` (SHA-256 of
+  username:password) only triggers the same status check. Each attempt has
+  its own merchantOrderId stored as `payments.provider_order_id`.
+- **upi_manual** — paid to the shop's own UPI ID. The order waits in
+  `pending_payment` (stock held `upi_hold_hours`); the order page shows a UPI
+  QR/link (`src/lib/payments/upi.ts`); the customer submits the UTR
+  (`orders.payment_reference`, which also stops expiry); staff confirm with
+  `confirmUpiPaymentAction` → `mark_order_paid(p_provider = 'upi_manual')`.
+- `mark_order_paid` refuses a payment id that already belongs to another
+  order and a provider that isn't the order's payment method.
+- `availablePaymentMethods()` (src/lib/commerce/payment-methods.ts) decides
+  what checkout offers: switched on in Settings **and** configured.
+
+Invoices: `src/lib/invoices/pdf.ts` (pdf-lib) builds the PDF; it is attached
+to `payment_confirmed` and sent as `invoice` when COD/UPI is marked received
+(`notifyOrder`), and downloadable at `/invoice/<number>/pdf`.
+
+Google sign-in: `/auth/google` → Google → `/auth/google/callback`
+(`src/lib/auth/google.ts`: PKCE + state + nonce, ID token from Google's token
+endpoint, verified email required). `auth_identities` links the Google
+account; `findOrCreateGoogleUser` links by email and clears the password of
+an unconfirmed account with that email.
+
 COD orders are `placed` immediately with `payment_status = cod_pending`;
 revenue counts once staff mark the cash collected. Order numbers come from
 the `counters` table (`UNAR-001001`, …; failed checkouts leave gaps).

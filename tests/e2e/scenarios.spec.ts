@@ -400,8 +400,9 @@ test.describe("brief scenarios — accounts", () => {
       await visitor.goto(RAW);
       return (await visitor.locator("body").textContent())?.includes(body);
     }).toBe(true);
-    await expect(visitor.getByRole("list", { name: "Photos from this review" }).getByRole("button")).toHaveCount(1);
-    await expect(visitor.getByText("Verified purchase")).toHaveCount(0);
+    const mine = visitor.locator("#reviews li", { hasText: body });
+    await expect(mine.getByRole("list", { name: "Photos from this review" }).getByRole("button")).toHaveCount(1);
+    await expect(mine.getByText("Verified purchase")).toHaveCount(0);
     await anon.close();
   });
 });

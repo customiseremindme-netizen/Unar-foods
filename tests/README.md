@@ -45,7 +45,17 @@ local copy of the shop — never the live website.
    SMTP_USER=orders@unar.local
    SMTP_PASSWORD=test
    EMAIL_FROM=UNAR <orders@unar.local>
+   GOOGLE_CLIENT_ID=test-google-client.apps.googleusercontent.com
+   GOOGLE_CLIENT_SECRET=local_google_secret
+   GOOGLE_OAUTH_BASE_URL=http://127.0.0.1:4010/google
+   PHONEPE_CLIENT_ID=TEST_PHONEPE_CLIENT
+   PHONEPE_CLIENT_SECRET=local_phonepe_secret
+   PHONEPE_API_BASE_URL=http://127.0.0.1:4010/phonepe
+   PHONEPE_WEBHOOK_USERNAME=unar_hook
+   PHONEPE_WEBHOOK_PASSWORD=local_hook_password
    ```
+   (The local stand-in in `tests/e2e/support/mock-razorpay.mjs` also plays
+   Google sign-in and PhonePe.)
 3. `npx next dev --webpack` (or `npm run build` then `UNAR_ALLOW_TEST_OVERRIDES=1 npm start`).
    The Turbopack dev server (`npm run dev`) was seen reloading pages in a
    loop, which breaks the browser tests.

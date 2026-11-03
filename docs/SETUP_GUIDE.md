@@ -137,6 +137,63 @@ Switch to **Live Mode**, generate **live** keys (`rzp_live_…`), create the
 **same webhook again in Live Mode** (test and live webhooks are separate),
 and replace the three Razorpay values in Hostinger, then redeploy (Part 5).
 
+**Google Pay and PhonePe through Razorpay:** Razorpay's payment window
+already offers UPI, so customers can pay with Google Pay, PhonePe, Paytm or
+any UPI app. You only need the options below if you also want PhonePe's own
+gateway, or payments straight to your own UPI ID.
+
+### 4.4 PhonePe Payment Gateway (optional)
+For a PhonePe Business **Payment Gateway** account (not just the QR app).
+1. In the PhonePe Business dashboard, find the **Developer / API** settings
+   and note the **Client ID**, **Client Version** and **Client Secret**
+   (**SECRET**). Start with the **test (UAT/sandbox)** credentials.
+2. Add them in Hostinger (Part 5): `PHONEPE_CLIENT_ID`,
+   `PHONEPE_CLIENT_SECRET`, `PHONEPE_CLIENT_VERSION` (usually `1`), and
+   leave `PHONEPE_ENV` as `none` while testing.
+3. Webhook: in the PhonePe dashboard add a webhook with the address shown in
+   **Dashboard → Integrations → PhonePe** (it ends in `/api/webhooks/phonepe`),
+   choose a username and password there, tick *checkout.order.completed* and
+   *checkout.order.failed*, and put the same username/password into
+   `PHONEPE_WEBHOOK_USERNAME` / `PHONEPE_WEBHOOK_PASSWORD` (**SECRET**).
+4. Redeploy. Checkout then shows **Pay with PhonePe**. Place a test order.
+5. To go live: replace the three client values with the **production** ones,
+   set `PHONEPE_ENV` to `production`, create the webhook for production too,
+   and redeploy.
+
+The shop always asks PhonePe directly whether a payment succeeded before it
+marks an order paid. This PhonePe connection was tested only against a
+local stand-in for PhonePe — do a test-mode payment before going live.
+
+### 4.5 Pay by UPI to your own UPI ID — Google Pay / PhonePe Business (optional, no gateway)
+No gateway account or fees: customers pay straight into your bank account.
+The trade-off is that **you confirm each payment yourself**.
+1. Find your business UPI ID in your Google Pay Business or PhonePe Business
+   app (e.g. `unarfoods@okaxis`). It is not a secret.
+2. Dashboard → **Settings → Checkout & payments**: tick **Offer "Pay by UPI
+   to our UPI ID"**, enter the UPI ID and the name customers should see, and
+   save.
+3. When a customer chooses it, their order page shows your UPI QR code and an
+   **Open my UPI app** button with the exact amount; they then type the UPI
+   transaction ID (UTR).
+4. You get the new-order email ("UPI payment to check"). Open the order in
+   the dashboard, check the money arrived in your UPI/bank app, then press
+   **Confirm UPI payment received**. The customer gets their confirmation and
+   invoice. If nothing arrived, cancel the order.
+
+### 4.6 "Continue with Google" sign-in (optional)
+1. Go to console.cloud.google.com → create a project (e.g. "UNAR shop") →
+   **APIs & Services → OAuth consent screen**: choose *External*, fill in
+   the app name and your email, and publish it.
+2. **APIs & Services → Credentials → Create credentials → OAuth client ID**
+   → type **Web application**. Under **Authorised redirect URIs** add the
+   address shown in **Dashboard → Integrations → Google sign-in** (it ends
+   in `/auth/google/callback`, e.g.
+   `https://coral-seahorse-181020.hostingersite.com/auth/google/callback`).
+   Add your own domain's address too once it is connected.
+3. Put the **Client ID** into `GOOGLE_CLIENT_ID` and the **Client secret**
+   into `GOOGLE_CLIENT_SECRET` (**SECRET**) in Hostinger, and redeploy.
+   Sign-in and sign-up pages then show **Continue with Google**.
+
 ---
 
 ## Part 5 — Publishing the website on Hostinger
@@ -160,13 +217,15 @@ Hostinger. **After adding or changing any value, redeploy.**
 | `EMAIL_FROM`, `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD` | from Part 3 (**SMTP_PASSWORD is SECRET**) |
 | `CRON_SECRET` | a new long random password, 40+ characters (**SECRET**) |
 | `SHIPROCKET_EMAIL` / `SHIPROCKET_PASSWORD` | only if you use Shiprocket (create an **API user** in Shiprocket → Settings → API) |
+| `PHONEPE_CLIENT_ID`, `PHONEPE_CLIENT_SECRET`, `PHONEPE_CLIENT_VERSION`, `PHONEPE_ENV`, `PHONEPE_WEBHOOK_USERNAME`, `PHONEPE_WEBHOOK_PASSWORD` | only for PhonePe's gateway (Part 4.4); otherwise `none`. The secret and webhook password are **SECRET** |
+| `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` | only for "Continue with Google" (Part 4.6); otherwise `none`. The secret is **SECRET** |
 
 **About `DB_HOST`:** on Hostinger the website and the database are on the
 same account, so `localhost` normally works. If `/api/health` says the
 database is *unreachable*, use the **MySQL host** shown next to your
 database in hPanel → Databases instead, and redeploy.
 
-Never add `RAZORPAY_API_BASE_URL` — it exists only for automated tests (and
+Never add `RAZORPAY_API_BASE_URL`, `PHONEPE_API_BASE_URL` or `GOOGLE_OAUTH_BASE_URL` — they exist only for automated tests (and
 is ignored on the live site anyway). The file `.env.example` in the code
 lists the same names.
 
@@ -286,6 +345,12 @@ The **Overview** page shows a checklist until everything is done. In short:
 ---
 
 ## Part 8 — Everyday use
+
+**Invoices are emailed automatically** (once email is set up, Part 3): the
+PDF invoice is attached to the "payment confirmed" email for online
+payments, and sent when you mark cash on delivery or a UPI payment as
+received. To resend one, open the order → **Email invoice (PDF) to
+customer**. Switch automatic invoices off in Settings → Emails.
 
 | Task | Where |
 | --- | --- |

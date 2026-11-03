@@ -26,6 +26,22 @@ site itself could not be opened or tested from the development session.
 - Security updates (Next.js 16.4.3 and others); SEO addresses fixed.
 - Not built (optional in the brief): wishlist and product quick view.
 
+## New on 3 November 2026 (all tested locally)
+- **Invoices emailed automatically** as a PDF once money is received
+  (online payment, or cash on delivery / UPI marked received); download link
+  for customers; "Email invoice" button in the dashboard.
+- **PhonePe Payment Gateway** as a second online gateway — tested only
+  against a local stand-in for PhonePe (success, failure + retry, wrong
+  amount, webhook security). Needs your PhonePe Business gateway keys.
+- **Pay by UPI to your own UPI ID** (Google Pay / PhonePe Business): QR code
+  and "Open my UPI app" link; you confirm each payment in the dashboard.
+- **Continue with Google** sign-in — tested against a local stand-in for
+  Google. Needs a Google Cloud OAuth client.
+- Browser tests: 68 (desktop + phone), all passing on the production build
+  with MySQL 8.0 and with MariaDB 11.4; 19 database tests on both.
+- Not built: automatic WhatsApp/SMS messages (needs a WhatsApp Business API
+  provider account).
+
 ## ✅ Built and tested
 
 **Storefront**
