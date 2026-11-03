@@ -192,6 +192,12 @@ export default async function SettingsPage() {
           { name: "from_name", label: "Sender name", type: "text", max: 80 },
           { name: "reply_to", label: "Replies go to (optional)", type: "email" },
           { name: "notify_admin_new_order", label: "Email me when a new order is placed", type: "boolean" },
+          {
+            name: "send_invoice",
+            label: "Email customers their invoice (PDF) automatically",
+            type: "boolean",
+            help: "Attached to the “payment confirmed” email for online payments, and sent when you mark cash on delivery or UPI as received.",
+          },
           { name: "admin_recipients", label: "Send new-order emails to (one email per line)", type: "lines", rows: 2 },
           {
             name: "templates",
@@ -200,6 +206,7 @@ export default async function SettingsPage() {
             templates: [
               { key: "order_placed", label: "Order received" },
               { key: "payment_confirmed", label: "Payment confirmed" },
+              { key: "invoice", label: "Invoice (cash on delivery / UPI received)" },
               { key: "order_shipped", label: "Order shipped" },
               { key: "order_delivered", label: "Order delivered" },
               { key: "order_cancelled", label: "Order cancelled" },

@@ -295,6 +295,11 @@ export function QuickActions({
           Resend confirmation email
         </ActionButton>
       ) : null}
+      {canWrite && ["paid", "partially_refunded", "refunded", "cod_collected"].includes(paymentStatus) ? (
+        <ActionButton size="sm" variant="ghost" action={() => resendEmailAction(orderId, "invoice")}>
+          Email invoice (PDF) to customer
+        </ActionButton>
+      ) : null}
     </div>
   );
 }

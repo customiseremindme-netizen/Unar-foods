@@ -120,6 +120,8 @@ export const settingsSchemas = {
     reply_to: z.union([emailSchema, z.literal("")]).default(""),
     admin_recipients: z.array(emailSchema).max(10).default([]),
     notify_admin_new_order: z.boolean().default(true),
+    /** Attach the PDF invoice to the "payment confirmed" email and email it when cash on delivery is collected. */
+    send_invoice: z.boolean().default(true),
     whatsapp_enabled: z.boolean().default(false),
     templates: z
       .record(

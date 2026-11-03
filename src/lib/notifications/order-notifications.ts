@@ -5,6 +5,8 @@ import { getRequestSiteUrl } from "@/lib/site-url";
 import { sendEmail } from "@/lib/email/send";
 import { escapeHtml, fillTemplate, renderOrderEmail, type EmailOrder } from "@/lib/email/templates";
 import { logError } from "@/lib/monitoring";
+import { isInvoiceable, renderInvoicePdf, type InvoiceOrder } from "@/lib/invoices/pdf";
+import type { EmailAttachment } from "@/lib/email/send";
 
 export type OrderTemplate =
   | "order_placed"
@@ -13,10 +15,14 @@ export type OrderTemplate =
   | "order_delivered"
   | "order_cancelled"
   | "refund_issued"
+  | "invoice"
   | "admin_new_order";
 
 /** Templates that should only ever be sent once per order. */
-const ONCE_ONLY: OrderTemplate[] = ["order_placed", "payment_confirmed", "admin_new_order", "order_delivered", "order_cancelled"];
+const ONCE_ONLY: OrderTemplate[] = ["order_placed", "payment_confirmed", "admin_new_order", "order_delivered", "order_cancelled", "invoice"];
+
+/** Emails that carry the PDF invoice (when the order is paid and the owner hasn't switched it off). */
+const WITH_INVOICE: OrderTemplate[] = ["payment_confirmed", "invoice"];
 
 const HEADINGS: Record<OrderTemplate, string> = {
   order_placed: "Thank you for your order",
@@ -25,6 +31,7 @@ const HEADINGS: Record<OrderTemplate, string> = {
   order_delivered: "Your order was delivered",
   order_cancelled: "Your order was cancelled",
   refund_issued: "Refund update",
+  invoice: "Your invoice",
   admin_new_order: "New order received",
 };
 
@@ -35,7 +42,7 @@ const HEADINGS: Record<OrderTemplate, string> = {
 export async function notifyOrder(
   orderId: string,
   template: OrderTemplate,
-  extra?: { html?: string; text?: string },
+  extra?: { html?: string; text?: string; force?: boolean },
 ): Promise<void> {
   try {
     const admin = getServiceDb();
@@ -43,7 +50,8 @@ export async function notifyOrder(
     const settings = await getAllSettings();
     const notifications = settings.notifications;
 
-    if (ONCE_ONLY.includes(template)) {
+    if (template === "invoice" && !notifications.send_invoice && !extra?.force) return;
+    if (ONCE_ONLY.includes(template) && !extra?.force) {
       const { count } = await admin
         .from("notification_log")
         .select("id", { count: "exact", head: true })
@@ -56,11 +64,12 @@ export async function notifyOrder(
     const { data: order } = await admin
       .from("orders")
       .select(
-        "id, order_number, user_id, customer_name, email, phone, payment_method, payment_status, subtotal_paise, discount_paise, shipping_paise, cod_fee_paise, tax_paise, prices_include_tax, total_paise, coupon_code, shipping_address, order_items ( title, variant_title, quantity, line_total_paise )",
+        "id, order_number, user_id, customer_name, email, phone, payment_method, payment_status, subtotal_paise, discount_paise, shipping_paise, cod_fee_paise, tax_paise, prices_include_tax, tax_breakdown, total_paise, refunded_paise, coupon_code, shipping_address, billing_address, placed_at, paid_at, created_at, order_items ( title, variant_title, sku, hsn_code, gst_rate, quantity, unit_price_paise, line_total_paise )",
       )
       .eq("id", orderId)
       .maybeSingle();
     if (!order) return;
+    if (template === "invoice" && !isInvoiceable(order.payment_status)) return;
 
     const siteUrl = await getRequestSiteUrl();
     const emailOrder: EmailOrder = {
@@ -86,7 +95,10 @@ export async function notifyOrder(
       if (config && !config.enabled) return;
       recipients = [order.email];
       subject = fillTemplate(config?.subject ?? `${HEADINGS[template]} — ${order.order_number}`, values);
-      intro = fillTemplate(config?.intro ?? "", values);
+      intro = fillTemplate(
+        config?.intro || (template === "invoice" ? "Thank you for your payment. Your invoice for order {{order_number}} is attached as a PDF." : ""),
+        values,
+      );
       orderUrl = order.user_id
         ? `${siteUrl}/account/orders/${encodeURIComponent(order.order_number)}`
         : `${siteUrl}/track-order?order=${encodeURIComponent(order.order_number)}`;
@@ -108,6 +120,17 @@ export async function notifyOrder(
       showItems: template !== "refund_issued",
     });
 
+    // The invoice PDF goes with the payment confirmation (and the separate invoice email).
+    let attachments: EmailAttachment[] | undefined;
+    if (WITH_INVOICE.includes(template) && (notifications.send_invoice || extra?.force) && isInvoiceable(order.payment_status)) {
+      try {
+        const pdf = await renderInvoicePdf({ ...order, items: order.order_items ?? [] } as unknown as InvoiceOrder, settings);
+        attachments = [{ filename: `Invoice-${order.order_number}.pdf`, content: pdf, contentType: "application/pdf" }];
+      } catch (error) {
+        logError("notifications.invoice_pdf", error, { orderId });
+      }
+    }
+
     const result = await sendEmail({
       to: recipients,
       subject,
@@ -115,6 +138,7 @@ export async function notifyOrder(
       text,
       replyTo: notifications.reply_to || settings.store.email || undefined,
       fromName: notifications.from_name,
+      attachments,
     });
 
     await admin.from("notification_log").insert({

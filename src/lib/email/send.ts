@@ -5,7 +5,9 @@ import { logError } from "@/lib/monitoring";
 
 export type SendResult = { status: "sent" | "skipped" | "failed"; id?: string; error?: string };
 
-type Message = { from: string; to: string[]; subject: string; html: string; text: string; replyTo?: string };
+export type EmailAttachment = { filename: string; content: Uint8Array; contentType: string };
+
+type Message = { from: string; to: string[]; subject: string; html: string; text: string; replyTo?: string; attachments?: EmailAttachment[] };
 
 async function sendViaSmtp(smtp: SmtpEnv, message: Message): Promise<SendResult> {
   const transport = createTransport({
@@ -19,7 +21,11 @@ async function sendViaSmtp(smtp: SmtpEnv, message: Message): Promise<SendResult>
     socketTimeout: 20000,
   });
   try {
-    const info = await transport.sendMail({ ...message, replyTo: message.replyTo || undefined });
+    const info = await transport.sendMail({
+      ...message,
+      replyTo: message.replyTo || undefined,
+      attachments: message.attachments?.map((a) => ({ filename: a.filename, content: Buffer.from(a.content), contentType: a.contentType })),
+    });
     return { status: "sent", id: info.messageId };
   } finally {
     transport.close();
@@ -39,6 +45,7 @@ export async function sendEmail(input: {
   text: string;
   replyTo?: string;
   fromName?: string;
+  attachments?: EmailAttachment[];
 }): Promise<SendResult> {
   const env = getEmailEnv();
   if (!env) return { status: "skipped", error: "Email provider not configured" };
@@ -47,7 +54,7 @@ export async function sendEmail(input: {
   const to = Array.isArray(input.to) ? input.to : [input.to];
   if (env.provider === "smtp") {
     try {
-      return await sendViaSmtp(env.smtp, { from, to, subject: input.subject, html: input.html, text: input.text, replyTo: input.replyTo });
+      return await sendViaSmtp(env.smtp, { from, to, subject: input.subject, html: input.html, text: input.text, replyTo: input.replyTo, attachments: input.attachments });
     } catch (error) {
       logError("email.smtp", error);
       return { status: "failed", error: error instanceof Error ? error.message.slice(0, 200) : "SMTP error" };
@@ -64,6 +71,7 @@ export async function sendEmail(input: {
         html: input.html,
         text: input.text,
         reply_to: input.replyTo || undefined,
+        attachments: input.attachments?.map((a) => ({ filename: a.filename, content: Buffer.from(a.content).toString("base64") })),
       }),
       cache: "no-store",
       signal: AbortSignal.timeout(15000),

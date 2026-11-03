@@ -7,6 +7,7 @@ import { formatINRFixed } from "@/lib/money";
 import { formatDate } from "@/lib/utils";
 import { PrintButton } from "@/components/orders/print-button";
 import type { TaxBreakdown } from "@/lib/commerce/types";
+import { paymentMethodLabel } from "@/lib/invoices/pdf";
 
 export const metadata: Metadata = { title: "Invoice", robots: { index: false, follow: false } };
 export const dynamic = "force-dynamic";
@@ -40,6 +41,12 @@ export default async function InvoicePage({
   return (
     <div className="min-h-dvh bg-cream-deep/40 py-8 print:bg-white print:py-0">
       <div className="no-print mx-auto mb-4 flex max-w-3xl justify-end gap-3 px-4">
+        <a
+          href={`/invoice/${encodeURIComponent(order.order_number)}/pdf${token ? `?token=${encodeURIComponent(token)}` : ""}`}
+          className="inline-flex h-10 items-center rounded-full border border-line bg-paper px-4 text-[0.85rem] font-semibold text-forest hover:border-forest"
+        >
+          Download PDF
+        </a>
         <PrintButton />
       </div>
       <main className="mx-auto max-w-3xl bg-white p-8 text-[0.85rem] leading-relaxed text-graphite shadow-soft print:max-w-none print:p-0 print:shadow-none sm:p-12">
@@ -185,7 +192,7 @@ export default async function InvoicePage({
 
         <footer className="mt-10 border-t border-line pt-6 text-[0.78rem] text-muted">
           <p>
-            Payment: {order.payment_method === "cod" ? "Cash on Delivery" : "Online (Razorpay)"} · Status: {order.payment_status.replace(/_/g, " ")}
+            Payment: {paymentMethodLabel(order.payment_method)} · Status: {order.payment_status.replace(/_/g, " ")}
           </p>
           {tax.invoice_footer ? <p className="mt-2">{tax.invoice_footer}</p> : null}
           <p className="mt-2">This is a computer-generated document.</p>

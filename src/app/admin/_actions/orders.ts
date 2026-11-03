@@ -153,6 +153,7 @@ export async function markCodCollectedAction(orderId: string): Promise<ActionRes
     const { error } = await db.rpc("mark_cod_collected", { p_order_id: id.parse(orderId) });
     if (error) throw new UserFacingError(dbError(error.message));
     await logAdminAction({ action: "order.cod_collected", entityType: "order", entityId: orderId, summary: "Marked COD payment as collected" });
+    await notifyOrder(orderId, "invoice");
     done(orderId);
     return { ok: true, message: "Cash on Delivery payment recorded." };
   });
@@ -306,10 +307,12 @@ export async function reconcilePaymentAction(orderId: string): Promise<ActionRes
 export async function resendEmailAction(orderId: string, template: OrderTemplate): Promise<ActionResult> {
   return runAdminAction("orders.write", async ({ db }) => {
     id.parse(orderId);
+    z.enum(["order_placed", "payment_confirmed", "order_shipped", "order_delivered", "order_cancelled", "refund_issued", "invoice"]).parse(template);
     // Allow re-sending once-only templates by clearing their earlier log entry.
     check(await db.from("orders").select("id").eq("id", orderId).single());
     await requireServiceDb().from("notification_log").delete().eq("order_id", orderId).eq("template", template);
-    await notifyOrder(orderId, template);
+    // A button press means the owner wants it sent, even if automatic invoices are off.
+    await notifyOrder(orderId, template, template === "invoice" ? { force: true } : undefined);
     const { data } = await db
       .from("notification_log")
       .select("status, error")
