@@ -161,7 +161,7 @@ export default async function AdminOrdersPage({ searchParams }: { searchParams: 
                     <Badge tone={st.tone}>{st.label}</Badge>
                   </Td>
                   <Td className="text-[0.8rem] text-muted">
-                    {o.payment_method === "cod" ? "COD" : "Online"} · {o.payment_status.replace(/_/g, " ")}
+                    {o.payment_method === "cod" ? "COD" : o.payment_method === "upi_manual" ? "UPI (own)" : o.payment_method === "phonepe" ? "PhonePe" : "Online"} · {o.payment_status.replace(/_/g, " ")}
                   </Td>
                   <Td className="text-right tabular-nums">{formatINR(o.total_paise)}</Td>
                   <Td className="text-muted">{formatDateTime(o.created_at)}</Td>

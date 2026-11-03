@@ -6,6 +6,7 @@ import { getEmailEnv } from "@/lib/env";
 import { OrderDetail } from "@/components/orders/order-detail";
 import { ButtonLink } from "@/components/ui/button";
 import { LeafSprig } from "@/components/brand/botanical";
+import { upiDetailsFor } from "@/lib/orders/upi-details";
 
 export const metadata: Metadata = { title: "Your order", robots: { index: false, follow: false } };
 export const dynamic = "force-dynamic";
@@ -15,11 +16,12 @@ export default async function OrderPage({
   searchParams,
 }: {
   params: Promise<{ orderNumber: string }>;
-  searchParams: Promise<{ token?: string }>;
+  searchParams: Promise<{ token?: string; payment?: string }>;
 }) {
-  const [{ orderNumber }, { token }] = await Promise.all([params, searchParams]);
+  const [{ orderNumber }, { token, payment }] = await Promise.all([params, searchParams]);
   const order = await getOrderForViewer(decodeURIComponent(orderNumber), token ?? null);
   if (!order) notFound();
+  const upi = await upiDetailsFor(order);
 
   const confirmed = order.status === "placed";
 
@@ -42,7 +44,12 @@ export default async function OrderPage({
           </p>
         ) : null}
       </div>
-      <OrderDetail order={order} token={token ?? null} />
+      <OrderDetail
+        order={order}
+        token={token ?? null}
+        upi={upi}
+        paymentResult={payment === "failed" || payment === "pending" || payment === "success" ? payment : null}
+      />
       <div className="mt-12 flex flex-wrap gap-3">
         <ButtonLink href="/shop" variant="secondary">
           Continue shopping

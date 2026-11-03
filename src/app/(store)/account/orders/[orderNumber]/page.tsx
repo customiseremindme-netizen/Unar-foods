@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { requireUser } from "@/lib/auth/session";
 import { getOrderForViewer } from "@/lib/orders/view";
 import { OrderDetail } from "@/components/orders/order-detail";
+import { upiDetailsFor } from "@/lib/orders/upi-details";
 
 export default async function AccountOrderPage({ params }: { params: Promise<{ orderNumber: string }> }) {
   const { orderNumber } = await params;
@@ -15,7 +16,7 @@ export default async function AccountOrderPage({ params }: { params: Promise<{ o
         ← All orders
       </Link>
       <h1 className="mb-8 mt-4 text-[2.2rem]">Order {order.order_number}</h1>
-      <OrderDetail order={order} token={null} />
+      <OrderDetail order={order} token={null} upi={await upiDetailsFor(order)} />
     </div>
   );
 }

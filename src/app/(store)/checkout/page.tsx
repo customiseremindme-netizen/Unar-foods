@@ -4,8 +4,8 @@ import { Lock } from "lucide-react";
 import { getSessionUser } from "@/lib/auth/session";
 import { getUserDb } from "@/lib/db/client";
 import { getPublicSettings } from "@/lib/settings";
-import { getRazorpayEnv } from "@/lib/env";
 import { getCartView } from "@/lib/commerce/cart";
+import { availablePaymentMethods } from "@/lib/commerce/payment-methods";
 import { CheckoutForm, type SavedAddress } from "@/components/checkout/checkout-form";
 import { EmptyState } from "@/components/ui/misc";
 import { ButtonLink } from "@/components/ui/button";
@@ -50,7 +50,7 @@ export default async function CheckoutPage() {
     }
   }
 
-  const onlineAvailable = settings.checkout.online_payments_enabled && getRazorpayEnv() !== null;
+  const methods = await availablePaymentMethods(settings);
 
   return (
     <div className="container-site py-10 lg:py-14">
@@ -69,8 +69,7 @@ export default async function CheckoutPage() {
         initialName={profile?.full_name ?? ""}
         savedAddresses={addresses}
         signedIn={!!user}
-        onlineAvailable={onlineAvailable}
-        codEnabled={settings.checkout.cod_enabled}
+        methods={methods}
         newsletterConsentText={settings.newsletter.consent_text}
         themeColor={settings.theme.forest}
         pricesIncludeTax={settings.tax.prices_include_tax}

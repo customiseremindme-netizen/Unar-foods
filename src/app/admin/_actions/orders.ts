@@ -7,7 +7,8 @@ import { logAdminAction } from "@/lib/audit";
 import { revalidateStorefront } from "@/lib/cache";
 import { rupeesToPaise } from "@/lib/money";
 import { createRazorpayRefund, isRazorpayConfigured, RazorpayError } from "@/lib/payments/razorpay";
-import { reconcileOrderPayment } from "@/lib/commerce/payments";
+import { isPhonePeConfigured, PhonePeError, refundPhonePePayment } from "@/lib/payments/phonepe";
+import { confirmManualUpiPayment, reconcileOrderPayment } from "@/lib/commerce/payments";
 import { notifyOrder, trackingExtra, type OrderTemplate } from "@/lib/notifications/order-notifications";
 import { getAllSettings } from "@/lib/settings";
 import {
@@ -159,6 +160,34 @@ export async function markCodCollectedAction(orderId: string): Promise<ActionRes
   });
 }
 
+/** Staff checked their UPI app and the money for a "UPI to our UPI ID" order arrived. */
+export async function confirmUpiPaymentAction(orderId: string, reference: string): Promise<ActionResult> {
+  return runAdminAction("orders.write", async ({ db }) => {
+    id.parse(orderId);
+    const ref = z
+      .string()
+      .trim()
+      .transform((v) => v.replace(/\s+/g, "").toUpperCase())
+      .pipe(z.string().regex(/^[A-Z0-9]{6,35}$/, "Enter the UPI transaction ID (UTR) from your UPI app"))
+      .parse(reference);
+    const { data: order } = check(await db.from("orders").select("payment_method, status").eq("id", orderId).single());
+    if (order!.payment_method !== "upi_manual") throw new UserFacingError("This order wasn't paid by UPI to your UPI ID.");
+    let result: string;
+    try {
+      result = await confirmManualUpiPayment(orderId, ref);
+    } catch (error) {
+      const message = (error as Error).message;
+      if (message.includes("PAYMENT_BELONGS_TO_ANOTHER_ORDER")) throw new UserFacingError("This UPI reference was already used to confirm another order.");
+      throw error;
+    }
+    if (result === "amount_mismatch" || result === "invalid") throw new UserFacingError("Could not confirm this payment.");
+    await requireServiceDb().from("orders").update({ needs_attention: false, attention_reason: null }).eq("id", orderId);
+    await logAdminAction({ action: "order.upi_confirmed", entityType: "order", entityId: orderId, summary: `Confirmed UPI payment ${ref}` });
+    done(orderId);
+    return { ok: true, message: result === "already_paid" ? "This order was already paid." : "UPI payment confirmed. The customer has been emailed." };
+  });
+}
+
 export async function clearAttentionAction(orderId: string): Promise<ActionResult> {
   return runAdminAction("orders.write", async ({ db, user }) => {
     check(await db.from("orders").update({ needs_attention: false }).eq("id", id.parse(orderId)));
@@ -173,7 +202,7 @@ async function issueRefund(input: {
   amountPaise: number;
   reason: string;
   restock: boolean;
-}): Promise<{ provider: "razorpay" | "manual"; providerRefundId: string | null; status: "pending" | "processed" }> {
+}): Promise<{ provider: "razorpay" | "phonepe" | "manual"; providerRefundId: string | null; status: "pending" | "processed" }> {
   const admin = requireServiceDb();
   const { data: order } = await admin
     .from("orders")
@@ -184,7 +213,7 @@ async function issueRefund(input: {
   if (input.amountPaise <= 0) throw new UserFacingError("Enter a refund amount.");
   if (input.amountPaise > order.total_paise - order.refunded_paise) throw new UserFacingError("That refund is more than the amount left to refund.");
 
-  let provider: "razorpay" | "manual" = "manual";
+  let provider: "razorpay" | "phonepe" | "manual" = "manual";
   let providerRefundId: string | null = null;
   let status: "pending" | "processed" = "processed";
 
@@ -214,6 +243,33 @@ async function issueRefund(input: {
       throw e;
     }
   }
+  if (order.payment_method === "phonepe") {
+    if (!isPhonePeConfigured()) throw new UserFacingError("PhonePe is not configured, so an online refund can't be sent.");
+    const { data: payment } = await admin
+      .from("payments")
+      .select("provider_order_id")
+      .eq("order_id", order.id)
+      .eq("provider", "phonepe")
+      .in("status", ["captured", "partially_refunded"])
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (!payment?.provider_order_id) throw new UserFacingError("No completed PhonePe payment found for this order.");
+    try {
+      const refund = await refundPhonePePayment({
+        merchantRefundId: `${order.order_number}-RF${Date.now().toString(36)}`,
+        merchantOrderId: payment.provider_order_id,
+        amountPaise: input.amountPaise,
+      });
+      provider = "phonepe";
+      providerRefundId = refund.refundId;
+      status = refund.state === "COMPLETED" ? "processed" : "pending";
+    } catch (e) {
+      if (e instanceof PhonePeError) throw new UserFacingError(`PhonePe refused the refund: ${e.message}`);
+      throw e;
+    }
+  }
+  // Cash on delivery and UPI to your own UPI ID: you send the money back yourself; this records it.
   return { provider, providerRefundId, status };
 }
 
@@ -296,10 +352,10 @@ export async function reconcilePaymentAction(orderId: string): Promise<ActionRes
       ok: true,
       message:
         outcome === "paid"
-          ? "Razorpay confirms this order was paid. The order has been updated."
+          ? "The payment provider confirms this order was paid. The order has been updated."
           : outcome === "not_paid"
-            ? "Razorpay shows no successful payment for this order."
-            : "Couldn't reach Razorpay. Please try again later.",
+            ? "The payment provider shows no successful payment for this order."
+            : "Couldn't get an answer from the payment provider yet. Please try again later.",
     };
   });
 }

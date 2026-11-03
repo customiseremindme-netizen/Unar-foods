@@ -65,6 +65,10 @@ await db.query(
 );
 await db.query("UPDATE cms_sections SET is_visible = 1 WHERE `key` = 'trust'");
 await db.query("UPDATE settings SET value = JSON_SET(value, '$.cod_enabled', true) WHERE `key` = 'checkout'");
+// Test-only UPI ID for the "Pay by UPI to our UPI ID" option (no real account).
+await db.query(
+  "UPDATE settings SET value = JSON_SET(value, '$.upi_enabled', true, '$.upi_id', 'unar.test@okaxis', '$.upi_payee_name', 'UNAR TEST') WHERE `key` = 'checkout'",
+);
 
 const email = process.env.E2E_ADMIN_EMAIL ?? "owner@unar.local";
 const password = process.env.E2E_ADMIN_PASSWORD ?? "OwnerPass123";

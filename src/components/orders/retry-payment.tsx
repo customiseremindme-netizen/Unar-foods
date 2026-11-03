@@ -33,6 +33,10 @@ export function RetryPayment({ orderNumber, token }: { orderNumber: string; toke
               setBusy(false);
               return;
             }
+            if (result.kind === "redirect") {
+              window.location.assign(result.url);
+              return;
+            }
             if (result.kind === "razorpay") {
               const outcome = await payWithRazorpay(result.razorpay, "#2E4E36");
               if (outcome.outcome === "verified") router.refresh();

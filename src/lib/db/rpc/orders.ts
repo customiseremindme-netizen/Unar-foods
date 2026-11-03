@@ -48,10 +48,12 @@ export async function create_order(ctx: DbContext, args: Record<string, unknown>
   if (!Array.isArray(items) || items.length === 0) raise("EMPTY_CART");
   if (items.length > 50) raise("TOO_MANY_ITEMS");
 
-  const isCod = order.payment_method === "cod";
+  const method = ["razorpay", "phonepe", "upi_manual", "cod"].includes(String(order.payment_method)) ? String(order.payment_method) : "razorpay";
+  const isCod = method === "cod";
   const email = String(order.email ?? "").trim().toLowerCase();
   const userId = str(order.user_id);
-  const minutes = Math.max(5, Math.min(120, int(order.reservation_minutes) ?? 30));
+  // UPI paid to the shop's own UPI ID is confirmed by staff, so its stock is held longer (up to 3 days).
+  const minutes = Math.max(5, Math.min(method === "upi_manual" ? 72 * 60 : 120, int(order.reservation_minutes) ?? 30));
   const pricesIncludeTax = bool(order.prices_include_tax, true);
   const discount = int(order.discount_paise) ?? 0;
   const shipping = int(order.shipping_paise) ?? 0;
@@ -73,7 +75,7 @@ export async function create_order(ctx: DbContext, args: Record<string, unknown>
       billing_address: order.billing_address ?? null,
       status: isCod ? "placed" : "pending_payment",
       payment_status: isCod ? "cod_pending" : "unpaid",
-      payment_method: isCod ? "cod" : "razorpay",
+      payment_method: method,
       subtotal_paise: 0,
       discount_paise: discount,
       shipping_paise: shipping,
@@ -189,7 +191,14 @@ export async function create_order(ctx: DbContext, args: Record<string, unknown>
       await orderEvent(conn, orderId, "placed", "Order placed — Cash on Delivery.", "customer", null);
       await clearOrderCart(conn, orderId);
     } else {
-      await orderEvent(conn, orderId, "created", "Order created. Waiting for online payment.", "internal", null);
+      await orderEvent(
+        conn,
+        orderId,
+        "created",
+        method === "upi_manual" ? "Order created. Waiting for your UPI payment." : "Order created. Waiting for online payment.",
+        method === "upi_manual" ? "customer" : "internal",
+        null,
+      );
     }
     return { order_id: orderId, order_number: orderNumber };
   });
@@ -197,9 +206,10 @@ export async function create_order(ctx: DbContext, args: Record<string, unknown>
 
 export async function attach_provider_order(ctx: DbContext, args: Record<string, unknown>, pool: Pool) {
   requireService(ctx);
+  const provider = args.p_provider === "phonepe" ? "phonepe" : "razorpay";
   await insertRow(pool, "payments", {
     order_id: args.p_order_id,
-    provider: "razorpay",
+    provider,
     provider_order_id: args.p_provider_order_id,
     amount_paise: int(args.p_amount_paise),
     status: "created",
@@ -217,24 +227,29 @@ export async function mark_order_paid(ctx: DbContext, args: Record<string, unkno
   const method = str(args.p_method);
   const status = args.p_payment_status === "authorized" ? "authorized" : "captured";
   const raw = args.p_raw ?? null;
+  const provider = ["razorpay", "phonepe", "upi_manual"].includes(String(args.p_provider)) ? String(args.p_provider) : "razorpay";
+  if (!providerPaymentId) raise("MISSING_PAYMENT_ID");
 
   return tx(pool, async (conn) => {
     const order = await one(conn, "SELECT * FROM orders WHERE id = ? FOR UPDATE", [orderId]);
     if (!order) raise("ORDER_NOT_FOUND");
+    if (order.payment_method !== provider) raise("WRONG_PAYMENT_METHOD");
 
     // Record the payment (one row per provider payment id).
-    let payment = await one(conn, "SELECT id FROM payments WHERE provider_payment_id = ? FOR UPDATE", [providerPaymentId]);
+    let payment = await one(conn, "SELECT id, order_id FROM payments WHERE provider_payment_id = ? FOR UPDATE", [providerPaymentId]);
+    // A payment reference can only ever pay for one order.
+    if (payment && payment.order_id !== orderId) raise("PAYMENT_BELONGS_TO_ANOTHER_ORDER");
     if (!payment) {
       payment = await one(
         conn,
-        "SELECT id FROM payments WHERE order_id = ? AND provider = 'razorpay' AND provider_order_id = ? AND provider_payment_id IS NULL ORDER BY created_at LIMIT 1 FOR UPDATE",
-        [orderId, providerOrderId],
+        "SELECT id FROM payments WHERE order_id = ? AND provider = ? AND provider_order_id = ? AND provider_payment_id IS NULL ORDER BY created_at LIMIT 1 FOR UPDATE",
+        [orderId, provider, providerOrderId],
       );
     }
     if (!payment) {
       await insertRow(conn, "payments", {
         order_id: orderId,
-        provider: "razorpay",
+        provider,
         provider_order_id: providerOrderId,
         provider_payment_id: providerPaymentId,
         amount_paise: amount,
@@ -272,7 +287,7 @@ export async function mark_order_paid(ctx: DbContext, args: Record<string, unkno
 
     if (amount !== Number(order.total_paise)) {
       await exec(conn, "UPDATE orders SET needs_attention = 1, attention_reason = ? WHERE id = ?", [
-        `Payment amount (${amount} paise) does not match the order total (${order.total_paise} paise). Check this payment in Razorpay.`,
+        `Payment amount (${amount} paise) does not match the order total (${order.total_paise} paise). Check this payment with the payment provider.`,
         orderId,
       ]);
       await orderEvent(conn, orderId, "payment_mismatch", "Payment amount did not match the order total.", "internal", null);
@@ -359,7 +374,7 @@ export async function record_payment_failure(ctx: DbContext, args: Record<string
         } else {
           await insertRow(conn, "payments", {
             order_id: orderId,
-            provider: "razorpay",
+            provider: args.p_provider === "phonepe" ? "phonepe" : "razorpay",
             provider_order_id: str(args.p_provider_order_id),
             provider_payment_id: providerPaymentId,
             amount_paise: Number(order.total_paise),
@@ -440,7 +455,7 @@ export async function set_fulfillment_status(ctx: DbContext, args: Record<string
     const order = await one(conn, "SELECT status, payment_method, payment_status FROM orders WHERE id = ? FOR UPDATE", [orderId]);
     if (!order) raise("ORDER_NOT_FOUND");
     if (order.status !== "placed") raise("ORDER_NOT_PLACED");
-    if (order.payment_method === "razorpay" && !["paid", "partially_refunded"].includes(order.payment_status)) raise("ORDER_NOT_PAID");
+    if (order.payment_method !== "cod" && !["paid", "partially_refunded"].includes(order.payment_status)) raise("ORDER_NOT_PAID");
     await exec(
       conn,
       `UPDATE orders SET fulfillment_status = ?,

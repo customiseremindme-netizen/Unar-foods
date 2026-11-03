@@ -100,7 +100,7 @@ describe.skipIf(!url)("automatic database setup", () => {
     const [before] = await pool.query<RowDataPacket[]>("SELECT COUNT(*) AS n FROM products");
 
     const results = await Promise.all([installSchema(pool), installSchema(pool)]);
-    expect(results.flatMap((r) => r.dataFixes)).toEqual(["2026-11-01-starter-products", "2026-11-01-home-sections"]);
+    expect(results.flatMap((r) => r.dataFixes)).toEqual(["2026-11-01-starter-products", "2026-11-01-home-sections", "2026-11-03-payment-methods"]);
 
     const [products] = await pool.query<RowDataPacket[]>("SELECT id, title, short_title, status, published_at FROM products ORDER BY sort_order");
     expect(products.length).toBe(Number(before[0].n));
@@ -124,6 +124,24 @@ describe.skipIf(!url)("automatic database setup", () => {
     const [after] = await pool.query<RowDataPacket[]>("SELECT status FROM products WHERE id = ?", [raw]);
     expect(after[0].status).toBe("archived");
     await pool.query("UPDATE products SET status = 'published', title = 'UNAR Dehydrated Banana Chewy — Fresh Raw Banana' WHERE id = ?", [raw]);
+  });
+
+  it("lets a database with the old payment rule accept the new payment methods", async () => {
+    // Put back the rule an older version of the site created.
+    await pool.query("ALTER TABLE orders DROP CONSTRAINT ck_orders_4");
+    await pool.query("ALTER TABLE orders ADD CONSTRAINT ck_orders_4 CHECK (`payment_method` IN ('razorpay','cod'))");
+    const insert = (method: string) =>
+      pool.query(
+        "INSERT INTO orders (id, order_number, email, phone, customer_name, shipping_address, tax_breakdown, payment_method, subtotal_paise, total_paise, access_token_hash) VALUES (UUID(), ?, 'a@example.com', '9876543210', 'A', '{}', '{}', ?, 100, 100, 'x')",
+        [`UNAR-T${Math.floor(Math.random() * 1e6)}`, method],
+      );
+    await expect(insert("phonepe")).rejects.toThrow(/check|constraint/i);
+    await pool.query("DELETE FROM schema_meta WHERE `key` = 'data_migration:2026-11-03-payment-methods'");
+    expect((await installSchema(pool)).dataFixes).toEqual(["2026-11-03-payment-methods"]);
+    await insert("phonepe");
+    await insert("upi_manual");
+    await expect(insert("bitcoin")).rejects.toThrow(/check|constraint/i);
+    await pool.query("DELETE FROM orders WHERE order_number LIKE 'UNAR-T%'");
   });
 
   it("enforces stock and relationship rules in the database", async () => {

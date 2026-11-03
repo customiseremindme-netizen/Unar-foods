@@ -28,6 +28,7 @@ export type OrderView = {
   refunded_paise: number;
   coupon_code: string | null;
   customer_note: string | null;
+  payment_reference: string | null;
   reservation_expires_at: string | null;
   placed_at: string | null;
   paid_at: string | null;
@@ -64,7 +65,7 @@ export type OrderView = {
 const ORDER_SELECT = `
   id, order_number, user_id, email, phone, customer_name, shipping_address, billing_address, status, payment_status,
   fulfillment_status, payment_method, subtotal_paise, discount_paise, shipping_paise, cod_fee_paise, tax_paise,
-  prices_include_tax, tax_breakdown, total_paise, refunded_paise, coupon_code, customer_note, reservation_expires_at,
+  prices_include_tax, tax_breakdown, total_paise, refunded_paise, coupon_code, customer_note, payment_reference, reservation_expires_at,
   placed_at, paid_at, cancelled_at, cancel_reason, created_at, access_token_hash,
   order_items ( id, title, variant_title, sku, image_url, unit_price_paise, mrp_paise, quantity, line_total_paise, hsn_code, gst_rate, product_id ),
   order_events ( id, type, message, visibility, created_at ),

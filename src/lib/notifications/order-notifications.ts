@@ -87,7 +87,9 @@ export async function notifyOrder(
     if (template === "admin_new_order") {
       if (!notifications.notify_admin_new_order || notifications.admin_recipients.length === 0) return;
       recipients = notifications.admin_recipients;
-      subject = `New order ${order.order_number} — ${order.payment_method === "cod" ? "Cash on Delivery" : "Paid online"}`;
+      subject = `New order ${order.order_number} — ${
+        order.payment_method === "cod" ? "Cash on Delivery" : order.payment_method === "upi_manual" && order.payment_status !== "paid" ? "UPI payment to check" : "Paid online"
+      }`;
       intro = `A new order was placed by ${order.customer_name} (${order.email}, ${order.phone}).`;
       orderUrl = `${siteUrl}/admin/orders/${order.id}`;
     } else {
@@ -102,6 +104,13 @@ export async function notifyOrder(
       orderUrl = order.user_id
         ? `${siteUrl}/account/orders/${encodeURIComponent(order.order_number)}`
         : `${siteUrl}/track-order?order=${encodeURIComponent(order.order_number)}`;
+    }
+
+    // Orders paid by UPI to the shop's own UPI ID: tell the customer how to pay.
+    if (template === "order_placed" && order.payment_method === "upi_manual" && order.payment_status !== "paid") {
+      const { checkout } = settings;
+      const line = `To confirm your order, please pay ${(order.total_paise / 100).toFixed(2)} rupees by UPI to ${checkout.upi_id} (${checkout.upi_payee_name || settings.store.name}) with ${order.order_number} in the note. Your order page shows a QR code.`;
+      extra = { ...extra, html: `${extra?.html ?? ""}<p style="margin:16px 0;padding:12px 16px;background:#f6e8bd;border-radius:12px">${escapeHtml(line)}</p>`, text: `${extra?.text ?? ""}\n\n${line}` };
     }
 
     const { html, text } = renderOrderEmail({

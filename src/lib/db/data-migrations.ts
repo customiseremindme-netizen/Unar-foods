@@ -2,6 +2,7 @@ import type { PoolConnection, RowDataPacket } from "mysql2/promise";
 import initialData from "./data/initial-data.json";
 import { prepareInsertRow } from "./rows";
 import { TABLES } from "./schema";
+import { keyName } from "./ddl";
 
 /**
  * Versioned data fixes for databases that were set up earlier.
@@ -119,6 +120,28 @@ export const DATA_MIGRATIONS: DataMigration[] = [
           cols.map((c) => row[c]),
         );
       }
+    },
+  },
+  {
+    id: "2026-11-03-payment-methods",
+    description: "Allow the new payment methods (PhonePe, UPI to the shop's UPI ID) on orders",
+    async run(conn) {
+      // The installer only adds rules; a changed rule has to be replaced here.
+      const checks = TABLES.orders!.checks ?? [];
+      const index = checks.findIndex((c) => c.includes("`payment_method`"));
+      if (index < 0) return;
+      const [rows] = await conn.query<RowDataPacket[]>(
+        `SELECT cc.CONSTRAINT_NAME AS name, cc.CHECK_CLAUSE AS clause
+           FROM information_schema.CHECK_CONSTRAINTS cc
+           JOIN information_schema.TABLE_CONSTRAINTS tc
+             ON tc.CONSTRAINT_SCHEMA = cc.CONSTRAINT_SCHEMA AND tc.CONSTRAINT_NAME = cc.CONSTRAINT_NAME
+          WHERE cc.CONSTRAINT_SCHEMA = DATABASE() AND tc.TABLE_NAME = 'orders' AND tc.CONSTRAINT_TYPE = 'CHECK'`,
+      );
+      const old = rows.filter((r) => String(r.clause).includes("payment_method") && !String(r.clause).includes("upi_manual"));
+      for (const r of old) await conn.query(`ALTER TABLE orders DROP CONSTRAINT \`${String(r.name).replace(/`/g, "")}\``);
+      const name = keyName("ck", "orders", String(index + 1));
+      const present = rows.some((r) => r.name === name && String(r.clause).includes("upi_manual"));
+      if (!present) await conn.query(`ALTER TABLE orders ADD CONSTRAINT \`${name}\` CHECK (${checks[index]})`);
     },
   },
 ];

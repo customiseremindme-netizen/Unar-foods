@@ -10,6 +10,7 @@ import {
   reconcilePaymentAction,
   refundOrderAction,
   resendEmailAction,
+  confirmUpiPaymentAction,
   saveShipmentAction,
   setFulfillmentAction,
   syncShiprocketAction,
@@ -203,9 +204,9 @@ export function RefundPanel({ orderId, remainingPaise, method }: { orderId: stri
       }}
     >
       <p className="text-[0.82rem] text-muted">
-        {method === "razorpay"
-          ? "The refund is sent through Razorpay to the customer's original payment method."
-          : "For Cash on Delivery orders, record the refund here after sending the money to the customer yourself."}
+        {method === "razorpay" || method === "phonepe"
+          ? `The refund is sent through ${method === "phonepe" ? "PhonePe" : "Razorpay"} to the customer's original payment method.`
+          : "For Cash on Delivery and UPI-to-your-UPI-ID orders, send the money back yourself (e.g. from your UPI app), then record the refund here."}
       </p>
       <div className="grid gap-3 sm:grid-cols-2">
         <div>
@@ -280,9 +281,9 @@ export function QuickActions({
           Mark COD payment collected
         </ActionButton>
       ) : null}
-      {paymentMethod === "razorpay" && ["pending_payment", "expired", "payment_failed", "cancelled"].includes(status) ? (
+      {(paymentMethod === "razorpay" || paymentMethod === "phonepe") && ["pending_payment", "expired", "payment_failed", "cancelled"].includes(status) ? (
         <ActionButton size="sm" variant="secondary" action={() => reconcilePaymentAction(orderId)}>
-          Check payment with Razorpay
+          Check payment with {paymentMethod === "phonepe" ? "PhonePe" : "Razorpay"}
         </ActionButton>
       ) : null}
       {canWrite && needsAttention ? (
@@ -301,5 +302,36 @@ export function QuickActions({
         </ActionButton>
       ) : null}
     </div>
+  );
+}
+
+/** "UPI to your UPI ID" orders: confirm once the money shows in your Google Pay / PhonePe Business app. */
+export function UpiConfirmPanel({ orderId, totalLabel, upiId, reference }: { orderId: string; totalLabel: string; upiId: string; reference: string | null }) {
+  const [ref, setRef] = useState(reference ?? "");
+  const { run, pending } = useAdminAction();
+  return (
+    <form
+      className="space-y-3 rounded-2xl border border-banana/50 bg-banana-soft/40 p-4"
+      onSubmit={async (e) => {
+        e.preventDefault();
+        if (!window.confirm(`Confirm that ${totalLabel} has arrived in your UPI account (${upiId || "your UPI ID"}) with reference ${ref}?`)) return;
+        await run(() => confirmUpiPaymentAction(orderId, ref));
+      }}
+    >
+      <p className="text-[0.85rem] font-semibold text-forest">Waiting for a UPI payment of {totalLabel}</p>
+      <p className="text-[0.8rem] text-muted">
+        Open your UPI / bank app, find a payment of exactly {totalLabel}{reference ? ` with reference ${reference}` : ""}, then confirm here. The customer is
+        emailed and the order moves to “To fulfil”. If no money arrived, cancel the order instead.
+      </p>
+      <div className="flex flex-wrap items-end gap-2">
+        <div>
+          <Label htmlFor="upi-ref">UPI transaction ID (UTR)</Label>
+          <Input id="upi-ref" value={ref} onChange={(e) => setRef(e.target.value)} className="h-10 w-56" placeholder="12-digit UTR" />
+        </div>
+        <Button type="submit" size="sm" loading={pending} disabled={ref.trim().length < 6}>
+          Confirm UPI payment received
+        </Button>
+      </div>
+    </form>
   );
 }

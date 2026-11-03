@@ -66,6 +66,18 @@ export const settingsSchemas = {
   }),
   checkout: z.object({
     online_payments_enabled: z.boolean().default(true),
+    /** PhonePe Payment Gateway (needs PHONEPE_* settings in Hostinger). */
+    phonepe_enabled: z.boolean().default(true),
+    /** Pay directly to the shop's own UPI ID (Google Pay / PhonePe Business); staff confirm receipt. */
+    upi_enabled: z.boolean().default(false),
+    upi_id: z
+      .string()
+      .trim()
+      .max(80)
+      .refine((v) => v === "" || /^[A-Za-z0-9._-]{2,256}@[A-Za-z][A-Za-z0-9.-]{1,63}$/.test(v), "Enter a UPI ID like yourname@okaxis")
+      .default(""),
+    upi_payee_name: z.string().trim().max(60).default(""),
+    upi_hold_hours: z.number().int().min(1).max(72).default(48),
     cod_enabled: z.boolean().default(false),
     cod_fee_paise: z.number().int().min(0).default(0),
     cod_max_order_paise: z.number().int().min(0).nullable().default(null),

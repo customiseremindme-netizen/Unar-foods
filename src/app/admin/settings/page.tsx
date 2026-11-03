@@ -152,10 +152,20 @@ export default async function SettingsPage() {
         id="set-checkout"
         settingKey="checkout"
         title="Checkout & payments"
-        description="Online payments use Razorpay (set up under Integrations). Cash on Delivery also needs “COD available” on a shipping zone."
+        description="Choose how customers can pay. Razorpay and PhonePe are connected under Integrations. Cash on Delivery also needs “COD available” on a shipping zone."
         initial={s.checkout}
         fields={[
-          { name: "online_payments_enabled", label: "Accept online payments (UPI, cards, net banking via Razorpay)", type: "boolean" },
+          { name: "online_payments_enabled", label: "Accept online payments through Razorpay (UPI incl. Google Pay & PhonePe, cards, net banking)", type: "boolean" },
+          { name: "phonepe_enabled", label: "Offer PhonePe Payment Gateway (when connected under Integrations)", type: "boolean" },
+          {
+            name: "upi_enabled",
+            label: "Offer “Pay by UPI to our UPI ID” (your Google Pay / PhonePe Business UPI ID)",
+            type: "boolean",
+            help: "No gateway fees. Customers scan your UPI QR code; you confirm each payment on the order page after checking your UPI app.",
+          },
+          { name: "upi_id", label: "Your business UPI ID", type: "text", max: 80, help: "As shown in your Google Pay Business / PhonePe Business app, e.g. unarfoods@okaxis." },
+          { name: "upi_payee_name", label: "Name shown to customers in their UPI app", type: "text", max: 60 },
+          { name: "upi_hold_hours", label: "Hours to hold stock while waiting for a UPI payment", type: "number", min: 1, max: 72 },
           { name: "cod_enabled", label: "Offer Cash on Delivery", type: "boolean" },
           { name: "cod_fee_paise", label: "COD handling fee", type: "rupees", help: "Shown clearly to the customer before they order. Use 0 for no fee." },
           { name: "cod_max_order_paise", label: "Maximum order value for COD (optional)", type: "rupees", optional: true },

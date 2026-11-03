@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 import { requireStaffPage } from "@/lib/auth/session";
 import { getUserDb } from "@/lib/db/client";
 import { getRequestSiteUrl } from "@/lib/site-url";
-import { getCronSecret, getEmailEnv, getGoogleEnv, getRazorpayEnv, getConfiguredSiteUrl, getShiprocketEnv, maskSecret } from "@/lib/env";
+import { getCronSecret, getEmailEnv, getGoogleEnv, getPhonePeEnv, getRazorpayEnv, getConfiguredSiteUrl, getShiprocketEnv, maskSecret } from "@/lib/env";
 import { checkDatabase } from "@/lib/db/health";
 import { getDbConfig } from "@/lib/db/pool";
 import { formatDateTime } from "@/lib/utils";
@@ -32,6 +32,7 @@ export default async function IntegrationsPage() {
   const email = getEmailEnv();
   const shiprocket = getShiprocketEnv();
   const google = getGoogleEnv();
+  const phonepe = getPhonePeEnv();
   const [dbHealth, dbConfig] = [await checkDatabase(), getDbConfig()];
   const site = await getRequestSiteUrl();
   const siteConfigured = !!getConfiguredSiteUrl();
@@ -60,6 +61,17 @@ export default async function IntegrationsPage() {
           <Row label="Webhook secret" value={razorpay?.webhookSecret ? maskSecret(razorpay.webhookSecret) : <span className="text-danger">not set</span>} />
           <Row label="Webhook URL to paste in Razorpay" value={`${site}/api/webhooks/razorpay`} />
           <p className="mt-3 text-[0.78rem] text-muted">Webhook events to tick: payment.authorized, payment.captured, payment.failed, order.paid, refund.processed, refund.failed.</p>
+        </Card>
+
+        <Card title="PhonePe Payment Gateway (optional)" actions={<Status ok={!!phonepe} noText="Not used" />}>
+          <Row label="Mode" value={phonepe ? (phonepe.mode === "production" ? <Badge tone="forest">Live — real money</Badge> : <Badge tone="banana">Test (sandbox)</Badge>) : "—"} />
+          <Row label="Client ID" value={phonepe ? `${phonepe.clientId.slice(0, 6)}…${phonepe.clientId.slice(-4)}` : "not set"} />
+          <Row label="Client secret" value={maskSecret(phonepe?.clientSecret)} />
+          <Row label="Webhook login" value={phonepe?.webhookUsername ? `${phonepe.webhookUsername} / ${maskSecret(phonepe.webhookPassword)}` : <span className="text-danger">not set</span>} />
+          <Row label="Webhook URL to paste in PhonePe" value={`${site}/api/webhooks/phonepe`} />
+          <p className="mt-3 text-[0.78rem] text-muted">
+            Webhook events to tick: checkout.order.completed, checkout.order.failed. Payments are always double-checked with PhonePe before an order is marked paid.
+          </p>
         </Card>
 
         <Card title="Email (order emails)" actions={<Status ok={!!email} />}>

@@ -5,6 +5,7 @@ import { PDFDocument, StandardFonts, rgb, type PDFFont, type PDFImage, type PDFP
 import sharp from "sharp";
 import type { AllSettings } from "@/lib/settings/schema";
 import type { TaxBreakdown } from "@/lib/commerce/types";
+import { paymentMethodLabel } from "@/lib/orders/labels";
 
 /** The order fields an invoice needs (the same ones the /invoice page shows). */
 export type InvoiceOrder = {
@@ -45,20 +46,7 @@ export function isInvoiceable(paymentStatus: string): boolean {
   return ["paid", "partially_refunded", "refunded", "cod_collected"].includes(paymentStatus);
 }
 
-export function paymentMethodLabel(method: string): string {
-  switch (method) {
-    case "cod":
-      return "Cash on Delivery";
-    case "razorpay":
-      return "Online (Razorpay)";
-    case "phonepe":
-      return "Online (PhonePe)";
-    case "upi_manual":
-      return "UPI";
-    default:
-      return method;
-  }
-}
+export { paymentMethodLabel };
 
 const FOREST = rgb(0.18, 0.306, 0.212);
 const INK = rgb(0.15, 0.157, 0.137);

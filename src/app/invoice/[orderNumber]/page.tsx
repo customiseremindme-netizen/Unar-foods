@@ -7,7 +7,7 @@ import { formatINRFixed } from "@/lib/money";
 import { formatDate } from "@/lib/utils";
 import { PrintButton } from "@/components/orders/print-button";
 import type { TaxBreakdown } from "@/lib/commerce/types";
-import { paymentMethodLabel } from "@/lib/invoices/pdf";
+import { paymentMethodLabel } from "@/lib/orders/labels";
 
 export const metadata: Metadata = { title: "Invoice", robots: { index: false, follow: false } };
 export const dynamic = "force-dynamic";

@@ -2,6 +2,7 @@
 // tests, never in production:
 // - Razorpay REST API (RAZORPAY_API_BASE_URL=http://127.0.0.1:4010/v1)
 // - Google sign-in (GOOGLE_OAUTH_BASE_URL=http://127.0.0.1:4010/google)
+// - PhonePe Payment Gateway (PHONEPE_API_BASE_URL=http://127.0.0.1:4010/phonepe)
 import http from "node:http";
 import crypto from "node:crypto";
 const KEY_ID = process.env.RAZORPAY_KEY_ID ?? "rzp_test_localmock01";
@@ -14,6 +15,12 @@ let googleUser = { sub: "100000000000000000001", email: "google.user@example.com
 const googleCodes = new Map();
 const GOOGLE_SECRET = process.env.GOOGLE_CLIENT_SECRET ?? "local_google_secret";
 const b64url = (o) => Buffer.from(JSON.stringify(o)).toString("base64url");
+// PhonePe: what the customer does on the payment page (success | fail | abandon | tamper).
+let phonepeScenario = "success";
+const phonepeOrders = new Map();
+const PHONEPE_ID = process.env.PHONEPE_CLIENT_ID ?? "TEST_PHONEPE_CLIENT";
+const PHONEPE_SECRET = process.env.PHONEPE_CLIENT_SECRET ?? "local_phonepe_secret";
+const phonepeTokens = new Set();
 const json = (res, code, body) => { res.writeHead(code, { "Content-Type": "application/json" }); res.end(JSON.stringify(body)); };
 const rand = (n) => crypto.randomBytes(n).toString("hex").slice(0, n);
 function paymentFor(order) {
@@ -29,6 +36,54 @@ http.createServer((req, res) => {
     const p = url.pathname;
     if (p === "/__scenario") { scenario = JSON.parse(body).status; return json(res, 200, { scenario }); }
     if (p === "/__state") return json(res, 200, { orders: [...orders.values()], payments: [...payments.values()] });
+    if (p === "/__phonepe") { phonepeScenario = JSON.parse(body).scenario; return json(res, 200, { phonepeScenario }); }
+    if (p === "/__phonepe_state") return json(res, 200, { orders: [...phonepeOrders.values()] });
+    if (p.startsWith("/phonepe/")) {
+      const pp = p.slice("/phonepe".length);
+      if (pp === "/v1/oauth/token" && req.method === "POST") {
+        const f = new URLSearchParams(body);
+        if (f.get("client_id") !== PHONEPE_ID || f.get("client_secret") !== PHONEPE_SECRET || f.get("grant_type") !== "client_credentials") return json(res, 401, { code: "UNAUTHORIZED", message: "Bad client credentials" });
+        const token = rand(24);
+        phonepeTokens.add(token);
+        return json(res, 200, { access_token: token, token_type: "O-Bearer", expires_at: Math.floor(Date.now() / 1000) + 3600 });
+      }
+      if (pp === "/pay-page") {
+        // The customer's visit to PhonePe's payment page.
+        const o = phonepeOrders.get(url.searchParams.get("m"));
+        if (!o) return json(res, 404, { message: "unknown order" });
+        if (phonepeScenario === "success" || phonepeScenario === "tamper") {
+          o.state = "COMPLETED";
+          o.paidAmount = phonepeScenario === "tamper" ? o.amount - 100 : o.amount;
+          o.transactionId = "T" + rand(18);
+        } else if (phonepeScenario === "fail") o.state = "FAILED";
+        res.writeHead(302, { Location: o.redirectUrl });
+        return res.end();
+      }
+      if ((req.headers.authorization ?? "").replace("O-Bearer ", "") === "" || !phonepeTokens.has((req.headers.authorization ?? "").replace("O-Bearer ", ""))) {
+        return json(res, 401, { code: "UNAUTHORIZED", message: "Invalid token" });
+      }
+      if (pp === "/checkout/v2/pay" && req.method === "POST") {
+        const b = JSON.parse(body);
+        if (phonepeOrders.has(b.merchantOrderId)) return json(res, 400, { code: "DUPLICATE", message: "merchantOrderId already used" });
+        const o = { merchantOrderId: b.merchantOrderId, orderId: "OMO" + rand(16), amount: b.amount, state: "PENDING", redirectUrl: b.paymentFlow.merchantUrls.redirectUrl };
+        phonepeOrders.set(b.merchantOrderId, o);
+        return json(res, 200, { orderId: o.orderId, state: "PENDING", expireAt: Date.now() + b.expireAfter * 1000, redirectUrl: `http://127.0.0.1:4010/phonepe/pay-page?m=${encodeURIComponent(b.merchantOrderId)}` });
+      }
+      let mm;
+      if (req.method === "GET" && (mm = pp.match(/^\/checkout\/v2\/order\/([^/]+)\/status$/))) {
+        const o = phonepeOrders.get(decodeURIComponent(mm[1]));
+        if (!o) return json(res, 404, { code: "ORDER_NOT_FOUND", message: "not found" });
+        const amount = o.state === "COMPLETED" ? o.paidAmount : o.amount;
+        return json(res, 200, { orderId: o.orderId, state: o.state, amount, paymentDetails: o.state === "PENDING" ? [] : [{ paymentMode: "UPI_QR", transactionId: o.transactionId ?? "TFAILED" + rand(8), amount, state: o.state }] });
+      }
+      if (pp === "/payments/v2/refund" && req.method === "POST") {
+        const b = JSON.parse(body);
+        const o = phonepeOrders.get(b.originalMerchantOrderId);
+        if (!o || o.state !== "COMPLETED") return json(res, 400, { code: "INVALID", message: "Order not refundable" });
+        return json(res, 200, { refundId: "OMR" + rand(16), amount: b.amount, state: "PENDING" });
+      }
+      return json(res, 404, { message: `mock phonepe: no route ${req.method} ${pp}` });
+    }
     if (p === "/__google") { googleUser = { ...googleUser, ...JSON.parse(body) }; return json(res, 200, googleUser); }
     if (p === "/google/auth") {
       // Pretend the person picked their Google account: go straight back with a one-time code.

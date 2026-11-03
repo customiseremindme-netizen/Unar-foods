@@ -53,7 +53,8 @@ export type QuoteLine = {
   available: boolean;
 };
 
-export type PaymentMethod = "razorpay" | "cod";
+/** razorpay / phonepe: payment gateways. upi_manual: paid to the shop's own UPI ID, confirmed by staff. */
+export type PaymentMethod = "razorpay" | "phonepe" | "upi_manual" | "cod";
 
 export type TaxBreakdown = {
   configured: boolean;

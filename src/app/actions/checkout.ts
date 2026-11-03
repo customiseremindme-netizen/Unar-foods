@@ -4,7 +4,11 @@ import type { Json } from "@/lib/db/database.types";
 import { getServiceDb, getUserDb } from "@/lib/db/client";
 import { getSessionUser } from "@/lib/auth/session";
 import { getAllSettings } from "@/lib/settings";
-import { getRazorpayEnv } from "@/lib/env";
+import { getPhonePeEnv, getRazorpayEnv } from "@/lib/env";
+import { availablePaymentMethods } from "@/lib/commerce/payment-methods";
+import { cookies } from "next/headers";
+import { createPhonePePayment, newMerchantOrderId } from "@/lib/payments/phonepe";
+import { getRequestSiteUrl } from "@/lib/site-url";
 import { loadCartLines, resolveCart, saveCartContact } from "@/lib/commerce/cart";
 import {
   checkoutSchema,
@@ -75,7 +79,7 @@ export async function quoteCheckoutAction(input: {
     lines: await loadCartLines(cart.id),
     couponCode: cart.coupon_code,
     destination: pin.success || st.success ? { pincode: pin.success ? pin.data : undefined, state: st.success ? st.data : undefined } : null,
-    paymentMethod: input.paymentMethod === "cod" ? "cod" : "razorpay",
+    paymentMethod: (["razorpay", "phonepe", "upi_manual", "cod"] as const).includes(input.paymentMethod) ? input.paymentMethod : "razorpay",
     email: input.email?.toLowerCase().trim() || user?.email || null,
     userId: user?.id ?? null,
   });
@@ -96,8 +100,45 @@ export type RazorpayCheckoutOptions = {
 
 export type PlaceOrderResult =
   | { ok: false; message: string | null; errors?: FieldErrors }
+  /** Order placed (cash on delivery, or UPI to the shop's UPI ID): show the order page. */
   | { ok: true; kind: "cod"; redirectTo: string }
-  | { ok: true; kind: "razorpay"; razorpay: RazorpayCheckoutOptions };
+  | { ok: true; kind: "razorpay"; razorpay: RazorpayCheckoutOptions }
+  /** Payment happens on the provider's own page (PhonePe). */
+  | { ok: true; kind: "redirect"; url: string; orderNumber: string; accessToken: string };
+
+/** Keeps the private order link for the customer's return from PhonePe, without sending it to PhonePe. */
+const returnCookie = (orderNumber: string) => `unar_pay_${orderNumber.replace(/[^A-Z0-9-]/gi, "")}`;
+
+/** Starts a PhonePe payment attempt for an order that is waiting for payment. */
+async function startPhonePe(order: { id: string; order_number: string; total_paise: number }, accessToken: string, minutes: number) {
+  const admin = getServiceDb()!;
+  const merchantOrderId = newMerchantOrderId(order.order_number);
+  const site = await getRequestSiteUrl();
+  const payment = await createPhonePePayment({
+    merchantOrderId,
+    amountPaise: order.total_paise,
+    orderNumber: order.order_number,
+    redirectUrl: `${site}/api/payments/phonepe/return?order=${encodeURIComponent(order.order_number)}&m=${encodeURIComponent(merchantOrderId)}`,
+    expireAfterSeconds: minutes * 60,
+  });
+  const { error } = await admin.rpc("attach_provider_order", {
+    p_order_id: order.id,
+    p_provider: "phonepe",
+    p_provider_order_id: merchantOrderId,
+    p_amount_paise: order.total_paise,
+  });
+  if (error) throw error;
+  if (accessToken) {
+    (await cookies()).set(returnCookie(order.order_number), accessToken, {
+      httpOnly: true,
+      sameSite: "lax",
+      secure: process.env.NODE_ENV === "production" && process.env.UNAR_ALLOW_TEST_OVERRIDES !== "1",
+      path: "/api/payments/phonepe",
+      maxAge: 2 * 60 * 60,
+    });
+  }
+  return payment.redirectUrl;
+}
 
 export async function placeOrderAction(payload: unknown): Promise<PlaceOrderResult> {
   const parsed = checkoutSchema.safeParse(payload);
@@ -121,8 +162,8 @@ export async function placeOrderAction(payload: unknown): Promise<PlaceOrderResu
   if (!user && !settings.checkout.guest_checkout_enabled) {
     return { ok: false, message: "Please sign in to place an order." };
   }
-  if (input.payment_method === "razorpay" && !getRazorpayEnv()) {
-    return { ok: false, message: "Online payment isn't set up yet. Please choose another payment method or contact us." };
+  if (!(await availablePaymentMethods(settings)).includes(input.payment_method)) {
+    return { ok: false, message: "This way of paying isn't available right now. Please choose another payment method." };
   }
 
   // Free up stock held by abandoned payments before checking availability.
@@ -173,7 +214,7 @@ export async function placeOrderAction(payload: unknown): Promise<PlaceOrderResu
     shipping_method: quote.shipping.status === "ok" ? quote.shipping.zoneName : "",
     customer_note: input.customer_note ?? "",
     access_token_hash: sha256Hex(accessToken),
-    reservation_minutes: settings.checkout.reservation_minutes,
+    reservation_minutes: input.payment_method === "upi_manual" ? settings.checkout.upi_hold_hours * 60 : settings.checkout.reservation_minutes,
     marketing_consent: input.marketing_consent,
     terms_accepted: input.terms,
   };
@@ -196,10 +237,22 @@ export async function placeOrderAction(payload: unknown): Promise<PlaceOrderResu
     input.marketing_consent ? subscribeFromCheckout(input.email, settings.newsletter.consent_text) : Promise.resolve(),
   ]);
 
-  if (input.payment_method === "cod") {
+  if (input.payment_method === "cod" || input.payment_method === "upi_manual") {
     await notifyOrder(created.order_id, "order_placed");
     await notifyOrder(created.order_id, "admin_new_order");
     return { ok: true, kind: "cod", redirectTo: `/orders/${created.order_number}?token=${accessToken}` };
+  }
+
+  if (input.payment_method === "phonepe") {
+    try {
+      const url = await startPhonePe({ id: created.order_id, order_number: created.order_number, total_paise: quote.totalPaise }, accessToken, settings.checkout.reservation_minutes);
+      return { ok: true, kind: "redirect", url, orderNumber: created.order_number, accessToken };
+    } catch (e) {
+      logError("checkout.phonepe_order", e, { order: created.order_number });
+      await admin.rpc("release_order", { p_order_id: created.order_id, p_new_status: "cancelled", p_reason: "Payment could not be started" });
+      revalidateStorefront();
+      return { ok: false, message: "We couldn't start the PhonePe payment. You have not been charged. Please try again or choose another way to pay." };
+    }
   }
 
   try {
@@ -290,7 +343,7 @@ async function authorizedPendingOrder(orderNumber: string, token: string | null)
   if (!admin || !/^UNAR-\d{4,}$/.test(orderNumber)) return null;
   const { data: order } = await admin
     .from("orders")
-    .select("id, order_number, user_id, status, payment_status, total_paise, access_token_hash, customer_name, email, phone, reservation_expires_at")
+    .select("id, order_number, user_id, status, payment_status, payment_method, payment_reference, total_paise, access_token_hash, customer_name, email, phone, reservation_expires_at")
     .eq("order_number", orderNumber)
     .maybeSingle();
   if (!order) return null;
@@ -309,6 +362,18 @@ export async function resumePaymentAction(orderNumber: string, token: string | n
   if (order.reservation_expires_at && new Date(order.reservation_expires_at) < new Date()) {
     return { ok: false, message: "The payment window for this order has closed. Please place a new order." };
   }
+  if (order.payment_method === "phonepe") {
+    if (!getPhonePeEnv()) return { ok: false, message: "PhonePe payments are not available right now." };
+    const settings = await getAllSettings();
+    try {
+      const url = await startPhonePe(order, token ?? "", settings.checkout.reservation_minutes);
+      return { ok: true, kind: "redirect", url, orderNumber: order.order_number, accessToken: token ?? "" };
+    } catch (e) {
+      logError("checkout.phonepe_resume", e, { order: order.order_number });
+      return { ok: false, message: "We couldn't start the PhonePe payment. Please try again in a moment." };
+    }
+  }
+  if (order.payment_method !== "razorpay") return { ok: false, message: "This order isn't paid online." };
   const env = getRazorpayEnv();
   const admin = getServiceDb();
   if (!env || !admin) return { ok: false, message: "Online payment is not available right now." };
@@ -345,6 +410,9 @@ export async function cancelPendingOrderAction(orderNumber: string, token: strin
   const order = await authorizedPendingOrder(orderNumber, token);
   if (!order) return { ok: false, message: "We couldn't find that order." };
   if (order.status !== "pending_payment") return { ok: false, message: "This order can no longer be cancelled here." };
+  if (order.payment_reference) {
+    return { ok: false, message: "You've told us you paid by UPI, so we're checking your payment. Please contact us if you want to cancel." };
+  }
   // Make sure the customer didn't actually pay before cancelling.
   const { reconcileOrderPayment } = await import("@/lib/commerce/payments");
   const outcome = await reconcileOrderPayment(order.id);
@@ -354,4 +422,44 @@ export async function cancelPendingOrderAction(orderNumber: string, token: strin
   await admin.rpc("release_order", { p_order_id: order.id, p_new_status: "cancelled", p_reason: "Cancelled by customer before payment" });
   revalidateStorefront();
   return { ok: true, message: "Your order was cancelled. You have not been charged." };
+}
+
+/**
+ * After paying to the shop's UPI ID, the customer enters the UPI transaction
+ * reference (UTR, shown in their UPI app). The order is then held until the
+ * shop has checked the payment — it does NOT count as paid yet.
+ */
+export async function submitUpiReferenceAction(orderNumber: string, token: string | null, reference: string): Promise<{ ok: boolean; message: string }> {
+  if (!(await checkRateLimit("paymentVerify", await getClientIp()))) return { ok: false, message: "Too many attempts. Please wait a moment." };
+  const ref = reference.replace(/\s+/g, "").toUpperCase();
+  if (!/^[A-Z0-9]{6,35}$/.test(ref)) {
+    return { ok: false, message: "Enter the UPI transaction ID (UTR) exactly as your UPI app shows it — usually 12 digits." };
+  }
+  const order = await authorizedPendingOrder(orderNumber, token);
+  if (!order || order.payment_method !== "upi_manual") return { ok: false, message: "We couldn't find that order." };
+  if (order.status !== "pending_payment") return { ok: false, message: "This order is no longer waiting for payment." };
+  const admin = getServiceDb();
+  if (!admin) return { ok: false, message: "Please try again." };
+  const { error } = await admin
+    .from("orders")
+    .update({
+      payment_reference: ref,
+      // Keep the stock for this customer until the shop has checked the payment.
+      reservation_expires_at: null,
+      needs_attention: true,
+      attention_reason: `Customer says they paid ₹${(order.total_paise / 100).toFixed(2)} by UPI (reference ${ref}). Check your UPI app, then confirm or cancel.`,
+    })
+    .eq("id", order.id)
+    .eq("status", "pending_payment");
+  if (error) {
+    logError("checkout.upi_reference", error);
+    return { ok: false, message: "We couldn't save that. Please try again." };
+  }
+  await admin.from("order_events").insert({
+    order_id: order.id,
+    type: "upi_reference",
+    message: `UPI payment reference ${ref} received. We'll confirm your order once we've checked the payment.`,
+    visibility: "customer",
+  });
+  return { ok: true, message: "Thank you! We'll confirm your order as soon as we've checked the payment — usually within a few hours." };
 }

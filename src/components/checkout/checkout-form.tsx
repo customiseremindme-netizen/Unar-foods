@@ -3,8 +3,9 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useState, useTransition, type ChangeEvent, type FormEvent } from "react";
-import { CreditCard, Lock, Tag, Truck, Wallet } from "lucide-react";
+import { useEffect, useMemo, useState, useTransition, type ChangeEvent, type FormEvent, type ReactNode } from "react";
+import { CreditCard, Lock, QrCode, Smartphone, Tag, Truck, Wallet } from "lucide-react";
+import type { PaymentMethod } from "@/lib/commerce/types";
 import {
   cancelPendingOrderAction,
   placeOrderAction,
@@ -158,14 +159,27 @@ function CouponBox() {
   );
 }
 
+function PaymentOption({ checked, onSelect, icon, title, text }: { checked: boolean; onSelect: () => void; icon: ReactNode; title: string; text: string }) {
+  return (
+    <label className={cn("flex cursor-pointer items-start gap-3 rounded-2xl border bg-paper p-4", checked ? "border-forest ring-2 ring-forest/10" : "border-line")}>
+      <input type="radio" name="payment" checked={checked} onChange={onSelect} className="mt-1 accent-[var(--color-forest)]" />
+      <span>
+        <span className="flex items-center gap-2 font-semibold text-forest">
+          {icon} {title}
+        </span>
+        <span className="block text-[0.85rem] text-muted">{text}</span>
+      </span>
+    </label>
+  );
+}
+
 export function CheckoutForm({
   initialEmail,
   initialPhone,
   initialName,
   savedAddresses,
   signedIn,
-  onlineAvailable,
-  codEnabled,
+  methods,
   newsletterConsentText,
   themeColor,
   pricesIncludeTax,
@@ -175,8 +189,8 @@ export function CheckoutForm({
   initialName: string;
   savedAddresses: SavedAddress[];
   signedIn: boolean;
-  onlineAvailable: boolean;
-  codEnabled: boolean;
+  /** Ways to pay that are switched on and set up, in display order. */
+  methods: PaymentMethod[];
   newsletterConsentText: string;
   themeColor: string;
   pricesIncludeTax: boolean;
@@ -193,7 +207,10 @@ export function CheckoutForm({
   );
   const [billingSame, setBillingSame] = useState(true);
   const [billing, setBilling] = useState<AddressForm>(emptyAddress);
-  const [paymentMethod, setPaymentMethod] = useState<"razorpay" | "cod">(onlineAvailable ? "razorpay" : "cod");
+  const onlineMethods = methods.filter((m) => m !== "cod");
+  const codEnabled = methods.includes("cod");
+  const onlineAvailable = onlineMethods.length > 0;
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>(methods[0] ?? "cod");
   const [note, setNote] = useState("");
   const [terms, setTerms] = useState(false);
   const [marketing, setMarketing] = useState(false);
@@ -236,7 +253,7 @@ export function CheckoutForm({
 
   // COD isn't offered for this address: switch to online payment.
   if (quote && paymentMethod === "cod" && !quote.codAvailable && quote.shipping.status === "ok" && onlineAvailable) {
-    setPaymentMethod("razorpay");
+    setPaymentMethod(onlineMethods[0]!);
   }
 
   const lines = cartState?.cart.lines ?? [];
@@ -292,6 +309,11 @@ export function CheckoutForm({
       if (result.kind === "cod") {
         await refresh();
         router.push(result.redirectTo);
+        return;
+      }
+      if (result.kind === "redirect") {
+        // PhonePe's secure payment page; the customer comes back to their order page.
+        window.location.assign(result.url);
         return;
       }
       await startPayment(result.razorpay);
@@ -455,23 +477,32 @@ export function CheckoutForm({
           </h2>
           <fieldset className="mt-5 grid gap-3">
             <legend className="sr-only">Payment method</legend>
-            {onlineAvailable ? (
-              <label
-                className={cn(
-                  "flex cursor-pointer items-start gap-3 rounded-2xl border bg-paper p-4",
-                  paymentMethod === "razorpay" ? "border-forest ring-2 ring-forest/10" : "border-line",
-                )}
-              >
-                <input type="radio" name="payment" checked={paymentMethod === "razorpay"} onChange={() => setPaymentMethod("razorpay")} className="mt-1 accent-[var(--color-forest)]" />
-                <span>
-                  <span className="flex items-center gap-2 font-semibold text-forest">
-                    <CreditCard className="size-4" aria-hidden="true" /> Pay online
-                  </span>
-                  <span className="block text-[0.85rem] text-muted">
-                    Secure payment by Razorpay. The available options (such as UPI, cards or netbanking) are shown in the payment window.
-                  </span>
-                </span>
-              </label>
+            {methods.includes("razorpay") ? (
+              <PaymentOption
+                checked={paymentMethod === "razorpay"}
+                onSelect={() => setPaymentMethod("razorpay")}
+                icon={<CreditCard className="size-4" aria-hidden="true" />}
+                title="Pay online"
+                text="UPI (Google Pay, PhonePe, Paytm), cards, net banking or wallets — secure payment by Razorpay."
+              />
+            ) : null}
+            {methods.includes("phonepe") ? (
+              <PaymentOption
+                checked={paymentMethod === "phonepe"}
+                onSelect={() => setPaymentMethod("phonepe")}
+                icon={<Smartphone className="size-4" aria-hidden="true" />}
+                title="Pay with PhonePe"
+                text="UPI, cards or net banking on PhonePe's secure payment page."
+              />
+            ) : null}
+            {methods.includes("upi_manual") ? (
+              <PaymentOption
+                checked={paymentMethod === "upi_manual"}
+                onSelect={() => setPaymentMethod("upi_manual")}
+                icon={<QrCode className="size-4" aria-hidden="true" />}
+                title="Pay by UPI to our UPI ID"
+                text="Use Google Pay, PhonePe or any UPI app. You'll see our UPI QR code after placing the order; we confirm your order once the payment reaches us."
+              />
             ) : null}
             {showCod ? (
               <label
@@ -489,7 +520,7 @@ export function CheckoutForm({
                 </span>
               </label>
             ) : null}
-            {!onlineAvailable && !codEnabled ? (
+            {methods.length === 0 ? (
               <FormMessage tone="info">Ordering will open soon — payments are not set up yet.</FormMessage>
             ) : null}
           </fieldset>
@@ -615,12 +646,18 @@ export function CheckoutForm({
               <FormMessage tone="error">{quote.errors[0]}</FormMessage>
             </div>
           ) : null}
-          <Button type="submit" size="lg" className="mt-6 w-full" loading={submitting} disabled={lines.length === 0 || (!onlineAvailable && !codEnabled)}>
+          <Button type="submit" size="lg" className="mt-6 w-full" loading={submitting} disabled={lines.length === 0 || methods.length === 0}>
             <Lock className="size-4" aria-hidden="true" />
-            {paymentMethod === "cod" ? "Place order" : "Continue to payment"}
+            {paymentMethod === "cod" || paymentMethod === "upi_manual" ? "Place order" : "Continue to payment"}
           </Button>
           <p className="mt-3 text-center text-[0.75rem] text-muted">
-            {paymentMethod === "cod" ? "You'll pay in cash when your order is delivered." : "You'll complete payment securely with Razorpay."}
+            {paymentMethod === "cod"
+              ? "You'll pay in cash when your order is delivered."
+              : paymentMethod === "upi_manual"
+                ? "Next you'll see our UPI ID and QR code to pay."
+                : paymentMethod === "phonepe"
+                  ? "You'll complete payment securely on PhonePe."
+                  : "You'll complete payment securely with Razorpay."}
           </p>
         </div>
       </aside>

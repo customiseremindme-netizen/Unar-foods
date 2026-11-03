@@ -168,6 +168,45 @@ export function getGoogleEnv(): GoogleEnv | null {
   };
 }
 
+export type PhonePeEnv = {
+  mode: "production" | "sandbox";
+  clientId: string;
+  clientSecret: string;
+  clientVersion: string;
+  authUrl: string;
+  apiBaseUrl: string;
+  webhookUsername: string | null;
+  webhookPassword: string | null;
+};
+
+/**
+ * PhonePe Payment Gateway (Standard Checkout). PHONEPE_CLIENT_ID,
+ * PHONEPE_CLIENT_SECRET and PHONEPE_CLIENT_VERSION come from the PhonePe
+ * Business dashboard. PHONEPE_ENV=production for real payments; anything
+ * else uses PhonePe's test (sandbox) servers.
+ */
+export function getPhonePeEnv(): PhonePeEnv | null {
+  const clientId = read("PHONEPE_CLIENT_ID");
+  const clientSecret = read("PHONEPE_CLIENT_SECRET");
+  if (!clientId || !clientSecret) return null;
+  const mode = read("PHONEPE_ENV")?.toLowerCase() === "production" ? "production" : "sandbox";
+  const override = testOverride("PHONEPE_API_BASE_URL")?.replace(/\/+$/, "");
+  return {
+    mode,
+    clientId,
+    clientSecret,
+    clientVersion: read("PHONEPE_CLIENT_VERSION") ?? "1",
+    authUrl: override
+      ? `${override}/v1/oauth/token`
+      : mode === "production"
+        ? "https://api.phonepe.com/apis/identity-manager/v1/oauth/token"
+        : "https://api-preprod.phonepe.com/apis/pg-sandbox/v1/oauth/token",
+    apiBaseUrl: override ?? (mode === "production" ? "https://api.phonepe.com/apis/pg" : "https://api-preprod.phonepe.com/apis/pg-sandbox"),
+    webhookUsername: read("PHONEPE_WEBHOOK_USERNAME") ?? null,
+    webhookPassword: read("PHONEPE_WEBHOOK_PASSWORD") ?? null,
+  };
+}
+
 export function getCronSecret(): string | null {
   return read("CRON_SECRET") ?? null;
 }

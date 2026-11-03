@@ -18,7 +18,10 @@ import {
   QuickActions,
   RefundPanel,
   ShipmentActions,
+  UpiConfirmPanel,
 } from "@/components/admin/order-panels";
+import { paymentMethodLabel } from "@/lib/orders/labels";
+import { getAllSettings } from "@/lib/settings";
 
 export const metadata = { title: "Order" };
 
@@ -42,6 +45,7 @@ export default async function AdminOrderPage({ params }: { params: Promise<{ id:
   if (!order) notFound();
 
   const canWrite = access.permissions.has("orders.write");
+  const upiId = order.payment_method === "upi_manual" ? (await getAllSettings()).checkout.upi_id : "";
   const canCancel = access.permissions.has("orders.cancel");
   const canRefund = access.permissions.has("orders.refund");
   const st = orderStatusLabel(order);
@@ -92,6 +96,10 @@ export default async function AdminOrderPage({ params }: { params: Promise<{ id:
         needsAttention={order.needs_attention}
         canWrite={canWrite}
       />
+
+      {canWrite && order.payment_method === "upi_manual" && order.status === "pending_payment" ? (
+        <UpiConfirmPanel orderId={order.id} totalLabel={formatINR(order.total_paise)} upiId={upiId} reference={order.payment_reference} />
+      ) : null}
 
       <div className="grid gap-6 xl:grid-cols-3">
         <div className="space-y-6 xl:col-span-2">
@@ -233,9 +241,10 @@ export default async function AdminOrderPage({ params }: { params: Promise<{ id:
 
           <Card title="Payment">
             <p className="text-[0.86rem]">
-              {order.payment_method === "cod" ? "Cash on Delivery" : "Online (Razorpay)"} · <strong>{titleCase(order.payment_status)}</strong>
+              {paymentMethodLabel(order.payment_method)} · <strong>{titleCase(order.payment_status)}</strong>
             </p>
             {order.paid_at ? <p className="text-[0.8rem] text-muted">Paid {formatDateTime(order.paid_at)}</p> : null}
+            {order.payment_reference ? <p className="text-[0.8rem]">Customer&apos;s UPI reference: <strong>{order.payment_reference}</strong></p> : null}
             <ul className="mt-3 space-y-2 text-[0.8rem]">
               {(order.payments ?? []).map((p) => (
                 <li key={p.id} className="rounded-lg bg-cream/60 p-2.5">
@@ -269,7 +278,7 @@ export default async function AdminOrderPage({ params }: { params: Promise<{ id:
 
           {canCancel && (order.status === "placed" || order.status === "pending_payment") && !["shipped", "delivered", "returned"].includes(order.fulfillment_status) ? (
             <Card title="Cancel order">
-              <CancelPanel orderId={order.id} paidOnline={order.payment_method === "razorpay" && paid} canRefund={canRefund} />
+              <CancelPanel orderId={order.id} paidOnline={(order.payment_method === "razorpay" || order.payment_method === "phonepe") && paid} canRefund={canRefund} />
             </Card>
           ) : null}
 

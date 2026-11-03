@@ -7,6 +7,10 @@ import { formatINR } from "@/lib/money";
 import { formatDate, formatDateTime, titleCase } from "@/lib/utils";
 import { Badge } from "@/components/ui/misc";
 import { RetryPayment } from "./retry-payment";
+import { UpiPay } from "./upi-pay";
+import { paymentMethodLabel } from "@/lib/orders/labels";
+
+export type UpiDetails = { link: string; qrSvg: string; upiId: string; payeeName: string };
 
 const PAYMENT_LABELS: Record<string, string> = {
   unpaid: "Awaiting payment",
@@ -38,7 +42,20 @@ function Address({ a }: { a: Record<string, string> }) {
   );
 }
 
-export function OrderDetail({ order, token, showRetry = true }: { order: OrderView; token: string | null; showRetry?: boolean }) {
+export function OrderDetail({
+  order,
+  token,
+  showRetry = true,
+  upi = null,
+  paymentResult = null,
+}: {
+  order: OrderView;
+  token: string | null;
+  showRetry?: boolean;
+  upi?: UpiDetails | null;
+  /** Set when the customer just came back from the payment page. */
+  paymentResult?: "failed" | "pending" | "success" | null;
+}) {
   const status = orderStatusLabel(order);
   const paid = ["paid", "partially_refunded", "refunded", "cod_collected"].includes(order.payment_status);
   const invoiceHref = `/invoice/${order.order_number}${token ? `?token=${encodeURIComponent(token)}` : ""}`;
@@ -52,15 +69,39 @@ export function OrderDetail({ order, token, showRetry = true }: { order: OrderVi
         <span className="text-[0.85rem] text-muted">Placed {formatDateTime(order.placed_at ?? order.created_at)}</span>
       </div>
 
-      {order.status === "pending_payment" ? (
+      {order.status === "pending_payment" && order.payment_method === "upi_manual" ? (
+        <div className="rounded-[1.5rem] border border-banana/40 bg-banana-soft/50 p-6">
+          <p className="flex items-center gap-2 font-semibold text-forest-deep">
+            <Clock className="size-4" aria-hidden="true" />{" "}
+            {order.payment_reference ? "We're checking your payment." : pendingStillValid ? "Your order is reserved — please pay by UPI to confirm it." : "The time to pay for this order has passed."}
+          </p>
+          {!pendingStillValid && !order.payment_reference ? (
+            <p className="mt-1 text-[0.9rem] text-forest-deep/80">Please place a new order, or contact us if you have already paid.</p>
+          ) : null}
+          {upi && (pendingStillValid || order.payment_reference) ? (
+            <UpiPay
+              orderNumber={order.order_number}
+              token={token}
+              link={upi.link}
+              qrSvg={upi.qrSvg}
+              upiId={upi.upiId}
+              payeeName={upi.payeeName}
+              amountLabel={formatINR(order.total_paise)}
+              reference={order.payment_reference}
+            />
+          ) : null}
+        </div>
+      ) : order.status === "pending_payment" ? (
         <div className="rounded-[1.5rem] border border-banana/40 bg-banana-soft/50 p-6">
           <p className="flex items-center gap-2 font-semibold text-forest-deep">
             <Clock className="size-4" aria-hidden="true" /> We haven&apos;t received payment for this order yet.
           </p>
           <p className="mt-1 text-[0.9rem] text-forest-deep/80">
-            {pendingStillValid
-              ? "If you've just paid, this page will update in a moment. Otherwise you can complete payment below."
-              : "The payment window has closed. Please place a new order."}
+            {paymentResult === "failed"
+              ? "The payment was not completed and you have not been charged. You can try again below."
+              : pendingStillValid
+                ? "If you've just paid, this page will update in a moment. Otherwise you can complete payment below."
+                : "The payment window has closed. Please place a new order."}
           </p>
           {pendingStillValid && showRetry ? <RetryPayment orderNumber={order.order_number} token={token} /> : null}
         </div>
@@ -144,7 +185,7 @@ export function OrderDetail({ order, token, showRetry = true }: { order: OrderVi
               Payment
             </h2>
             <p className="text-muted">
-              {order.payment_method === "cod" ? "Cash on Delivery" : "Online (Razorpay)"} · {PAYMENT_LABELS[order.payment_status] ?? titleCase(order.payment_status)}
+              {paymentMethodLabel(order.payment_method)} · {PAYMENT_LABELS[order.payment_status] ?? titleCase(order.payment_status)}
             </p>
             {order.paid_at ? <p className="mt-1 text-muted">Paid {formatDate(order.paid_at)}</p> : null}
           </section>

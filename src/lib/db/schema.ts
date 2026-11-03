@@ -443,6 +443,8 @@ export const TABLES: Record<string, Table> = {
       shipping_method: str(120, { nullable: true }),
       total_weight_grams: int({ default: 0 }),
       customer_note: str(500, { nullable: true }),
+      /** UPI transaction reference (UTR) the customer typed after paying to the shop's UPI ID. */
+      payment_reference: str(40, { nullable: true }),
       needs_attention: bool(false),
       attention_reason: str(500, { nullable: true }),
       access_token_hash: str(128),
@@ -463,7 +465,7 @@ export const TABLES: Record<string, Table> = {
       "`status` IN ('pending_payment','placed','cancelled','expired','payment_failed')",
       "`payment_status` IN ('unpaid','paid','failed','refunded','partially_refunded','cod_pending','cod_collected')",
       "`fulfillment_status` IN ('unfulfilled','processing','packed','shipped','delivered','returned','cancelled')",
-      "`payment_method` IN ('razorpay','cod')",
+      "`payment_method` IN ('razorpay','phonepe','upi_manual','cod')",
       "`subtotal_paise` >= 0",
       "`discount_paise` >= 0",
       "`shipping_paise` >= 0",

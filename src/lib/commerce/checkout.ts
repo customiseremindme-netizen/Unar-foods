@@ -15,7 +15,7 @@ export const checkoutSchema = z
     shipping: addressSchema,
     billing_same: z.boolean(),
     billing: addressSchema.optional(),
-    payment_method: z.enum(["razorpay", "cod"]),
+    payment_method: z.enum(["razorpay", "phonepe", "upi_manual", "cod"]),
     customer_note: z
       .string()
       .trim()
