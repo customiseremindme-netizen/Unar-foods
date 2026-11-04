@@ -86,6 +86,13 @@ export const TABLES: Record<string, Table> = {
       password_hash: str(255, { hidden: true }),
       email_confirmed_at: ts(),
       last_sign_in_at: ts(),
+      /** Two-step sign-in (authenticator app): secret, when it was switched on, last code step used (blocks replays). */
+      totp_secret: str(64, { nullable: true, hidden: true }),
+      totp_pending_secret: str(64, { nullable: true, hidden: true }),
+      totp_enabled_at: ts(),
+      totp_last_step: { type: "bigint", nullable: true, hidden: true },
+      /** SHA-256 hashes of unused one-time recovery codes. */
+      recovery_codes: json(() => [], { hidden: true, nullable: true }),
       created_at: createdAt(),
       updated_at: updatedAt(),
     },
@@ -98,6 +105,8 @@ export const TABLES: Record<string, Table> = {
       user_id: ref("auth_users"),
       expires_at: { type: "datetime" },
       user_agent: str(300, { nullable: true }),
+      /** When this session passed the two-step check (null = not yet, or not needed). */
+      mfa_at: ts(),
       created_at: createdAt(),
     },
     primaryKey: ["id"],

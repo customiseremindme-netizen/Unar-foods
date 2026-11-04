@@ -119,9 +119,10 @@ export async function signInAction(_prev: FormState, formData: FormData): Promis
     }
   }
   const userId = result.userId;
-  await startSession(userId);
+  const { needsTwoStep } = await startSession(userId);
   // Merge the guest cart into the customer's cart.
   await resolveCart({ create: false, userId }).catch((e) => logError("auth.merge_cart", e));
+  if (needsTwoStep) redirect(`/login/two-step?next=${encodeURIComponent(safeNext(formData.get("next")))}`);
   redirect(safeNext(formData.get("next")));
 }
 
@@ -266,7 +267,7 @@ export async function updatePasswordAction(_prev: FormState, formData: FormData)
     await setPassword(user.id, parsed.data.password);
     // Sign out everywhere else, keep this browser signed in.
     await endAllSessions(user.id);
-    await startSession(user.id);
+    await startSession(user.id, { twoStepDone: true });
     jar.delete(RESET_COOKIE);
   } catch (error) {
     logError("auth.update_password", error);
@@ -291,12 +292,13 @@ export async function confirmLinkAction(formData: FormData): Promise<void> {
   const nextParam = String(formData.get("next") ?? "");
   const purpose: TokenPurpose | null = type === "signup" ? "verify_email" : type === "recovery" ? "reset_password" : null;
   let userId: string | null = null;
+  let needsTwoStep = false;
   if (purpose && isDatabaseConfigured()) {
     try {
       userId = await consumeToken(token, purpose);
       if (userId) {
         await confirmEmail(userId); // a reset link also proves the email address
-        await startSession(userId);
+        needsTwoStep = (await startSession(userId)).needsTwoStep;
         if (purpose === "reset_password") {
           const proof = await issueToken(userId, "reset_session", 30);
           (await cookies()).set(RESET_COOKIE, proof, { httpOnly: true, sameSite: "lax", path: "/", maxAge: 30 * 60, secure: await cookieIsSecure() });
@@ -308,6 +310,8 @@ export async function confirmLinkAction(formData: FormData): Promise<void> {
     }
   }
   if (!userId) redirect("/login?error=link");
+  const target = purpose === "reset_password" ? "/reset-password" : nextParam && isSafeInternalPath(nextParam) && !nextParam.startsWith("/auth") ? nextParam : "/account";
+  if (needsTwoStep) redirect(`/login/two-step?next=${encodeURIComponent(target)}`);
   if (purpose === "reset_password") redirect("/reset-password");
   redirect(nextParam && isSafeInternalPath(nextParam) && !nextParam.startsWith("/auth") ? nextParam : "/account");
 }

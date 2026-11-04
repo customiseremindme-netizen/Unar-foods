@@ -14,6 +14,8 @@ export const RATE_LIMITS = {
   signup: { limit: 5, windowSeconds: 3600 },
   passwordReset: { limit: 5, windowSeconds: 3600 },
   googleSignIn: { limit: 20, windowSeconds: 600 },
+  twoStep: { limit: 6, windowSeconds: 600 },
+  securityChange: { limit: 10, windowSeconds: 600 },
   contact: { limit: 5, windowSeconds: 3600 },
   newsletter: { limit: 5, windowSeconds: 3600 },
   review: { limit: 5, windowSeconds: 3600 },

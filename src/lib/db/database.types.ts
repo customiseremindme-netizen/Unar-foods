@@ -32,10 +32,10 @@ export type Database = {
         ]
       }
       "auth_sessions": {
-        Row: { "created_at": string; "expires_at": string; "id": string; "user_agent": string | null; "user_id": string }
+        Row: { "created_at": string; "expires_at": string; "id": string; "mfa_at": string | null; "user_agent": string | null; "user_id": string }
         ComputedFields: never
-        Insert: { "created_at"?: string; "expires_at": string; "id": string; "user_agent"?: string | null; "user_id": string }
-        Update: { "created_at"?: string; "expires_at"?: string; "id"?: string; "user_agent"?: string | null; "user_id"?: string }
+        Insert: { "created_at"?: string; "expires_at": string; "id": string; "mfa_at"?: string | null; "user_agent"?: string | null; "user_id": string }
+        Update: { "created_at"?: string; "expires_at"?: string; "id"?: string; "mfa_at"?: string | null; "user_agent"?: string | null; "user_id"?: string }
         Relationships: [
           { foreignKeyName: "auth_sessions_user_id_fkey"; columns: ["user_id"]; isOneToOne: false; referencedRelation: "auth_users"; referencedColumns: ["id"] },
         ]
@@ -50,10 +50,10 @@ export type Database = {
         ]
       }
       "auth_users": {
-        Row: { "created_at": string; "email": string; "email_confirmed_at": string | null; "id": string; "last_sign_in_at": string | null; "updated_at": string }
+        Row: { "created_at": string; "email": string; "email_confirmed_at": string | null; "id": string; "last_sign_in_at": string | null; "totp_enabled_at": string | null; "updated_at": string }
         ComputedFields: never
-        Insert: { "created_at"?: string; "email": string; "email_confirmed_at"?: string | null; "id"?: string; "last_sign_in_at"?: string | null; "updated_at"?: string }
-        Update: { "created_at"?: string; "email"?: string; "email_confirmed_at"?: string | null; "id"?: string; "last_sign_in_at"?: string | null; "updated_at"?: string }
+        Insert: { "created_at"?: string; "email": string; "email_confirmed_at"?: string | null; "id"?: string; "last_sign_in_at"?: string | null; "totp_enabled_at"?: string | null; "updated_at"?: string }
+        Update: { "created_at"?: string; "email"?: string; "email_confirmed_at"?: string | null; "id"?: string; "last_sign_in_at"?: string | null; "totp_enabled_at"?: string | null; "updated_at"?: string }
         Relationships: []
       }
       "banners": {

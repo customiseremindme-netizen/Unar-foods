@@ -65,6 +65,11 @@ await db.query(
 );
 await db.query("UPDATE cms_sections SET is_visible = 1 WHERE `key` = 'trust'");
 await db.query("UPDATE settings SET value = JSON_SET(value, '$.cod_enabled', true) WHERE `key` = 'checkout'");
+// The general browser tests sign in as the test owner without an authenticator app;
+// tests/e2e/two-step.spec.ts switches the "staff must use two-step" rule on by itself.
+await db.query(
+  "INSERT INTO settings (`key`, value, is_public) VALUES ('security', JSON_OBJECT('require_staff_two_step', false, 'staff_session_hours', 12), 0) ON DUPLICATE KEY UPDATE value = JSON_SET(value, '$.require_staff_two_step', false)",
+);
 // Test-only courier and WhatsApp settings (they talk to the local stand-ins only).
 await db.query("UPDATE settings SET value = JSON_SET(value, '$.enabled', true, '$.pickup_location', 'Home') WHERE `key` = 'shiprocket'");
 await db.query(

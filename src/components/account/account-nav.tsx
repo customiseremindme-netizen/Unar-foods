@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef } from "react";
-import { Heart, LayoutDashboard, MapPin, Package, Settings, User } from "lucide-react";
+import { Heart, LayoutDashboard, MapPin, Package, Settings, ShieldCheck, User } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const LINKS = [
@@ -12,6 +12,7 @@ const LINKS = [
   { href: "/account/addresses", label: "Addresses", icon: MapPin },
   { href: "/wishlist", label: "Wishlist", icon: Heart },
   { href: "/account/profile", label: "Profile & password", icon: Settings },
+  { href: "/account/security", label: "Security", icon: ShieldCheck },
 ];
 
 export function AccountNav({ isStaff }: { isStaff: boolean }) {

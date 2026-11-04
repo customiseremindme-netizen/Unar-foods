@@ -176,15 +176,24 @@ export async function cookieIsSecure(): Promise<boolean> {
 }
 
 /** Signs the user in on this browser (server actions and route handlers only). */
-export async function startSession(userId: string): Promise<void> {
+/**
+ * Signs the user in on this browser (server actions and route handlers only).
+ * If the account uses two-step sign-in, the new session stays locked until
+ * the code is entered (returns needsTwoStep: true) — unless `twoStepDone`
+ * (the person already proved it in this browser, e.g. right after changing their password).
+ */
+export async function startSession(userId: string, opts: { twoStepDone?: boolean } = {}): Promise<{ needsTwoStep: boolean }> {
   const pool = await getReadyPool();
   const token = randomToken(32);
   const h = await headers();
-  await pool.query("INSERT INTO auth_sessions (id, user_id, expires_at, user_agent) VALUES (?, ?, ?, ?)", [
+  const [u] = await pool.query<RowDataPacket[]>("SELECT totp_enabled_at FROM auth_users WHERE id = ?", [userId]);
+  const twoStepOn = !!u[0]?.totp_enabled_at;
+  await pool.query("INSERT INTO auth_sessions (id, user_id, expires_at, user_agent, mfa_at) VALUES (?, ?, ?, ?, ?)", [
     sha256Hex(token),
     userId,
     inMinutes(SESSION_DAYS * 24 * 60),
     (h.get("user-agent") ?? "").slice(0, 300) || null,
+    twoStepOn && opts.twoStepDone ? now() : null,
   ]);
   await pool.query("UPDATE auth_users SET last_sign_in_at = ? WHERE id = ?", [now(), userId]);
   (await cookies()).set(SESSION_COOKIE, token, {
@@ -194,6 +203,15 @@ export async function startSession(userId: string): Promise<void> {
     path: "/",
     maxAge: SESSION_DAYS * 24 * 60 * 60,
   });
+  return { needsTwoStep: twoStepOn && !opts.twoStepDone };
+}
+
+/** Marks this browser's session as having passed the two-step check. */
+export async function completeTwoStep(): Promise<void> {
+  const token = (await cookies()).get(SESSION_COOKIE)?.value;
+  if (!token) return;
+  const pool = await getReadyPool();
+  await pool.query("UPDATE auth_sessions SET mfa_at = ? WHERE id = ?", [now(), sha256Hex(token)]);
 }
 
 /** Signs out of this browser. */

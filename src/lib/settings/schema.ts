@@ -154,6 +154,12 @@ export const settingsSchemas = {
       )
       .default({}),
   }),
+  security: z.object({
+    /** Staff must use two-step sign-in (authenticator app) before the dashboard opens. */
+    require_staff_two_step: z.boolean().default(true),
+    /** Hours a staff sign-in lasts before signing in again. */
+    staff_session_hours: z.number().int().min(1).max(168).default(12),
+  }),
   shiprocket: z.object({
     enabled: z.boolean().default(false),
     pickup_location: z.string().trim().max(120).default(""),

@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
-import { getSessionUser, getStaffAccess } from "@/lib/auth/session";
+import { getSessionUser, getStaffAccess, staffNeedsTwoStepSetup } from "@/lib/auth/session";
 import { ADMIN_NAV } from "@/lib/admin/nav";
 import { ROLE_LABELS } from "@/lib/auth/permissions";
 import { getPublicSettings } from "@/lib/settings";
@@ -18,6 +18,8 @@ export default async function AdminLayout({ children }: { children: ReactNode })
   const user = await getSessionUser();
   if (!user) redirect("/login?next=/admin");
   const access = await getStaffAccess();
+  // Staff must switch on two-step sign-in before the dashboard opens (Settings → Security).
+  if (!access && (await staffNeedsTwoStepSetup())) redirect("/account/security?required=1");
   const settings = await getPublicSettings();
 
   if (!access) {

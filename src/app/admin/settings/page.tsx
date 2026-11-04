@@ -15,6 +15,7 @@ const SECTIONS = [
   ["navigation", "Menus"],
   ["footer", "Footer"],
   ["checkout", "Checkout & payments"],
+  ["security", "Security"],
   ["tax", "Tax / GST"],
   ["notifications", "Emails"],
   ["reviews", "Reviews & newsletter"],
@@ -173,6 +174,23 @@ export default async function SettingsPage() {
           { name: "max_quantity_per_item", label: "Maximum packs of one item per order", type: "number", min: 1, max: 99 },
           { name: "guest_checkout_enabled", label: "Allow checkout without an account", type: "boolean" },
           { name: "reservation_minutes", label: "Minutes to hold stock while a customer pays online", type: "number", min: 10, max: 120 },
+        ]}
+      />
+
+      <SettingsForm
+        id="set-security"
+        settingKey="security"
+        title="Security"
+        description="Protects the dashboard. Each staff member sets up two-step sign-in under My account → Security."
+        initial={s.security}
+        fields={[
+          {
+            name: "require_staff_two_step",
+            label: "Staff must use two-step sign-in (a code from an authenticator app) to open the dashboard",
+            type: "boolean",
+            help: "Strongly recommended for an online shop. Keep your recovery codes safe.",
+          },
+          { name: "staff_session_hours", label: "Hours a staff sign-in lasts", type: "number", min: 1, max: 168 },
         ]}
       />
 
