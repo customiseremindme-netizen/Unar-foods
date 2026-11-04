@@ -2,13 +2,16 @@
 
 import Image from "next/image";
 import { useRef, useState, type ReactNode } from "react";
-import { ArrowDown, ArrowUp, ExternalLink, GripVertical, ImagePlus, Plus, Trash2, Upload } from "lucide-react";
+import { ArrowDown, ArrowUp, ChevronDown, ExternalLink, GripVertical, ImagePlus, Plus, Trash2, Upload } from "lucide-react";
 import { saveProductAction, type ProductPayload } from "@/app/admin/_actions/products";
 import { Button } from "@/components/ui/button";
 import { Checkbox, FieldError, Input, Label, Select, Textarea } from "@/components/ui/field";
 import { Card, Notice } from "./ui";
 import { StickySaveBar, useAdminAction, useUnsavedWarning } from "./forms";
 import { MediaPicker, useImageUpload } from "./image-field";
+import { StockAdjuster } from "./stock-adjuster";
+import { deleteProductAction } from "@/app/admin/_actions/products";
+import { useRouter } from "next/navigation";
 import { formatINR, rupeesToPaise, discountPercent } from "@/lib/money";
 import { slugify } from "@/lib/validation/common";
 import { cn } from "@/lib/utils";
@@ -49,26 +52,16 @@ const IMAGE_KINDS: { value: ImageKind; label: string }[] = [
 
 const GST_RATES = ["", "0", "0.25", "3", "5", "12", "18", "28", "40"];
 
-const SECTIONS = [
-  ["basics", "Basics"],
-  ["images", "Images"],
-  ["pricing", "Sizes & prices"],
-  ["label", "Label & nutrition"],
-  ["claims", "Claims & benefits"],
-  ["storage", "Storage & shelf life"],
-  ["shipping", "Shipping & returns"],
-  ["tax", "Tax"],
-  ["seo", "Search engines"],
-] as const;
-
 export function ProductEditor({
   initial,
   categories,
   canWrite,
   gstRegistered,
   siteHost,
+  canEditStock,
 }: {
   siteHost: string;
+  canEditStock: boolean;
   initial: EditorProduct;
   categories: { id: string; name: string; is_active: boolean }[];
   canWrite: boolean;
@@ -77,6 +70,8 @@ export function ProductEditor({
   const [p, setP] = useState<EditorProduct>(initial);
   const [saved, setSaved] = useState(() => JSON.stringify(initial));
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [moreOpen, setMoreOpen] = useState(false);
+  const router = useRouter();
   const { run, pending } = useAdminAction();
   const dirty = JSON.stringify(p) !== saved;
 
@@ -94,7 +89,9 @@ export function ProductEditor({
       setSaved(JSON.stringify(next));
     } else if (result.errors) {
       const first = Object.keys(result.errors)[0];
-      document.querySelector<HTMLElement>(`[data-field="${first}"]`)?.scrollIntoView({ behavior: "smooth", block: "center" });
+      const basic = ["title", "slug", "images"].includes(first ?? "") || (first ?? "").startsWith("variants");
+      if (!basic) setMoreOpen(true);
+      window.setTimeout(() => document.querySelector<HTMLElement>(`[data-field="${first}"]`)?.scrollIntoView({ behavior: "smooth", block: "center" }), 50);
     }
   }
 
@@ -104,13 +101,6 @@ export function ProductEditor({
   return (
     <div className="grid gap-6 pb-28 lg:grid-cols-[1fr_300px]">
       <div className="min-w-0 space-y-6">
-        <nav aria-label="Product sections" className="flex flex-wrap gap-1.5 text-[0.78rem]">
-          {SECTIONS.map(([id, label]) => (
-            <a key={id} href={`#section-${id}`} className="rounded-full border border-line bg-paper px-3 py-1 hover:border-forest">
-              {label}
-            </a>
-          ))}
-        </nav>
 
         {!canWrite ? <Notice>You can view this product but your role can’t change it.</Notice> : null}
 
@@ -151,8 +141,21 @@ export function ProductEditor({
 
           <ImagesCard images={p.images} onChange={(images) => set("images", images)} productName={p.title} error={err("images")} />
 
-          <VariantsCard variants={p.variants} onChange={(variants) => set("variants", variants)} errors={errors} />
+          <VariantsCard variants={p.variants} onChange={(variants) => set("variants", variants)} errors={errors} canEditStock={canEditStock && canWrite} liveStock={Object.fromEntries(initial.variants.filter((v) => v.id).map((v) => [v.id!, v.stock]))} />
 
+          <details
+            open={moreOpen}
+            onToggle={(e) => setMoreOpen((e.currentTarget as HTMLDetailsElement).open)}
+            className="group rounded-[1.5rem] border border-line bg-paper"
+          >
+            <summary className="flex cursor-pointer list-none items-center justify-between gap-3 p-5 sm:p-6">
+              <span>
+                <span className="block font-sans text-[1rem] font-semibold text-forest">More details</span>
+                <span className="block text-[0.82rem] text-muted">Label &amp; nutrition, claims, shelf life, shipping note, tax and search engines</span>
+              </span>
+              <ChevronDown className="size-5 shrink-0 text-muted transition-transform group-open:rotate-180" aria-hidden="true" />
+            </summary>
+            <div className="space-y-6 border-t border-line p-3 sm:p-4">
           <Card id="section-label" title="Label & nutrition" description="Copy these exactly as printed on the pack.">
                   <div className="grid gap-4">
               <TextAreaField id="ingredients" label="Ingredients" rows={3} value={p.ingredients ?? ""} onChange={(v) => set("ingredients", v)} max={2000} />
@@ -231,6 +234,8 @@ export function ProductEditor({
           </Card>
 
           <SeoCard p={p} set={set} siteHost={siteHost} />
+            </div>
+          </details>
         </fieldset>
       </div>
 
@@ -285,6 +290,31 @@ export function ProductEditor({
             </div>
           </fieldset>
         </Card>
+
+        {canWrite ? (
+          <Card title="Remove this product">
+            {initial.status === "published" ? (
+              <p className="text-[0.8rem] text-muted">
+                To take it off the shop, choose <strong>Archived</strong> (or Draft) above and save. Archived products can be deleted afterwards.
+              </p>
+            ) : (
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="text-danger"
+                loading={pending}
+                onClick={async () => {
+                  if (!window.confirm(`Delete “${initial.title}” permanently? Its reviews and stock history are deleted too. Past orders keep their own copy.`)) return;
+                  const r = await run(() => deleteProductAction(initial.id), { refresh: false });
+                  if (r.ok) router.push("/admin/products");
+                }}
+              >
+                <Trash2 className="size-3.5" aria-hidden="true" /> Delete product
+              </Button>
+            )}
+          </Card>
+        ) : null}
       </aside>
 
       {canWrite ? (
@@ -483,12 +513,24 @@ function ImagesCard({ images, onChange, productName, error }: { images: EditorPr
 // ---------------------------------------------------------------------------
 // Variants & pricing
 // ---------------------------------------------------------------------------
-function VariantsCard({ variants, onChange, errors }: { variants: EditorProduct["variants"]; onChange: (v: EditorProduct["variants"]) => void; errors: Record<string, string> }) {
+function VariantsCard({
+  variants,
+  onChange,
+  errors,
+  canEditStock,
+  liveStock,
+}: {
+  liveStock: Record<string, number>;
+  variants: EditorProduct["variants"];
+  onChange: (v: EditorProduct["variants"]) => void;
+  errors: Record<string, string>;
+  canEditStock: boolean;
+}) {
   const update = (i: number, patch: Partial<EditorProduct["variants"][number]>) => onChange(variants.map((v, j) => (j === i ? { ...v, ...patch } : v)));
   return (
     <Card
       id="section-pricing"
-      title="Sizes & prices"
+      title="Sizes, prices & stock"
       description="Prices are in rupees and include GST if you are registered. The selling price can be lower than MRP — a saving is shown only when you set one."
      
     >
@@ -497,6 +539,7 @@ function VariantsCard({ variants, onChange, errors }: { variants: EditorProduct[
           const mrp = rupeesToPaise(v.mrp);
           const price = rupeesToPaise(v.price);
           const e = (k: string) => errors[`variants.${i}.${k}`];
+          const stock = v.id ? (liveStock[v.id] ?? v.stock) : 0;
           return (
             <li key={v.id ?? i} className="rounded-xl border border-line bg-cream/40 p-4" data-field={`variants.${i}.title`}>
               <div className="mb-3 flex items-center justify-between gap-2">
@@ -504,8 +547,8 @@ function VariantsCard({ variants, onChange, errors }: { variants: EditorProduct[
                   Size {i + 1}
                   {v.id ? (
                     <span className="ml-2 font-normal">
-                      · Stock: <strong className="text-graphite">{v.stock}</strong>
-                      {v.is_demo_stock ? " (demo)" : ""} — change in Inventory
+                      · In stock: <strong className={stock === 0 ? "text-danger" : "text-graphite"}>{stock}</strong>
+                      {v.is_demo_stock ? " (demo)" : ""}
                     </span>
                   ) : (
                     <span className="ml-2 font-normal">· New — starts with 0 stock</span>
@@ -548,6 +591,11 @@ function VariantsCard({ variants, onChange, errors }: { variants: EditorProduct[
                   <Checkbox checked={v.is_active} onChange={(x) => update(i, { is_active: x.target.checked })} label="Available to buy" />
                 </div>
               </div>
+              {v.id && canEditStock ? (
+                <div className="mt-3 rounded-lg border border-line bg-paper p-3">
+                  <StockAdjuster variantId={v.id} current={stock} />
+                </div>
+              ) : null}
               <p className="mt-2 text-[0.78rem] text-muted">
                 {mrp === null || price === null ? (
                   <span className="text-danger">Enter prices as numbers, e.g. 149 or 149.50.</span>

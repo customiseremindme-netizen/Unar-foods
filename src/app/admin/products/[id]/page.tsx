@@ -91,7 +91,7 @@ export default async function EditProductPage({ params }: { params: Promise<{ id
         description={
           <span className="flex flex-wrap items-center gap-2">
             <Badge tone={p.status === "published" ? "success" : p.status === "archived" ? "muted" : "neutral"}>{p.status === "published" ? "Live" : p.status}</Badge>
-            <span>Changes are saved only when you press Save. Stock levels are changed in Inventory.</span>
+            <span>Changes are saved when you press Save. Stock updates save straight away.</span>
           </span>
         }
       />
@@ -101,6 +101,7 @@ export default async function EditProductPage({ params }: { params: Promise<{ id
         canWrite={access.permissions.has("products.write")}
         gstRegistered={tax.gst_registered}
         siteHost={new URL(await getRequestSiteUrl()).host}
+        canEditStock={access.permissions.has("inventory.write")}
       />
     </div>
   );

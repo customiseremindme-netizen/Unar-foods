@@ -41,7 +41,7 @@ export type QuoteSummary = Pick<
   | "shipping"
   | "taxBreakdown"
   | "itemCount"
-> & { couponCode: string | null };
+> & { couponCode: string | null; couponFreeShipping: boolean };
 
 function summarize(quote: Quote): QuoteSummary {
   return {
@@ -59,6 +59,7 @@ function summarize(quote: Quote): QuoteSummary {
     taxBreakdown: quote.taxBreakdown,
     itemCount: quote.itemCount,
     couponCode: quote.coupon?.code ?? null,
+    couponFreeShipping: !!quote.coupon?.freeShipping,
   };
 }
 

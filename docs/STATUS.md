@@ -50,6 +50,19 @@ site itself could not be opened or tested from the development session.
   job), moving orders to Shipped/Delivered and notifying the customer —
   tested only against a local stand-in for Shiprocket.
 
+## New on 4 November 2026 — products, checkout (all tested locally)
+- **Products, Shopify-style:** search by name/SKU, tick several products to
+  publish / move to drafts / archive / delete together, counts on each tab,
+  a one-page **Add product** (title, photos with drag-and-drop, price, MRP,
+  size, opening stock, collections → Save & publish or Save as draft),
+  stock updated right on the product page, "Delete product" on the product
+  page, and the rarely-used fields tucked under **More details**.
+- **Checkout explains free delivery:** "Free (coupon WELCOME2026)" or
+  "Free (order above ₹1,500)", and "Add ₹X more for free delivery".
+- **Cash on Delivery:** the Shipping page now warns when COD is ticked on a
+  zone but switched off for the whole shop, with a one-click "Switch on Cash
+  on Delivery" button; it also warns when no way to pay is switched on.
+
 ## New on 4 November 2026 — security (all tested locally)
 - **Two-step sign-in** with an authenticator app (Google Authenticator /
   Microsoft Authenticator) plus 10 one-time recovery codes, for any account

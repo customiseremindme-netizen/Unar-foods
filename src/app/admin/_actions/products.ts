@@ -1,6 +1,5 @@
 "use server";
 
-import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { check, runAdminAction, UserFacingError, type ActionResult } from "@/lib/admin/action";
@@ -202,29 +201,6 @@ export async function saveProductAction(payload: ProductPayload): Promise<Action
   });
 }
 
-export async function createProductAction(): Promise<void> {
-  const result = await runAdminAction("products.write", async ({ db }) => {
-    const suffix = randomToken(4).toLowerCase().replace(/[^a-z0-9]/g, "x");
-    const { data } = check(
-      await db.from("products").insert({ title: "New product", slug: `new-product-${suffix}`, status: "draft" }).select("id").single(),
-    );
-    check(
-      await db.from("product_variants").insert({
-        product_id: data!.id,
-        title: "100 g",
-        sku: `NEW-${suffix.toUpperCase()}`,
-        mrp_paise: 0,
-        price_paise: 0,
-        stock: 0,
-      }),
-    );
-    await logAdminAction({ action: "product.create", entityType: "product", entityId: data!.id, summary: "Created a new draft product" });
-    return { ok: true, message: null, data: data!.id };
-  });
-  if (result.ok && result.data) redirect(`/admin/products/${result.data}`);
-  redirect(`/admin/products?error=${encodeURIComponent(result.message ?? "Could not create product")}`);
-}
-
 export async function duplicateProductAction(productId: string): Promise<ActionResult<string>> {
   return runAdminAction("products.write", async ({ db }) => {
     z.uuid().parse(productId);
@@ -358,4 +334,114 @@ export async function deleteCategoryAction(id: string): Promise<ActionResult> {
     revalidatePath("/admin/products/collections");
     return { ok: true, message: "Collection deleted." };
   });
+}
+
+// ---------------------------------------------------------------------------
+// Quick "Add product" page and bulk actions on the product list
+// ---------------------------------------------------------------------------
+const quickProductSchema = z.object({
+  title: z.string().trim().min(2, "Enter a product name").max(160),
+  short_description: z.string().trim().max(400).default(""),
+  size: z.string().trim().min(1, "Enter a size, e.g. 100 g").max(80),
+  price: z.string().trim(),
+  mrp: z.string().trim(),
+  weight_grams: z.coerce.number().int().min(0).max(100000),
+  stock: z.coerce.number().int().min(0, "Stock can't be negative").max(1_000_000),
+  sku: z.string().trim().max(64).default(""),
+  publish: z.boolean(),
+  category_ids: z.array(z.uuid()).max(50).default([]),
+  images: z
+    .array(z.object({ url: z.string().trim().min(1).max(500), width: z.number().int().positive().nullable(), height: z.number().int().positive().nullable() }))
+    .max(20)
+    .default([]),
+});
+export type QuickProductInput = z.input<typeof quickProductSchema>;
+
+/** Creates a complete product in one step: name, photos, price, size and opening stock. */
+export async function createQuickProductAction(input: QuickProductInput): Promise<ActionResult<string>> {
+  return runAdminAction("products.write", async ({ db }) => {
+    const parsed = quickProductSchema.safeParse(input);
+    if (!parsed.success) {
+      const errors: Record<string, string> = {};
+      for (const issue of parsed.error.issues) errors[String(issue.path[0])] ??= issue.message;
+      return { ok: false, message: "Please check the highlighted fields.", errors };
+    }
+    const p = parsed.data;
+    const price = rupeesToPaise(p.price);
+    const mrpInput = p.mrp === "" ? p.price : p.mrp;
+    const mrp = rupeesToPaise(mrpInput);
+    const errors: Record<string, string> = {};
+    if (price === null || price <= 0) errors.price = "Enter the selling price, e.g. 149";
+    if (mrp === null) errors.mrp = "Enter the MRP as a number, e.g. 160";
+    else if (price !== null && price > mrp) errors.mrp = "MRP can't be lower than the selling price";
+    if (p.publish && p.images.length === 0) errors.images = "Add at least one photo to publish, or save as a draft.";
+    if (Object.keys(errors).length) return { ok: false, message: "Please check the highlighted fields.", errors };
+
+    const suffix = randomToken(4).toLowerCase().replace(/[^a-z0-9]/g, "x");
+    const base = slugSchema.safeParse(p.title.toLowerCase().normalize("NFKD").replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 100));
+    const { data: clash } = base.success ? await db.from("products").select("id").eq("slug", base.data).maybeSingle() : { data: null };
+    const slug = base.success && !clash ? base.data : `${base.success ? base.data : "product"}-${suffix}`;
+    const sku = (p.sku || `${slug.slice(0, 20).toUpperCase()}-${suffix.toUpperCase()}`).toUpperCase();
+    const { data: dupSku } = await db.from("product_variants").select("id").eq("sku", sku).maybeSingle();
+    if (dupSku) return { ok: false, message: "Please check the highlighted fields.", errors: { sku: "Another product already uses this SKU." } };
+
+    const now = new Date().toISOString();
+    const { data: product } = check(
+      await db
+        .from("products")
+        .insert({
+          title: p.title,
+          slug,
+          short_description: p.short_description || null,
+          status: p.publish ? "published" : "draft",
+          published_at: p.publish ? now : null,
+        })
+        .select("id")
+        .single(),
+    );
+    const { data: variant } = check(
+      await db
+        .from("product_variants")
+        .insert({ product_id: product!.id, title: p.size, sku, mrp_paise: mrp!, price_paise: price!, weight_grams: p.weight_grams, stock: 0 })
+        .select("id")
+        .single(),
+    );
+    if (p.images.length) {
+      check(
+        await db
+          .from("product_images")
+          .insert(p.images.map((img, i) => ({ product_id: product!.id, url: img.url, alt: p.title, kind: "packshot", width: img.width, height: img.height, sort_order: i }))),
+      );
+    }
+    if (p.category_ids.length) {
+      check(await db.from("product_categories").insert(p.category_ids.map((category_id) => ({ product_id: product!.id, category_id }))));
+    }
+    if (p.stock > 0) {
+      const { error } = await db.rpc("adjust_stock", { p_variant_id: variant!.id, p_delta: p.stock, p_reason: "initial", p_note: "Opening stock" });
+      if (error) throw new UserFacingError("The product was created, but the opening stock couldn't be saved. Set it on the product page.");
+    }
+    await logAdminAction({ action: "product.create", entityType: "product", entityId: product!.id, summary: `Created “${p.title}”${p.publish ? " (live)" : " (draft)"}` });
+    revalidateStorefront();
+    revalidatePath("/admin/products");
+    return { ok: true, message: p.publish ? "Product created and live in the shop." : "Product saved as a draft.", data: product!.id };
+  });
+}
+
+/** Ticked rows on the product list: publish, move to drafts, archive or delete several at once. */
+export async function bulkProductsAction(ids: string[], op: "published" | "draft" | "archived" | "delete"): Promise<ActionResult> {
+  const list = z.array(z.uuid()).min(1).max(200).safeParse(ids);
+  if (!list.success || !["published", "draft", "archived", "delete"].includes(op)) return { ok: false, message: "Nothing selected." };
+  let done = 0;
+  const problems: string[] = [];
+  for (const id of list.data) {
+    const r = op === "delete" ? await deleteProductAction(id) : await setProductStatusAction(id, op);
+    if (r.ok) done += 1;
+    else if (r.message && !problems.includes(r.message)) problems.push(r.message);
+  }
+  const verb = op === "delete" ? "deleted" : op === "published" ? "published" : op === "draft" ? "moved to drafts" : "archived";
+  if (!done) return { ok: false, message: problems[0] ?? "Nothing was changed." };
+  return {
+    ok: true,
+    message: `${done} product${done === 1 ? "" : "s"} ${verb}.${problems.length ? ` Some were skipped: ${problems.join(" ")}` : ""}`,
+  };
 }

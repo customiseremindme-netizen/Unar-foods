@@ -1,18 +1,12 @@
-import Image from "next/image";
 import Link from "next/link";
-import { Plus, Star } from "lucide-react";
+import { Plus } from "lucide-react";
 import { requireStaffPage } from "@/lib/auth/session";
 import { getUserDb } from "@/lib/db/client";
-import { formatINR } from "@/lib/money";
-import { createProductAction } from "@/app/admin/_actions/products";
-import { Notice, PageHeader, Table, Td, Th } from "@/components/admin/ui";
-import { ProductRowActions } from "@/components/admin/product-row-actions";
-import { Badge, EmptyState } from "@/components/ui/misc";
-import { Button } from "@/components/ui/button";
+import { Notice, PageHeader } from "@/components/admin/ui";
+import { ProductsTable, type ProductRow } from "@/components/admin/products-table";
+import { EmptyState } from "@/components/ui/misc";
 
 export const metadata = { title: "Products" };
-
-const STATUS_TONE = { published: "success", draft: "neutral", archived: "muted" } as const;
 
 export default async function AdminProductsPage({ searchParams }: { searchParams: Promise<{ error?: string; status?: string }> }) {
   const { access } = await requireStaffPage("products.read");
@@ -26,20 +20,39 @@ export default async function AdminProductsPage({ searchParams }: { searchParams
     .order("sort_order")
     .order("created_at");
   if (params.status && ["draft", "published", "archived"].includes(params.status)) query = query.eq("status", params.status);
-  const { data: products } = await query;
+  const [{ data: products }, { data: everything }] = await Promise.all([query, db.from("products").select("status")]);
+  const counts: Record<string, number> = { "": everything?.length ?? 0 };
+  for (const row of everything ?? []) counts[row.status] = (counts[row.status] ?? 0) + 1;
+
+  const rows: ProductRow[] = (products ?? []).map((p) => {
+    const variants = p.product_variants ?? [];
+    const prices = variants.filter((v) => v.is_active).map((v) => v.price_paise);
+    return {
+      id: p.id,
+      title: p.title,
+      slug: p.slug,
+      status: p.status as ProductRow["status"],
+      featured: p.is_featured,
+      image: [...(p.product_images ?? [])].sort((a, b) => a.sort_order - b.sort_order)[0]?.url ?? null,
+      skus: variants.map((v) => v.sku),
+      sizes: variants.length,
+      stock: variants.reduce((sum, v) => sum + v.stock, 0),
+      low: variants.some((v) => v.is_active && v.stock <= v.low_stock_threshold),
+      demo: variants.some((v) => v.is_demo_stock),
+      minPricePaise: prices.length ? Math.min(...prices) : null,
+    };
+  });
 
   return (
     <div>
       <PageHeader
         title="Products"
-        description="Everything sold on the website. Click a product to edit its name, photos, sizes and prices, label details and SEO. Stock is changed in Inventory."
+        description="Everything sold on the website. Click a product to edit it; tick several to publish, archive or delete them together."
         actions={
           canWrite ? (
-            <form action={createProductAction}>
-              <Button type="submit" size="sm">
-                <Plus className="size-4" aria-hidden="true" /> New product
-              </Button>
-            </form>
+            <Link href="/admin/products/new" className="inline-flex h-10 items-center gap-1.5 rounded-full bg-forest px-4 text-[0.85rem] font-semibold text-cream hover:bg-forest-deep">
+              <Plus className="size-4" aria-hidden="true" /> Add product
+            </Link>
           ) : null
         }
       />
@@ -61,67 +74,14 @@ export default async function AdminProductsPage({ searchParams }: { searchParams
             aria-current={(params.status ?? "") === value ? "page" : undefined}
             className="rounded-full border border-line bg-paper px-3 py-1.5 hover:border-forest aria-[current=page]:border-forest aria-[current=page]:bg-forest aria-[current=page]:text-cream"
           >
-            {label}
+            {label} <span className="opacity-70">({counts[value] ?? 0})</span>
           </Link>
         ))}
       </div>
-      {!products || products.length === 0 ? (
-        <EmptyState title="No products here" description="Create a product with “New product”. New products start as drafts and stay hidden until you publish them." />
+      {!products || (products.length === 0 && !params.status) ? (
+        <EmptyState title="No products yet" description="Click “Add product” to create one. You can save it as a draft first." />
       ) : (
-        <Table>
-          <thead>
-            <tr>
-              <Th>Product</Th>
-              <Th>Status</Th>
-              <Th>SKU</Th>
-              <Th className="text-right">Price</Th>
-              <Th className="text-right">Stock</Th>
-              <Th>
-                <span className="sr-only">Actions</span>
-              </Th>
-            </tr>
-          </thead>
-          <tbody>
-            {products.map((p) => {
-              const image = [...(p.product_images ?? [])].sort((a, b) => a.sort_order - b.sort_order)[0];
-              const variants = p.product_variants ?? [];
-              const stock = variants.reduce((sum, v) => sum + v.stock, 0);
-              const low = variants.some((v) => v.is_active && v.stock <= v.low_stock_threshold);
-              const prices = variants.filter((v) => v.is_active).map((v) => v.price_paise);
-              const demo = variants.some((v) => v.is_demo_stock);
-              const status = p.status as keyof typeof STATUS_TONE;
-              return (
-                <tr key={p.id} className="hover:bg-cream/40">
-                  <Td>
-                    <Link href={`/admin/products/${p.id}`} className="flex items-center gap-3 font-semibold text-forest hover:underline">
-                      <span className="relative size-12 shrink-0 overflow-hidden rounded-lg bg-cream-deep ring-1 ring-line">
-                        {image ? <Image src={image.url} alt="" fill sizes="48px" className="object-cover" /> : null}
-                      </span>
-                      <span>
-                        {p.title}
-                        {p.is_featured ? <Star className="ml-1 inline size-3.5 fill-banana text-banana" aria-label="Featured" /> : null}
-                      </span>
-                    </Link>
-                  </Td>
-                  <Td>
-                    <Badge tone={STATUS_TONE[status]}>{status === "published" ? "Live" : status}</Badge>
-                  </Td>
-                  <Td className="font-mono text-[0.78rem] text-muted">{variants.map((v) => v.sku).join(", ")}</Td>
-                  <Td className="text-right tabular-nums">
-                    {prices.length === 0 ? "—" : Math.min(...prices) === 0 ? <span className="text-danger">Not set</span> : formatINR(Math.min(...prices))}
-                  </Td>
-                  <Td className="text-right tabular-nums">
-                    <span className={low ? "font-semibold text-danger" : undefined}>{stock}</span>
-                    {demo ? <span className="ml-1 text-[0.7rem] text-muted">(demo)</span> : null}
-                  </Td>
-                  <Td className="text-right">
-                    {canWrite ? <ProductRowActions id={p.id} slug={p.slug} status={status} /> : null}
-                  </Td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </Table>
+        <ProductsTable rows={rows} canWrite={canWrite} />
       )}
     </div>
   );

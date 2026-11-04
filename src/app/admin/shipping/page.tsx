@@ -4,14 +4,20 @@ import { getAllSettings } from "@/lib/settings";
 import { Notice, PageHeader } from "@/components/admin/ui";
 import { ZoneManager, type Zone } from "@/components/admin/marketing-managers";
 import { SettingsForm } from "@/components/admin/settings-form";
+import { ActionButton } from "@/components/admin/forms";
+import { enableCashOnDeliveryAction } from "@/app/admin/_actions/settings";
+import { availablePaymentMethods } from "@/lib/commerce/payment-methods";
 
 export const metadata = { title: "Shipping" };
 
 export default async function ShippingPage() {
-  await requireStaffPage("shipping.write");
+  const { access } = await requireStaffPage("shipping.write");
   const db = (await getUserDb())!;
   const [{ data: zones }, settings] = await Promise.all([db.from("shipping_zones").select("*").order("sort_order"), getAllSettings()]);
   const active = (zones ?? []).filter((z) => z.is_active);
+  const codZones = active.filter((z) => z.cod_available);
+  const methods = await availablePaymentMethods(settings);
+  const canEnableCod = access.permissions.has("settings.write");
 
   return (
     <div className="space-y-8">
@@ -22,6 +28,27 @@ export default async function ShippingPage() {
       {active.length === 0 ? (
         <Notice tone="danger">
           No active shipping zone — customers can’t check out yet. Edit “All India — Standard” below, enter your real delivery charge, tick <strong>Active</strong> and save.
+        </Notice>
+      ) : null}
+      {codZones.length > 0 && !settings.checkout.cod_enabled ? (
+        <Notice tone="warning">
+          <span className="block">
+            <strong>Cash on Delivery is switched off for the whole shop</strong>, so customers don&apos;t see it even though{" "}
+            {codZones.map((z) => `“${z.name}”`).join(", ")} {codZones.length === 1 ? "allows" : "allow"} it.
+          </span>
+          {canEnableCod ? (
+            <ActionButton action={enableCashOnDeliveryAction} size="sm" className="mt-3" successMessage="Cash on Delivery is now on.">
+              Switch on Cash on Delivery
+            </ActionButton>
+          ) : (
+            <span className="mt-1 block">Ask the owner to switch it on in Settings → Checkout &amp; payments.</span>
+          )}
+        </Notice>
+      ) : null}
+      {methods.length === 0 ? (
+        <Notice tone="danger">
+          No way to pay is switched on, so nobody can place an order. Switch on Cash on Delivery or UPI in Settings → Checkout &amp; payments, or add
+          your Razorpay / PhonePe keys in Hostinger.
         </Notice>
       ) : null}
       <section className="space-y-3">

@@ -46,6 +46,12 @@ export async function saveSettingAction(key: SettingsKey, value: unknown): Promi
   });
 }
 
+/** One-click "switch on Cash on Delivery" (keeps every other checkout setting as it is). */
+export async function enableCashOnDeliveryAction(): Promise<ActionResult> {
+  const current = await getSetting("checkout");
+  return saveSettingAction("checkout", { ...current, cod_enabled: true });
+}
+
 // ---------------------------------------------------------------------------
 // Staff
 // ---------------------------------------------------------------------------

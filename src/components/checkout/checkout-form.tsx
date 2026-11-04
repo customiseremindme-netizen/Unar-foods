@@ -625,11 +625,23 @@ export function CheckoutForm({
                   ? "Enter PIN code & state"
                   : quote.shipping.status === "ok"
                     ? quote.shippingPaise === 0
-                      ? "Free"
+                      ? quote.couponFreeShipping && quote.couponCode
+                        ? `Free (coupon ${quote.couponCode})`
+                        : quote.shipping.freeShippingThresholdPaise !== null && quote.subtotalPaise - quote.discountPaise >= quote.shipping.freeShippingThresholdPaise
+                          ? `Free (order above ${formatINR(quote.shipping.freeShippingThresholdPaise)})`
+                          : "Free"
                       : formatINR(quote.shippingPaise)
                     : "Not available"}
               </dd>
             </div>
+            {quote?.shipping.status === "ok" &&
+            quote.shippingPaise > 0 &&
+            quote.shipping.freeShippingThresholdPaise !== null &&
+            quote.shipping.freeShippingThresholdPaise > quote.subtotalPaise - quote.discountPaise ? (
+              <p className="text-[0.78rem] text-olive">
+                Add {formatINR(quote.shipping.freeShippingThresholdPaise - (quote.subtotalPaise - quote.discountPaise))} more for free delivery.
+              </p>
+            ) : null}
             {quote?.shipping.status === "ok" && quote.shipping.deliveryEstimate ? (
               <p className="text-[0.78rem] text-muted">Estimated delivery: {quote.shipping.deliveryEstimate}</p>
             ) : null}
@@ -653,17 +665,19 @@ export function CheckoutForm({
             </div>
             {pricesIncludeTax ? <p className="text-[0.75rem] text-muted">Prices include all applicable taxes.</p> : null}
           </dl>
-          {quote && quote.errors.length > 0 && quote.shipping.status !== "pending_address" ? (
+          {methods.length > 0 && quote && quote.errors.length > 0 && quote.shipping.status !== "pending_address" ? (
             <div className="mt-4">
               <FormMessage tone="error">{quote.errors[0]}</FormMessage>
             </div>
           ) : null}
           <Button type="submit" size="lg" className="mt-6 w-full" loading={submitting} disabled={lines.length === 0 || methods.length === 0}>
             <Lock className="size-4" aria-hidden="true" />
-            {paymentMethod === "cod" || paymentMethod === "upi_manual" ? "Place order" : "Continue to payment"}
+            {methods.length === 0 ? "Ordering opens soon" : paymentMethod === "cod" || paymentMethod === "upi_manual" ? "Place order" : "Continue to payment"}
           </Button>
           <p className="mt-3 text-center text-[0.75rem] text-muted">
-            {paymentMethod === "cod"
+            {methods.length === 0
+              ? "No way to pay is switched on yet."
+              : paymentMethod === "cod"
               ? "You'll pay in cash when your order is delivered."
               : paymentMethod === "upi_manual"
                 ? "Next you'll see our UPI ID and QR code to pay."
