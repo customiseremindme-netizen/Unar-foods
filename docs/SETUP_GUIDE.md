@@ -213,8 +213,11 @@ tracking link, delivered, cancelled) use Meta's official WhatsApp Cloud API:
 2. Create message **templates** (category *Utility*) and wait for approval.
    Use these placeholders in the body: `{{1}}` = customer's first name,
    `{{2}}` = order number, `{{3}}` = link (tracking link for "shipped",
-   otherwise the order page). Example: *Hi {{1}}, your UNAR order {{2}} is on
-   its way! Track it here: {{3}}*.
+   otherwise the order page). **Every template must contain all three**, and
+   Meta doesn't allow the text to end with a placeholder. Example: *Hi {{1}},
+   your UNAR order {{2}} has been shipped. Track your parcel here: {{3}} .
+   Team UNAR*. Ready-to-use texts for all five are in
+   `docs/CLAUDE_IN_CHROME_WHATSAPP.md`.
 3. Create a **permanent access token** (System user → Generate token, with
    whatsapp_business_messaging permission) and note the **Phone number ID**.
 4. In Hostinger add `WHATSAPP_ACCESS_TOKEN` (**SECRET**) and
