@@ -49,6 +49,8 @@ export async function fillCheckout(page: Page, opts: { method: "online" | "cod";
 }
 
 export async function loginAsAdmin(browser: Browser): Promise<BrowserContext> {
+  // The suite signs in as the owner many times; keep the sign-in limit from tripping.
+  await resetRateLimits();
   const context = await browser.newContext();
   const page = await context.newPage();
   await page.goto("/login?next=/admin");
