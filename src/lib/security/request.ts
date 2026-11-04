@@ -23,3 +23,28 @@ export function isSameOrigin(request: Request): boolean {
     return false;
   }
 }
+
+/**
+ * Reads a request body but stops as soon as it passes `maxBytes`, so a
+ * client can't fill the server's memory by leaving out or faking the
+ * Content-Length header. Returns null when the body is too large.
+ */
+export async function readBodyCapped(request: Request, maxBytes: number): Promise<Buffer | null> {
+  const declared = Number(request.headers.get("content-length") ?? 0);
+  if (declared > maxBytes) return null;
+  if (!request.body) return Buffer.alloc(0);
+  const reader = request.body.getReader();
+  const parts: Uint8Array[] = [];
+  let total = 0;
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    total += value.byteLength;
+    if (total > maxBytes) {
+      await reader.cancel().catch(() => undefined);
+      return null;
+    }
+    parts.push(value);
+  }
+  return Buffer.concat(parts, total);
+}

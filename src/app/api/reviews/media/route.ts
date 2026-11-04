@@ -2,11 +2,14 @@ import { NextResponse } from "next/server";
 import { getSessionUser } from "@/lib/auth/session";
 import { getAllSettings } from "@/lib/settings";
 import { checkRateLimit } from "@/lib/security/rate-limit";
-import { isSameOrigin } from "@/lib/security/request";
+import { isSameOrigin, readBodyCapped } from "@/lib/security/request";
 import { ReviewMediaError, storeReviewMedia } from "@/lib/reviews/media";
 import { logError } from "@/lib/monitoring";
 
 export const dynamic = "force-dynamic";
+
+/** A 25 MB video plus the form wrapping around it. */
+const MAX_UPLOAD_BYTES = 26 * 1024 * 1024;
 
 /** One photo or video for a review, uploaded by a signed-in customer before they submit it. */
 export async function POST(request: Request) {
@@ -16,14 +19,17 @@ export async function POST(request: Request) {
   if (!(await checkRateLimit("reviewMedia", user.id))) {
     return NextResponse.json({ error: "You've uploaded a lot in a short time. Please try again later." }, { status: 429 });
   }
-  const length = Number(request.headers.get("content-length") ?? 0);
-  if (length > 26 * 1024 * 1024) return NextResponse.json({ error: "This file is too large. Videos can be up to 25 MB." }, { status: 413 });
+  const tooLarge = () => NextResponse.json({ error: "This file is too large. Videos can be up to 25 MB." }, { status: 413 });
+  if (Number(request.headers.get("content-length") ?? 0) > MAX_UPLOAD_BYTES) return tooLarge();
   const settings = await getAllSettings();
   if (!settings.reviews.enabled) return NextResponse.json({ error: "Reviews are currently closed." }, { status: 403 });
 
   let file: FormDataEntryValue | null;
   try {
-    file = (await request.formData()).get("file");
+    const body = await readBodyCapped(request, MAX_UPLOAD_BYTES);
+    if (!body) return tooLarge();
+    const form = await new Response(new Uint8Array(body), { headers: { "content-type": request.headers.get("content-type") ?? "" } }).formData();
+    file = form.get("file");
   } catch {
     return NextResponse.json({ error: "We couldn't read that file. Please try again." }, { status: 400 });
   }

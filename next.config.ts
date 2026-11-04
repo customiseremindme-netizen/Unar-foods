@@ -1,30 +1,11 @@
 import type { NextConfig } from "next";
 
 /**
- * Security headers applied to every response.
- * The Content-Security-Policy allows Razorpay Checkout (payment window) and
- * nothing else from other sites. Images uploaded in the dashboard are served
- * by this site itself (/media/...).
+ * Security headers applied to every response. Pages get their
+ * Content-Security-Policy (with a per-request nonce) from src/proxy.ts;
+ * API routes, which only return data, get a policy that allows nothing.
  */
-const testRun = process.env.UNAR_ALLOW_TEST_OVERRIDES === "1";
-const csp = [
-  "default-src 'self'",
-  `script-src 'self' 'unsafe-inline' https://checkout.razorpay.com${process.env.NODE_ENV === "development" ? " 'unsafe-eval'" : ""}`,
-  "style-src 'self' 'unsafe-inline'",
-  "img-src 'self' data: blob: https://*.razorpay.com",
-  "font-src 'self' data:",
-  "connect-src 'self' https://*.razorpay.com https://lumberjack.razorpay.com",
-  "frame-src https://api.razorpay.com https://checkout.razorpay.com",
-  "object-src 'none'",
-  "base-uri 'self'",
-  "form-action 'self' https://api.razorpay.com",
-  "frame-ancestors 'none'",
-  // Local test runs use plain http://localhost.
-  ...(process.env.NODE_ENV === "production" && !testRun ? ["upgrade-insecure-requests"] : []),
-].join("; ");
-
 const securityHeaders = [
-  { key: "Content-Security-Policy", value: csp },
   { key: "X-Frame-Options", value: "DENY" },
   { key: "X-Content-Type-Options", value: "nosniff" },
   { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
@@ -51,6 +32,12 @@ const nextConfig: NextConfig = {
       {
         source: "/:path*",
         headers: securityHeaders,
+      },
+      {
+        source: "/api/:path*",
+        headers: [
+          { key: "Content-Security-Policy", value: "default-src 'none'; frame-ancestors 'none'; base-uri 'none'; form-action 'none'" },
+        ],
       },
     ];
   },
