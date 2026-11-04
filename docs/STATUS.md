@@ -50,6 +50,24 @@ site itself could not be opened or tested from the development session.
   job), moving orders to Shipped/Delivered and notifying the customer —
   tested only against a local stand-in for Shiprocket.
 
+## New on 4 November 2026 — security (all tested locally)
+- **Two-step sign-in** with an authenticator app (Google Authenticator /
+  Microsoft Authenticator) plus 10 one-time recovery codes, for any account
+  (Account → Security). **Required for staff by default**: the next time
+  you open the dashboard you'll be asked to set it up first. Can be changed
+  in Dashboard → Settings → Security, along with how long a staff sign-in
+  lasts (default 12 hours).
+- **Sign out everywhere** and **Delete my account** for customers (orders
+  stay on record for invoices, no longer linked to the account; staff
+  accounts can't be deleted this way).
+- Commonly guessed passwords (e.g. "Password123", "india@123") are refused.
+- Stricter browser protection: only the site's own scripts (and the
+  Razorpay payment window) can run, using a fresh random key on every page
+  view.
+- Review uploads stop at 25 MB even if the browser lies about the size.
+- `/.well-known/security.txt` tells anyone who finds a problem how to
+  contact you.
+
 ## ✅ Built and tested
 
 **Storefront**

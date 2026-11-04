@@ -6,6 +6,7 @@ import { ShieldCheck } from "lucide-react";
 import {
   beginTwoStepSetupAction,
   confirmTwoStepSetupAction,
+  deleteAccountAction,
   disableTwoStepAction,
   newRecoveryCodesAction,
   signOutEverywhereAction,
@@ -68,7 +69,19 @@ function RecoveryCodes({ codes }: { codes: string[] }) {
 }
 
 /** Account → Security: switch two-step sign-in on/off, recovery codes, sign out everywhere. */
-export function SecuritySettings({ enabled, recoveryLeft, mustSetUp }: { enabled: boolean; recoveryLeft: number; mustSetUp: boolean }) {
+export function SecuritySettings({
+  enabled,
+  recoveryLeft,
+  mustSetUp,
+  email,
+  isStaff,
+}: {
+  enabled: boolean;
+  recoveryLeft: number;
+  mustSetUp: boolean;
+  email: string;
+  isStaff: boolean;
+}) {
   const router = useRouter();
   const [setup, setSetup] = useState<TwoStepSetup | null>(null);
   const [codes, setCodes] = useState<string[] | null>(null);
@@ -248,6 +261,58 @@ export function SecuritySettings({ enabled, recoveryLeft, mustSetUp }: { enabled
           Sign out everywhere else
         </Button>
       </section>
+      {!isStaff ? <DeleteAccount email={email} needsCode={enabled} /> : null}
     </div>
+  );
+}
+
+/** Lets a customer delete their account after typing their email (and a code when two-step is on). */
+function DeleteAccount({ email, needsCode }: { email: string; needsCode: boolean }) {
+  const [confirm, setConfirm] = useState("");
+  const [code, setCode] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const matches = confirm.trim().toLowerCase() === email.toLowerCase();
+  return (
+    <section className="rounded-[1.75rem] border border-line bg-paper p-5 sm:p-6">
+      <h2 className="font-sans text-[1.05rem] font-semibold tracking-normal">Delete my account</h2>
+      <p className="mt-2 text-[0.9rem] text-muted">
+        This removes your sign-in, profile, saved addresses, wishlist and cart. Orders you&apos;ve placed stay on the shop&apos;s records for invoices
+        and deliveries, without your account attached. This can&apos;t be undone.
+      </p>
+      <details className="mt-4 text-[0.9rem]">
+        <summary className="cursor-pointer text-danger underline underline-offset-4">I want to delete my account</summary>
+        <div className="mt-4 space-y-4">
+          {error ? <FormMessage tone="error">{error}</FormMessage> : null}
+          <Field label={`Type ${email} to confirm`} htmlFor="delete-confirm">
+            <Input id="delete-confirm" value={confirm} onChange={(e) => setConfirm(e.target.value)} autoComplete="off" className="h-11 max-w-sm" />
+          </Field>
+          {needsCode ? (
+            <Field label="Code from your authenticator app" htmlFor="delete-code">
+              <Input id="delete-code" value={code} onChange={(e) => setCode(e.target.value)} inputMode="numeric" maxLength={20} autoComplete="one-time-code" className="h-11 w-48" />
+            </Field>
+          ) : null}
+          <Button
+            type="button"
+            variant="ghost"
+            className="text-danger"
+            loading={busy}
+            disabled={!matches || (needsCode && code.trim().length < 6)}
+            onClick={async () => {
+              setBusy(true);
+              setError(null);
+              try {
+                const r = await deleteAccountAction(confirm, code);
+                if (r && !r.ok) setError(r.message);
+              } finally {
+                setBusy(false);
+              }
+            }}
+          >
+            Delete my account permanently
+          </Button>
+        </div>
+      </details>
+    </section>
   );
 }

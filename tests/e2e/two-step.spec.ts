@@ -98,4 +98,31 @@ test.describe("two-step sign-in", () => {
       await setStaffRule(false);
     }
   });
+
+  test("a customer can delete their account; staff can't delete theirs here", async ({ page }) => {
+    const stamp = Date.now();
+    const user = { sub: `g-del-${stamp}`, email: `delete+${stamp}@example.com` };
+    await googleSignIn(page, user);
+    await page.waitForURL(/\/account/);
+    await page.goto("/account/security");
+    await page.getByText("I want to delete my account").click();
+    const button = page.getByRole("button", { name: "Delete my account permanently" });
+    await page.fill("#delete-confirm", "someone-else@example.com");
+    await expect(button).toBeDisabled();
+    await page.fill("#delete-confirm", user.email);
+    await button.click();
+    await page.waitForURL((url) => url.pathname === "/");
+    await page.goto("/account");
+    await expect(page).toHaveURL(/\/login/);
+
+    // The owner (staff) gets no delete option.
+    await page.context().clearCookies();
+    await page.goto("/login");
+    await page.fill("#email", ADMIN_EMAIL);
+    await page.fill("#password", ADMIN_PASSWORD);
+    await page.getByRole("button", { name: /^sign in$/i }).click();
+    await page.waitForURL(/\/(account|admin)/);
+    await page.goto("/account/security");
+    await expect(page.getByText("I want to delete my account")).toHaveCount(0);
+  });
 });

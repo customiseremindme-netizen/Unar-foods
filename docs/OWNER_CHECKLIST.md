@@ -118,6 +118,7 @@ the website. They are **not** legal advice and were not written by a lawyer.
 - [ ] A test purchase, refund and shipment completed successfully.
 - [ ] Hostinger plan that supports Node.js apps (Business or Cloud) with a MySQL database; daily backups switched on.
 - [ ] 2FA turned on for GitHub, Hostinger and Razorpay (and Resend if used).
+- [ ] Two-step sign-in set up on your own shop account (you'll be asked on your next dashboard visit) and recovery codes saved somewhere safe.
 
 ## Things deliberately left out (add only if true)
 - Customer reviews / testimonials — the reviews section shows an honest

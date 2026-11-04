@@ -344,6 +344,12 @@ minutes (sometimes up to 24 h).
 2. Enter the **SETUP_KEY** from Part 5, your name, the email you want to use
    for the business and a strong password → **Create owner account**.
 3. You are taken straight into the dashboard (`/admin`).
+4. **Two-step sign-in** (required for staff): the dashboard first asks you
+   to set it up. Install **Google Authenticator** or **Microsoft
+   Authenticator** on your phone, scan the QR code, type the 6-digit code,
+   and save the 10 **recovery codes** somewhere safe (password manager or
+   printed). From then on, signing in asks for a code from the app. If you
+   lose your phone, use one recovery code instead (each works once).
 
 This page works only once — as soon as an owner exists it is locked. (You
 can then delete `SETUP_KEY` from the environment variables if you like.)
@@ -419,6 +425,9 @@ customer**. Switch automatic invoices off in Settings → Emails.
 - Give each helper their **own** account with the smallest role
   (*Fulfilment staff* for packing, *Content editor* for photos/text). Remove
   access when they leave (**Staff → Remove**).
+- Keep **two-step sign-in** on for staff (Dashboard → Settings →
+  Security). Staff sign-ins expire after 12 hours by default. If a phone or
+  laptop is lost, open Account → Security → **Sign out everywhere else**.
 - The website code never contains secrets; they live only in Hostinger's
   environment variables. Never paste them anywhere else.
 - **Backups:** Hostinger Business plans make automatic backups that include

@@ -163,9 +163,9 @@ export async function signOutEverywhereAction(): Promise<{ ok: boolean; message:
 }
 
 /** For the security page: does this account use two-step, how many recovery codes are left, is it required. */
-export async function twoStepStatus(): Promise<{ enabled: boolean; recoveryLeft: number; required: boolean; staffRule: boolean }> {
+export async function twoStepStatus(): Promise<{ enabled: boolean; recoveryLeft: number; required: boolean; staffRule: boolean; isStaff: boolean }> {
   const user = await getSessionUser();
-  if (!user) return { enabled: false, recoveryLeft: 0, required: false, staffRule: false };
+  if (!user) return { enabled: false, recoveryLeft: 0, required: false, staffRule: false, isStaff: false };
   const row = await loadTwoStep(user.id);
   const pool = await getReadyPool();
   const [staff] = await pool.query<RowDataPacket[]>("SELECT 1 FROM staff_members WHERE user_id = ?", [user.id]);
@@ -176,5 +176,35 @@ export async function twoStepStatus(): Promise<{ enabled: boolean; recoveryLeft:
     required: await staffNeedsTwoStepSetup(),
     // Staff can't switch it off while the shop requires it.
     staffRule: staff.length > 0 && security.require_staff_two_step,
+    isStaff: staff.length > 0,
   };
+}
+
+/**
+ * Customer deletes their own account: sign-in, profile, addresses, saved
+ * items and sessions go. Orders stay for the shop's accounts and invoices,
+ * no longer linked to an account. Staff can't delete themselves here.
+ */
+export async function deleteAccountAction(confirmEmail: string, code: string): Promise<{ ok: boolean; message: string }> {
+  const user = await getSessionUser();
+  if (!user) return { ok: false, message: "Please sign in again." };
+  if (!(await checkRateLimit("securityChange", user.id))) return { ok: false, message: "Please wait a few minutes and try again." };
+  if (!user.email || confirmEmail.trim().toLowerCase() !== user.email.toLowerCase()) {
+    return { ok: false, message: "Type your email address exactly as shown to confirm." };
+  }
+  const pool = await getReadyPool();
+  const [staff] = await pool.query<RowDataPacket[]>("SELECT 1 FROM staff_members WHERE user_id = ?", [user.id]);
+  if (staff.length) return { ok: false, message: "Staff accounts can't be deleted here. Ask the owner to remove you in the dashboard first." };
+  const row = await loadTwoStep(user.id);
+  if (row?.totp_enabled_at && !(await checkSecondFactor(user.id, code))) {
+    return { ok: false, message: "Enter a current code from your authenticator app (or a recovery code)." };
+  }
+  try {
+    await endAllSessions(user.id);
+    await pool.query("DELETE FROM auth_users WHERE id = ?", [user.id]);
+  } catch (error) {
+    logError("account.delete", error);
+    return { ok: false, message: "We couldn't delete your account. Please try again or contact us." };
+  }
+  redirect("/?account=deleted");
 }

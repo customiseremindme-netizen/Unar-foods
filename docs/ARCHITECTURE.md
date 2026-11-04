@@ -69,6 +69,17 @@ Which client to use:
 - `permissions.ts`: roles → permissions (`ROLE_PERMISSIONS`), the single
   source of truth for both server actions and database rules.
 - `/setup` creates the first owner once (needs `SETUP_KEY`).
+- Two-step sign-in (`totp.ts`, `app/actions/security.ts`): RFC 6238 codes
+  (±1 step, a used step can't be reused) and SHA-256-hashed one-time
+  recovery codes. `auth_sessions.mfa_at` marks a session that passed the
+  code step; `getSession()` treats a session without it as signed out when
+  the account has two-step on. With `security.require_staff_two_step`,
+  staff without two-step get no staff role (sent to `/account/security`),
+  and staff sessions older than `security.staff_session_hours` end.
+- Content-Security-Policy is set per request in `src/proxy.ts` (nonce +
+  `'strict-dynamic'`); API routes get a deny-all policy from
+  `next.config.ts`. Inline `<script>` tags of your own won't run — use
+  `next/script` (it gets the nonce) or load from code that already runs.
 - Email links open `/auth/confirm`, where a button press (not the link
   itself) uses the token — email scanners can't burn links.
 

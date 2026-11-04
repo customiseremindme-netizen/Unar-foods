@@ -90,12 +90,25 @@ export const addressSchema = z.object({
 
 export type AddressInput = z.infer<typeof addressSchema>;
 
+/** Passwords that are tried first by anyone guessing (lowercase, compared without spaces). */
+const COMMON_PASSWORDS = new Set([
+  "password1", "password12", "password123", "password1234", "passw0rd1", "p@ssw0rd1", "p@ssword1", "qwerty123", "qwerty1234",
+  "qwertyuiop1", "abc12345", "abcd1234", "abcdef123", "abc123456", "iloveyou1", "welcome1", "welcome123", "letmein1", "admin123",
+  "admin1234", "administrator1", "test1234", "test12345", "1q2w3e4r", "1q2w3e4r5t", "q1w2e3r4", "zaq12wsx", "asdf1234", "asdfgh123",
+  "india123", "india1234", "india@123", "chennai123", "tamilnadu1", "unar1234", "unar12345", "unarfoods1", "unarfoods123", "shop1234",
+  "monkey123", "dragon123", "sunshine1", "princess1", "football1", "cricket123", "baseball1", "superman1", "batman123", "master123",
+  "changeme1", "secret123", "default1", "trustno1", "a1b2c3d4", "aa123456", "123456789a", "12345678a", "a12345678", "1234abcd",
+  "123abc123", "pass1234", "pass12345", "mypassword1", "hello123", "hello1234", "love1234", "krishna123", "ganesh123", "murugan123",
+]);
+
 export const passwordSchema = z
   .string()
   .min(8, "Use at least 8 characters")
   .max(72, "Password is too long")
   .regex(/[A-Za-z]/, "Include at least one letter")
-  .regex(/\d/, "Include at least one number");
+  .regex(/\d/, "Include at least one number")
+  .refine((v) => !COMMON_PASSWORDS.has(v.toLowerCase().replace(/\s+/g, "")), "This password is too common and easy to guess. Please choose another.")
+  .refine((v) => !/^(.)\1+$/.test(v) && !/^(?:0123456789|1234567890|12345678|123456789)/.test(v), "This password is too easy to guess. Please choose another.");
 
 export const slugSchema = z
   .string()
