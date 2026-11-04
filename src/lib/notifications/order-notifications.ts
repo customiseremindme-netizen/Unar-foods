@@ -76,6 +76,9 @@ export async function notifyOrder(
     if (template === "invoice" && !isInvoiceable(order.payment_status)) return;
 
     const siteUrl = await getRequestSiteUrl();
+    if (template === "admin_new_order" && notifications.notify_admin_new_order) {
+      await notifyAdminWhatsApp({ order, settings, dashboardUrl: `${siteUrl}/admin/orders/${order.id}` });
+    }
     const emailOrder: EmailOrder = {
       ...order,
       shipping_address: (order.shipping_address ?? {}) as Record<string, string>,
@@ -235,6 +238,53 @@ async function notifyWhatsApp(input: {
     provider_message_id: result.id ?? null,
     error: result.error ?? null,
   });
+}
+
+const PAYMENT_LABEL: Record<string, string> = { cod: "Cash on Delivery", upi_manual: "UPI to your UPI ID", razorpay: "paid online", phonepe: "paid by PhonePe" };
+
+/**
+ * WhatsApp message to the shop's own numbers for every new order. Template
+ * body: {{1}} order number, {{2}} customer · amount · payment, {{3}} dashboard link.
+ * Sent once per order and number.
+ */
+async function notifyAdminWhatsApp(input: {
+  order: { id: string; order_number: string; customer_name: string; total_paise: number; payment_method: string; payment_status: string };
+  settings: AllSettings;
+  dashboardUrl: string;
+}) {
+  const { notifications } = input.settings;
+  const name = notifications.whatsapp_tpl_admin_new_order;
+  if (!notifications.whatsapp_enabled || !name || !getWhatsAppEnv()) return;
+  const numbers = [...new Set(notifications.whatsapp_admin_numbers.map((n) => whatsappNumber(n)).filter((n): n is string => !!n))];
+  if (!numbers.length) return;
+  const admin = getServiceDb()!;
+  const { data: already } = await admin
+    .from("notification_log")
+    .select("recipient")
+    .eq("order_id", input.order.id)
+    .eq("template", "admin_new_order")
+    .eq("channel", "whatsapp")
+    .eq("status", "sent");
+  const done = new Set((already ?? []).map((r) => r.recipient));
+  const pay =
+    input.order.payment_method === "upi_manual" && input.order.payment_status !== "paid"
+      ? "UPI payment to check"
+      : (PAYMENT_LABEL[input.order.payment_method] ?? input.order.payment_method);
+  const summary = `${input.order.customer_name} · ₹${(input.order.total_paise / 100).toFixed(input.order.total_paise % 100 ? 2 : 0)} · ${pay}`;
+  for (const to of numbers) {
+    const masked = `+${to.slice(0, 4)}••••${to.slice(-3)}`;
+    if (done.has(masked)) continue;
+    const result = await sendWhatsAppTemplate({ to, template: name, language: notifications.whatsapp_language, params: [input.order.order_number, summary, input.dashboardUrl] });
+    await admin.from("notification_log").insert({
+      order_id: input.order.id,
+      template: "admin_new_order",
+      recipient: masked,
+      channel: "whatsapp",
+      status: result.status,
+      provider_message_id: result.id ?? null,
+      error: result.error ?? null,
+    });
+  }
 }
 
 /** Helper for shipment emails: tracking details block. */

@@ -225,7 +225,13 @@ tracking link, delivered, cancelled) use Meta's official WhatsApp Cloud API:
 5. Dashboard → **Settings → Emails**: tick **Send automatic WhatsApp order
    updates**, enter the language code and the template names, save.
 Checkout then offers "Send me order updates on WhatsApp"; only customers who
-tick it get messages. Meta charges per message (see Meta's pricing).
+tick it get messages (WhatsApp's rules require the customer's consent).
+6. **WhatsApp for you on every new order:** create one more template, e.g.
+   `unar_new_order` — *New UNAR order {{1}} from {{2}}. Open it in the
+   dashboard: {{3}} . Team UNAR* ({{1}} order number, {{2}} customer ·
+   amount · payment, {{3}} dashboard link) — and in Settings → Emails fill
+   in "WhatsApp me about every new order" with your mobile number(s) (not the
+   shop's sending number) and the template name. Meta charges per message (see Meta's pricing).
 
 ### 4.8 Courier (Shiprocket) with automatic tracking (optional)
 1. Shiprocket → Settings → API → **Create an API user** (a separate email).

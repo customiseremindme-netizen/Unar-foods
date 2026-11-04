@@ -8,8 +8,10 @@ import { addProductToCart, loginAsAdmin, MOCK_RAZORPAY, resetRateLimits } from "
 const COURIER_TOKEN = process.env.E2E_SHIPROCKET_WEBHOOK_TOKEN ?? "local_courier_token_0123456789";
 
 type WaMessage = { to: string; template: string; params: string[] };
+const allMessages = async (): Promise<WaMessage[]> => ((await (await fetch(`${MOCK_RAZORPAY}/__whatsapp_state`)).json()) as { messages: WaMessage[] }).messages;
+/** Messages to the customer about this order (not the shop's own new-order alerts). */
 const messagesFor = async (orderNumber: string): Promise<WaMessage[]> =>
-  ((await (await fetch(`${MOCK_RAZORPAY}/__whatsapp_state`)).json()) as { messages: WaMessage[] }).messages.filter((m) => m.params.includes(orderNumber));
+  (await allMessages()).filter((m) => m.template !== "unar_new_order" && m.params.includes(orderNumber));
 
 async function codOrder(page: Page, whatsapp: boolean): Promise<string> {
   await addProductToCart(page);
@@ -33,6 +35,15 @@ async function codOrder(page: Page, whatsapp: boolean): Promise<string> {
 test.describe("WhatsApp updates and courier tracking", () => {
   test.beforeEach(async () => {
     await resetRateLimits();
+  });
+
+  test("the shop owner gets a WhatsApp message for every new order, once", async ({ page }) => {
+    const orderNumber = await codOrder(page, false);
+    await expect.poll(async () => (await allMessages()).filter((m) => m.template === "unar_new_order" && m.params[0] === orderNumber).length).toBe(1);
+    const msg = (await allMessages()).find((m) => m.template === "unar_new_order" && m.params[0] === orderNumber)!;
+    expect(msg.to).toBe("919000000001");
+    expect(msg.params[1]).toMatch(/^Meena Customer · ₹[\d.]+ · Cash on Delivery$/);
+    expect(msg.params[2]).toMatch(/\/admin\/orders\/[0-9a-f-]{36}$/);
   });
 
   test("WhatsApp messages go only to customers who agreed", async ({ page }) => {

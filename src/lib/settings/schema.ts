@@ -143,6 +143,12 @@ export const settingsSchemas = {
     whatsapp_tpl_order_shipped: z.string().trim().max(60).regex(/^[a-z0-9_]*$/, "Use the template name exactly as in WhatsApp Manager (lowercase, digits, _)").default(""),
     whatsapp_tpl_order_delivered: z.string().trim().max(60).regex(/^[a-z0-9_]*$/, "Use the template name exactly as in WhatsApp Manager (lowercase, digits, _)").default(""),
     whatsapp_tpl_order_cancelled: z.string().trim().max(60).regex(/^[a-z0-9_]*$/, "Use the template name exactly as in WhatsApp Manager (lowercase, digits, _)").default(""),
+    /** Shop staff mobile numbers that get a WhatsApp message for every new order. */
+    whatsapp_admin_numbers: z
+      .array(z.string().trim().regex(/^(\+?91[\s-]?)?[6-9]\d{9}$/, "Use a 10-digit Indian mobile number, e.g. 9994657693"))
+      .max(5)
+      .default([]),
+    whatsapp_tpl_admin_new_order: z.string().trim().max(60).regex(/^[a-z0-9_]*$/, "Use the template name exactly as in WhatsApp Manager (lowercase, digits, _)").default(""),
     templates: z
       .record(
         z.string(),

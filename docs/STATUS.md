@@ -50,6 +50,12 @@ site itself could not be opened or tested from the development session.
   job), moving orders to Shipped/Delivered and notifying the customer —
   tested only against a local stand-in for Shiprocket.
 
+## New on 4 November 2026 — WhatsApp alert for every new order (tested locally against a stand-in for Meta)
+- Up to 5 shop mobile numbers get a WhatsApp message for each new order
+  (order number, customer, amount, payment and a dashboard link), once per
+  order. Set in Settings → Emails; needs WhatsApp connected and one approved
+  template (see `docs/CLAUDE_IN_CHROME_WHATSAPP.md`).
+
 ## New on 4 November 2026 — products, checkout (all tested locally)
 - **Products, Shopify-style:** search by name/SKU, tick several products to
   publish / move to drafts / archive / delete together, counts on each tab,
