@@ -1,15 +1,16 @@
+import Image from "next/image";
 import Link from "next/link";
+import { NotFoundContent } from "@/components/content/not-found-content";
 
 export default function RootNotFound() {
   return (
-    <main className="grid min-h-dvh place-items-center bg-cream p-8 text-center">
-      <div>
-        <h1 className="text-[2.4rem]">Page not found</h1>
-        <p className="mt-3 text-muted">The page you&apos;re looking for doesn&apos;t exist.</p>
-        <Link href="/" className="mt-6 inline-block font-semibold text-forest underline">
-          Go to the homepage
+    <main className="min-h-dvh bg-cream">
+      <div className="container-site flex justify-center pt-8">
+        <Link href="/" aria-label="UNAR home">
+          <Image src="/brand/unar-logo-transparent.webp" alt="UNAR" width={180} height={58} priority />
         </Link>
       </div>
+      <NotFoundContent />
     </main>
   );
 }

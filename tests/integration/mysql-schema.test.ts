@@ -103,7 +103,7 @@ describe.skipIf(!url)("automatic database setup", () => {
     const [before] = await pool.query<RowDataPacket[]>("SELECT COUNT(*) AS n FROM products");
 
     const results = await Promise.all([installSchema(pool), installSchema(pool)]);
-    expect(results.flatMap((r) => r.dataFixes)).toEqual(["2026-11-01-starter-products", "2026-11-01-home-sections", "2026-11-03-payment-methods", "2026-11-05-home-section-images"]);
+    expect(results.flatMap((r) => r.dataFixes)).toEqual(["2026-11-01-starter-products", "2026-11-01-home-sections", "2026-11-03-payment-methods", "2026-11-05-home-section-images", "2026-11-05-about-cover-and-share-card"]);
     const [story] = await pool.query<RowDataPacket[]>("SELECT state, JSON_UNQUOTE(JSON_EXTRACT(content, '$.image_url')) AS url FROM cms_sections WHERE `key` = 'story' ORDER BY state");
     expect(story.map((r) => `${r.state}:${r.url}`)).toEqual(["draft:/media/owner-photo.webp", "published:/images/site/banana-grove.webp"]);
 

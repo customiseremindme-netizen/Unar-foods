@@ -46,7 +46,7 @@ export const settingsSchemas = {
     site_title: z.string().trim().max(120).default("UNAR — One Healthy Habit a Day"),
     title_template: z.string().trim().max(60).default("%s · UNAR"),
     description: z.string().trim().max(300).default(""),
-    og_image_url: z.string().trim().max(500).default("/images/products/nuts-front.webp"),
+    og_image_url: z.string().trim().max(500).default("/images/site/share-card.jpg"),
     allow_indexing: z.boolean().default(true),
   }),
   social: z.object({

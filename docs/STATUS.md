@@ -59,6 +59,12 @@ site itself could not be opened or tested from the development session.
   once, only where you hadn't already chosen your own picture; change them
   any time in Dashboard → Content → Homepage. A spare "tea moment" picture is
   at `/images/site/tea-moment.webp`.
+- **Our Story page** now has a cover picture (bananas on a banana leaf,
+  AI-generated), and the **"page not found"** screen has a friendly picture
+  with Shop / Home buttons.
+- **Link previews:** sharing the site on WhatsApp, Facebook or X now shows a
+  1200×630 card made from your **real** pouch photo and logo
+  (`/images/site/share-card.jpg`; change it in Settings → Search engines).
 
 ## New on 5 November 2026 (tested locally against a stand-in for WhatsApp)
 - **Sign in with mobile number** — 6-digit code on WhatsApp; new customers

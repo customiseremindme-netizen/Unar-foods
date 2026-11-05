@@ -171,6 +171,20 @@ export const DATA_MIGRATIONS: DataMigration[] = [
       }
     },
   },
+  {
+    id: "2026-11-05-about-cover-and-share-card",
+    description: "Cover picture for the Our Story page, and a proper link-preview picture, unless already set",
+    async run(conn) {
+      await conn.query(
+        "UPDATE cms_pages SET cover_image_url = ?, cover_image_alt = ? WHERE slug = 'about' AND (cover_image_url IS NULL OR cover_image_url = '')",
+        ["/images/site/about-bananas-leaf.webp", "A bunch of ripe bananas on a fresh banana leaf"],
+      );
+      await conn.query(
+        "UPDATE settings SET value = JSON_SET(value, '$.og_image_url', ?) WHERE `key` = 'seo' AND JSON_UNQUOTE(JSON_EXTRACT(value, '$.og_image_url')) IN (?, ?)",
+        ["/images/site/share-card.jpg", "/images/products/dry-fruits-seeds/01-main-hero-pouch.webp", "/images/products/nuts-front.webp"],
+      );
+    },
+  },
 ];
 
 /** Runs every step that has not run yet, in order. Returns the ids that ran. */
