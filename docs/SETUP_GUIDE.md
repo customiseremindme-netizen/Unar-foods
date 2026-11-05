@@ -437,6 +437,24 @@ customer**. Switch automatic invoices off in Settings → Emails.
 
 ---
 
+### 7.5 Get found on Google and in AI assistants (free, 20 minutes)
+Once your own domain is connected (Part 6):
+1. **Google Search Console** (search.google.com/search-console) → Add
+   property → your domain → verify (Hostinger DNS) → **Sitemaps** → enter
+   `sitemap.xml` → Submit.
+2. **Bing Webmaster Tools** (bing.com/webmasters) → "Import from Google
+   Search Console". Bing's index also feeds ChatGPT search and Copilot.
+3. **Google Business Profile** (business.google.com) → add UNAR with your
+   Palladam address, phone, website and product photos. This is what shows
+   in Google Maps and "near me" searches.
+4. Fill in **Settings → Search engines** (site description) and the social
+   links in **Settings → Social** — they appear in search results and in
+   `/llms.txt`.
+5. Ask happy customers to leave a review on the product page — real reviews
+   show as stars in Google.
+
+---
+
 ## Part 9 — Safety habits and backups
 
 - Give each helper their **own** account with the smallest role

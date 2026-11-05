@@ -50,6 +50,23 @@ site itself could not be opened or tested from the development session.
   job), moving orders to Shipped/Delivered and notifying the customer —
   tested only against a local stand-in for Shiprocket.
 
+## SEO, GEO and security (5 November 2026, tested locally)
+- **/llms.txt** — a plain summary for AI assistants (ChatGPT, Gemini,
+  Claude, Perplexity), built live from your products, prices, ingredients,
+  nutrition (as printed), approved claims, delivery charges, payment
+  options, FAQs and contact details. Nothing is invented; unapproved claims
+  and shelf life are left out.
+- **robots.txt** explicitly welcomes AI search crawlers (GPTBot, ClaudeBot,
+  PerplexityBot, Google-Extended…) on public pages; account, checkout,
+  admin and sign-in pages stay closed to every crawler.
+- **Structured data:** products now include ingredients, allergen advice
+  and nutrition per 100 g, seller and "ships within India"; the business is
+  marked as an online store serving India with a customer-service contact;
+  About and Contact pages say what they are. Page language is en-IN.
+- **Security:** two more protective headers (Cross-Origin-Opener-Policy,
+  X-Permitted-Cross-Domain-Policies). Shipped packages: 0 known
+  vulnerabilities.
+
 ## New pictures (5 November 2026)
 - Homepage **Our Story** now shows a banana grove and **Ingredients** shows
   the ingredients laid out (bananas, almonds, cashews, black dry grapes,

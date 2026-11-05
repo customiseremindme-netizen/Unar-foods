@@ -56,7 +56,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" data-scroll-behavior="smooth" className={`${fraunces.variable} ${montserrat.variable} ${greatVibes.variable}`}>
+    <html lang="en-IN" data-scroll-behavior="smooth" className={`${fraunces.variable} ${montserrat.variable} ${greatVibes.variable}`}>
       <body className="min-h-dvh">{children}</body>
     </html>
   );

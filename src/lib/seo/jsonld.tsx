@@ -17,9 +17,14 @@ export function organizationJsonLd(settings: PublicSettings, site: string) {
   const sameAs = [settings.social.instagram_url, settings.social.facebook_url, settings.social.youtube_url].filter(Boolean);
   return {
     "@context": "https://schema.org",
-    "@type": "Organization",
+    "@type": "OnlineStore",
+    "@id": `${site}/#organization`,
     name: settings.store.name,
+    ...(settings.store.legal_name ? { legalName: settings.store.legal_name } : {}),
+    description: settings.seo.description || undefined,
     url: site,
+    areaServed: { "@type": "Country", name: "India" },
+    currenciesAccepted: "INR",
     logo: absolute(site, settings.brand.logo_url),
     slogan: settings.store.tagline,
     ...(settings.store.email ? { email: settings.store.email } : {}),
@@ -36,7 +41,33 @@ export function organizationJsonLd(settings: PublicSettings, site: string) {
           },
         }
       : {}),
+    ...(settings.store.email || settings.store.phone
+      ? {
+          contactPoint: {
+            "@type": "ContactPoint",
+            contactType: "customer service",
+            areaServed: "IN",
+            availableLanguage: ["English", "Tamil"],
+            ...(settings.store.email ? { email: settings.store.email } : {}),
+            ...(settings.store.phone ? { telephone: `+91${settings.store.phone}` } : {}),
+          },
+        }
+      : {}),
     ...(sameAs.length ? { sameAs } : {}),
+  };
+}
+
+/** About / Contact pages: say what the page is and who it belongs to. */
+export function webPageJsonLd(input: { site: string; path: string; type: "AboutPage" | "ContactPage"; name: string; description?: string | null }) {
+  return {
+    "@context": "https://schema.org",
+    "@type": input.type,
+    name: input.name,
+    url: `${input.site}${input.path}`,
+    ...(input.description ? { description: input.description } : {}),
+    inLanguage: "en-IN",
+    about: { "@id": `${input.site}/#organization` },
+    isPartOf: { "@type": "WebSite", url: input.site },
   };
 }
 
@@ -46,6 +77,8 @@ export function websiteJsonLd(settings: PublicSettings, site: string) {
     "@type": "WebSite",
     name: settings.store.name,
     url: site,
+    inLanguage: "en-IN",
+    publisher: { "@id": `${site}/#organization` },
     potentialAction: {
       "@type": "SearchAction",
       target: `${site}/shop?q={search_term_string}`,
@@ -88,8 +121,18 @@ export function productJsonLd(input: {
     sku: variant?.sku,
     ...(variant?.barcode && /^\d{8,14}$/.test(variant.barcode) ? { gtin: variant.barcode } : {}),
     brand: { "@type": "Brand", name: input.brand },
+    category: "Food > Snacks > Dried fruit snacks",
     image: product.images.filter((i) => !i.kind.endsWith("_label")).map((i) => absolute(site, i.url)),
     url: `${site}/products/${product.slug}`,
+    ...(variant?.title ? { size: variant.title } : {}),
+    // Facts as printed on the pack, so search engines and AI assistants can quote them exactly.
+    additionalProperty: [
+      product.ingredients ? { "@type": "PropertyValue", name: "Ingredients", value: product.ingredients } : null,
+      product.allergens ? { "@type": "PropertyValue", name: "Allergen advice", value: product.allergens } : null,
+      ...product.nutrition
+        .filter((n) => n.nutrient && n.per_100g)
+        .map((n) => ({ "@type": "PropertyValue", name: `${n.nutrient} (per 100 g)`, value: n.per_100g })),
+    ].filter(Boolean),
     ...(variant
       ? {
           offers: {
@@ -99,6 +142,8 @@ export function productJsonLd(input: {
             price: (variant.price_paise / 100).toFixed(2),
             availability: variant.stock > 0 ? "https://schema.org/InStock" : "https://schema.org/OutOfStock",
             itemCondition: "https://schema.org/NewCondition",
+            seller: { "@type": "Organization", name: input.brand },
+            eligibleRegion: { "@type": "Country", name: "IN" },
           },
         }
       : {}),

@@ -5,6 +5,8 @@ import { ContactForm } from "@/components/content/contact-form";
 import { Breadcrumbs } from "@/components/ui/misc";
 import { WhatsappIcon } from "@/components/brand/icons";
 import { LeafSprig } from "@/components/brand/botanical";
+import { JsonLd, organizationJsonLd, webPageJsonLd } from "@/lib/seo/jsonld";
+import { getRequestSiteUrl } from "@/lib/site-url";
 
 export const metadata: Metadata = {
   title: "Contact us",
@@ -13,10 +15,14 @@ export const metadata: Metadata = {
 };
 
 export default async function ContactPage() {
-  const { store, social } = await getPublicSettings();
+  const settings = await getPublicSettings();
+  const { store, social } = settings;
+  const site = await getRequestSiteUrl();
   const whatsapp = social.whatsapp_number || store.whatsapp;
   return (
     <>
+      <JsonLd data={webPageJsonLd({ site, path: "/contact", type: "ContactPage", name: "Contact UNAR", description: "Questions about an order, our products or anything else." })} />
+      <JsonLd data={organizationJsonLd(settings, site)} />
       <header className="paper relative overflow-hidden border-b border-line">
         <LeafSprig className="absolute -right-2 top-4 hidden h-48 w-32 text-sage sm:block" />
         <div className="container-site relative py-12 lg:py-16">
