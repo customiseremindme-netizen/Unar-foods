@@ -231,7 +231,15 @@ tick it get messages (WhatsApp's rules require the customer's consent).
    dashboard: {{3}} . Team UNAR* ({{1}} order number, {{2}} customer ·
    amount · payment, {{3}} dashboard link) — and in Settings → Emails fill
    in "WhatsApp me about every new order" with your mobile number(s) (not the
-   shop's sending number) and the template name. Meta charges per message (see Meta's pricing).
+   shop's sending number) and the template name.
+7. **Sign in with mobile number:** create an **Authentication** template
+   (e.g. `unar_login_code`, "Copy code" button, 10-minute expiry) and enter
+   its name under "WhatsApp template: sign-in code". The login page then
+   shows **Sign in with mobile number**: the customer types their number,
+   gets a 6-digit code on WhatsApp, and is signed in (new customers also give
+   their name and email). Existing customers can add their number in
+   Account → Security. Each code is one WhatsApp message (Meta charges a few
+   paise); codes last 10 minutes, allow 5 tries and work once. Meta charges per message (see Meta's pricing).
 
 ### 4.8 Courier (Shiprocket) with automatic tracking (optional)
 1. Shiprocket → Settings → API → **Create an API user** (a separate email).

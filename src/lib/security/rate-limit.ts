@@ -15,6 +15,10 @@ export const RATE_LIMITS = {
   passwordReset: { limit: 5, windowSeconds: 3600 },
   googleSignIn: { limit: 20, windowSeconds: 600 },
   twoStep: { limit: 6, windowSeconds: 600 },
+  // Codes sent to a mobile number (each costs a WhatsApp message).
+  phoneCodePhone: { limit: 3, windowSeconds: 900 },
+  phoneCodeIp: { limit: 10, windowSeconds: 900 },
+  phoneCodeVerify: { limit: 12, windowSeconds: 900 },
   securityChange: { limit: 10, windowSeconds: 600 },
   contact: { limit: 5, windowSeconds: 3600 },
   newsletter: { limit: 5, windowSeconds: 3600 },

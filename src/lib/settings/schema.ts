@@ -148,6 +148,8 @@ export const settingsSchemas = {
       .array(z.string().trim().regex(/^(\+?91[\s-]?)?[6-9]\d{9}$/, "Use a 10-digit Indian mobile number, e.g. 9994657693"))
       .max(5)
       .default([]),
+    /** Approved "Authentication" template for sign-in codes; empty = mobile sign-in is off. */
+    whatsapp_tpl_login_code: z.string().trim().max(60).regex(/^[a-z0-9_]*$/, "Use the template name exactly as in WhatsApp Manager (lowercase, digits, _)").default(""),
     whatsapp_tpl_admin_new_order: z.string().trim().max(60).regex(/^[a-z0-9_]*$/, "Use the template name exactly as in WhatsApp Manager (lowercase, digits, _)").default(""),
     templates: z
       .record(

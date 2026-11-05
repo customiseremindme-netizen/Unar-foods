@@ -146,7 +146,7 @@ const REGISTERED_MESSAGE = "Almost done! We've sent a confirmation link to your 
 export async function registerAction(_prev: FormState, formData: FormData): Promise<FormState> {
   const values = { full_name: text(formData.get("full_name"), 120), email: text(formData.get("email")), marketing: formData.get("marketing") === "on" ? "on" : "" };
   // Hidden field only bots fill in: pretend it worked.
-  if (text(formData.get("website"))) return { ok: true, message: REGISTERED_MESSAGE };
+  if (text(formData.get("hp_check"))) return { ok: true, message: REGISTERED_MESSAGE };
   const parsed = registerSchema.safeParse({
     full_name: formData.get("full_name"),
     email: formData.get("email"),

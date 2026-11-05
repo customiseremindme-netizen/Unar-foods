@@ -73,7 +73,7 @@ await db.query(
 // Test-only courier and WhatsApp settings (they talk to the local stand-ins only).
 await db.query("UPDATE settings SET value = JSON_SET(value, '$.enabled', true, '$.pickup_location', 'Home') WHERE `key` = 'shiprocket'");
 await db.query(
-  "UPDATE settings SET value = JSON_SET(value, '$.whatsapp_enabled', true, '$.whatsapp_tpl_order_placed', 'order_received', '$.whatsapp_tpl_payment_confirmed', 'order_confirmed', '$.whatsapp_tpl_order_shipped', 'order_shipped', '$.whatsapp_tpl_order_delivered', 'order_delivered', '$.whatsapp_tpl_admin_new_order', 'unar_new_order', '$.whatsapp_admin_numbers', JSON_ARRAY('9000000001')) WHERE `key` = 'notifications'",
+  "UPDATE settings SET value = JSON_SET(value, '$.whatsapp_enabled', true, '$.whatsapp_tpl_order_placed', 'order_received', '$.whatsapp_tpl_payment_confirmed', 'order_confirmed', '$.whatsapp_tpl_order_shipped', 'order_shipped', '$.whatsapp_tpl_order_delivered', 'order_delivered', '$.whatsapp_tpl_admin_new_order', 'unar_new_order', '$.whatsapp_admin_numbers', JSON_ARRAY('9000000001'), '$.whatsapp_tpl_login_code', 'unar_login_code') WHERE `key` = 'notifications'",
 );
 // Test-only UPI ID for the "Pay by UPI to our UPI ID" option (no real account).
 await db.query(

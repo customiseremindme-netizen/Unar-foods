@@ -93,11 +93,31 @@ export const TABLES: Record<string, Table> = {
       totp_last_step: { type: "bigint", nullable: true, hidden: true },
       /** SHA-256 hashes of unused one-time recovery codes. */
       recovery_codes: json(() => [], { hidden: true, nullable: true }),
+      /** Mobile number proved with a code (10 digits, India); used for "sign in with mobile number". */
+      phone: str(15, { nullable: true, hidden: true }),
+      phone_verified_at: ts(),
       created_at: createdAt(),
       updated_at: updatedAt(),
     },
     primaryKey: ["id"],
-    unique: [["email"]],
+    unique: [["email"], ["phone"]],
+  },
+
+  /** One-time codes sent to a mobile number (sign-in, or linking a number to an account). */
+  phone_codes: {
+    columns: {
+      id: str(64), // sha-256 of a random id
+      phone: str(15),
+      purpose: str(16), // login | link | signup_proof
+      user_id: ref("auth_users", "cascade", true),
+      code_hash: str(64, { hidden: true }),
+      attempts: int({ default: 0 }),
+      expires_at: { type: "datetime" },
+      used_at: ts(),
+      created_at: createdAt(),
+    },
+    primaryKey: ["id"],
+    indexes: [["phone", "purpose"], ["expires_at"]],
   },
   auth_sessions: {
     columns: {

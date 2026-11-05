@@ -31,7 +31,8 @@ const getRawSession = cache(async (): Promise<RawSession | null> => {
          FROM auth_sessions s
          JOIN auth_users u ON u.id = s.user_id
          LEFT JOIN staff_members sm ON sm.user_id = u.id
-        WHERE s.id = ? AND s.expires_at > UTC_TIMESTAMP(3) AND u.email_confirmed_at IS NOT NULL`,
+        WHERE s.id = ? AND s.expires_at > UTC_TIMESTAMP(3)
+          AND (u.email_confirmed_at IS NOT NULL OR u.phone_verified_at IS NOT NULL)`,
       [sha256Hex(token)],
     );
     const row = rows[0];

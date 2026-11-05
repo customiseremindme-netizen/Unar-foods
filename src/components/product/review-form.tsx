@@ -164,7 +164,7 @@ export function ReviewForm({
       <input type="hidden" name="product_id" value={productId} />
       <input type="hidden" name="rating" value={rating || ""} />
       <div aria-hidden="true" className="absolute -left-[9999px] h-0 overflow-hidden">
-        <input name="website" tabIndex={-1} autoComplete="off" />
+        <input name="hp_check" tabIndex={-1} autoComplete="off" />
       </div>
       <fieldset>
         <legend className="mb-2 text-[0.82rem] font-semibold">

@@ -15,7 +15,7 @@ export function ContactForm() {
   return (
     <form action={action} className="grid gap-5 sm:grid-cols-2" noValidate>
       <div aria-hidden="true" className="absolute -left-[9999px] h-0 overflow-hidden">
-        <input name="website" tabIndex={-1} autoComplete="off" />
+        <input name="hp_check" tabIndex={-1} autoComplete="off" />
       </div>
       {state.message ? (
         <div className="sm:col-span-2">

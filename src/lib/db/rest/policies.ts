@@ -71,6 +71,7 @@ export const RULES: Record<string, TableRules> = {
   auth_sessions: {},
   auth_tokens: {},
   auth_identities: {},
+  phone_codes: {},
   counters: {},
   schema_meta: {},
   rate_limits: {},

@@ -305,7 +305,9 @@ export function CheckoutForm({
       const result = await placeOrderAction(payload);
       if (!result.ok) {
         setErrors(result.errors ?? {});
-        setMessage(result.message);
+        // Say what is wrong in the message too, in case the field is off screen.
+        const problems = [...new Set(Object.values(result.errors ?? {}))].slice(0, 3);
+        setMessage(problems.length ? `${result.message ?? "Please check the highlighted fields."} ${problems.join(" · ")}` : result.message);
         const first = Object.keys(result.errors ?? {})[0];
         if (first) document.getElementById(first.replace(".", "-"))?.focus();
         else window.scrollTo({ top: 0, behavior: "smooth" });
@@ -371,7 +373,7 @@ export function CheckoutForm({
   return (
     <form onSubmit={submit} noValidate className="grid gap-10 lg:grid-cols-12 lg:gap-14">
       <div aria-hidden="true" className="absolute -left-[9999px] h-0 overflow-hidden">
-        <input name="website" tabIndex={-1} autoComplete="off" value={website} onChange={(e) => setWebsite(e.target.value)} />
+        <input name="hp_check" tabIndex={-1} autoComplete="off" value={website} onChange={(e) => setWebsite(e.target.value)} />
       </div>
 
       <div className="space-y-10 lg:col-span-7">

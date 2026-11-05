@@ -19,7 +19,7 @@ PART B — The sending phone number
 3. When Meta sends a verification code, STOP and say: "Please type the code Meta sent to your phone into the box and reply done." Wait.
 4. Tell me the Phone number ID shown for this number (a long number — it is not a secret) and whether the display name is "Approved" or "Pending".
 
-PART C — Message templates (6 templates)
+PART C — Message templates (7 templates)
 Open WhatsApp Manager (business.facebook.com → WhatsApp accounts → the account → Message templates, or from the app: WhatsApp → API Setup → "Manage message templates"). Create each template below with: Category = Utility, Language = English, Header = none, Footer = none, Buttons = none. Type the body EXACTLY as written (keep {{1}} {{2}} {{3}} — every template must have all three, in this order). When Meta asks for sample values use: {{1}} = Meena, {{2}} = UNAR-1001, {{3}} = https://coral-seahorse-181020.hostingersite.com/orders/UNAR-1001
 
 1. Name: unar_order_received
@@ -36,7 +36,10 @@ Open WhatsApp Manager (business.facebook.com → WhatsApp accounts → the accou
    Body: New UNAR order {{1}} from {{2}}. Open it in the dashboard: {{3}} . Team UNAR
    Sample values for this one: {{1}} = UNAR-1001, {{2}} = Meena Customer · ₹596 · Cash on Delivery, {{3}} = https://coral-seahorse-181020.hostingersite.com/admin/orders
 
-Submit each one. If Meta changes the category to Marketing or rejects a template, tell me the exact reason. Then tell me the status of all six (Approved / In review / Rejected). Approval usually takes minutes to a day — continue with Part D meanwhile.
+7. Name: unar_login_code   (sign-in codes for "Sign in with mobile number")
+   This one is different: Category = Authentication (not Utility), Language = English. Meta writes the text itself ("{{1}} is your verification code."). Choose code delivery "Copy code", tick "Add security recommendation", and set the code to expire in 10 minutes. No sample text is needed beyond what Meta asks.
+
+Submit each one. If Meta changes the category to Marketing or rejects a template, tell me the exact reason. Then tell me the status of all seven (Approved / In review / Rejected). Approval usually takes minutes to a day — continue with Part D meanwhile.
 
 PART D — Permanent access token
 1. Open https://business.facebook.com/settings → Users → System users. If a system user named "unar-shop" exists, select it; otherwise click Add, name: unar-shop, role: Admin.
@@ -65,6 +68,7 @@ PART G — Switch it on in the dashboard
    - delivered → unar_order_delivered
    - cancelled → unar_order_cancelled
    - new order (to you) → unar_new_order
+   - sign-in code → unar_login_code   (this switches on "Sign in with mobile number" on the login page)
 5. STOP and ask me: "Which mobile number(s) should get a WhatsApp message for every new order? (Not the shop's sending number from Part B.)" Type my answer into "WhatsApp me about every new order", one number per line. Make sure "Email me about new orders" stays as it is.
 6. Save, and tell me the message shown.
-7. Stop here and tell me everything is ready. I will test it myself: place an order on the shop with my own mobile number and "Send me order updates on WhatsApp" ticked, check that both WhatsApp messages arrive (the customer one and the new-order one), then cancel that order in the dashboard.
+7. Stop here and tell me everything is ready. I will test it myself: place an order on the shop with my own mobile number and "Send me order updates on WhatsApp" ticked, check that both WhatsApp messages arrive (the customer one and the new-order one), then cancel that order in the dashboard. I will also try "Sign in with mobile number" on the login page in a private window.

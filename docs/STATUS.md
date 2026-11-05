@@ -50,6 +50,16 @@ site itself could not be opened or tested from the development session.
   job), moving orders to Shipped/Delivered and notifying the customer —
   tested only against a local stand-in for Shiprocket.
 
+## New on 5 November 2026 (tested locally against a stand-in for WhatsApp)
+- **Sign in with mobile number** — 6-digit code on WhatsApp; new customers
+  give name + email once; existing customers link their number in Account →
+  Security. Appears once the sign-in template is set in Settings → Emails.
+  If the real owner of an email later claims an account someone else opened
+  with it, the number that person linked is removed.
+- **Checkout fix:** browser autofill could fill a hidden anti-spam field and
+  block the order with "Please check the highlighted fields" and nothing
+  highlighted. The field is renamed, and the message now names the problem.
+
 ## New on 4 November 2026 — WhatsApp alert for every new order (tested locally against a stand-in for Meta)
 - Up to 5 shop mobile numbers get a WhatsApp message for each new order
   (order number, customer, amount, payment and a dashboard link), once per

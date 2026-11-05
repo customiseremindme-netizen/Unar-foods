@@ -12,7 +12,7 @@ export function whatsappNumber(phone: string | null | undefined): string | null 
  * API. Business-initiated WhatsApp messages must use templates Meta has
  * approved; the body's {{1}}, {{2}}, {{3}} are filled with `params` in order.
  */
-export async function sendWhatsAppTemplate(input: { to: string; template: string; language: string; params: string[] }): Promise<{ status: "sent" | "failed" | "skipped"; id?: string; error?: string }> {
+export async function sendWhatsAppTemplate(input: { to: string; template: string; language: string; params: string[]; buttonParam?: string }): Promise<{ status: "sent" | "failed" | "skipped"; id?: string; error?: string }> {
   const env = getWhatsAppEnv();
   if (!env) return { status: "skipped", error: "WhatsApp is not connected" };
   try {
@@ -26,7 +26,11 @@ export async function sendWhatsAppTemplate(input: { to: string; template: string
         template: {
           name: input.template,
           language: { code: input.language },
-          components: input.params.length ? [{ type: "body", parameters: input.params.map((text) => ({ type: "text", text: text.slice(0, 200) })) }] : [],
+          components: [
+            ...(input.params.length ? [{ type: "body", parameters: input.params.map((text) => ({ type: "text", text: text.slice(0, 200) })) }] : []),
+            // Sign-in code templates ("Authentication") carry the code in their copy-code button too.
+            ...(input.buttonParam ? [{ type: "button", sub_type: "url", index: "0", parameters: [{ type: "text", text: input.buttonParam }] }] : []),
+          ],
         },
       }),
       cache: "no-store",

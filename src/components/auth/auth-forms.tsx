@@ -86,7 +86,7 @@ export function RegisterForm({ next, emailVerification }: { next: string; emailV
     <form action={action} className="space-y-5" noValidate>
       <input type="hidden" name="next" value={next} />
       <div aria-hidden="true" className="absolute -left-[9999px] h-0 overflow-hidden">
-        <input name="website" tabIndex={-1} autoComplete="off" />
+        <input name="hp_check" tabIndex={-1} autoComplete="off" />
       </div>
       {state.message ? <FormMessage tone="error">{state.message}</FormMessage> : null}
       <Field label="Full name" htmlFor="full_name" error={state.errors?.full_name}>

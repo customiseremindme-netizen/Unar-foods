@@ -7,6 +7,8 @@ import { LoginForm } from "@/components/auth/auth-forms";
 import { GoogleButton } from "@/components/auth/google-button";
 import { FormMessage } from "@/components/ui/field";
 import { getGoogleEnv } from "@/lib/env";
+import { phoneSignInAvailable } from "@/lib/auth/phone";
+import { PhoneLoginLink } from "@/components/auth/phone-login";
 
 const GOOGLE_ERRORS: Record<string, string> = {
   google: "Google sign-in didn't work. Please try again, or sign in with your email and password.",
@@ -29,6 +31,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
           <FormMessage tone="error">{GOOGLE_ERRORS[error]}</FormMessage>
         </div>
       ) : null}
+      {(await phoneSignInAvailable()) ? <PhoneLoginLink next={target} /> : null}
       {getGoogleEnv() ? <GoogleButton next={target} /> : null}
       <LoginForm next={target} linkError={error === "link"} />
     </AuthShell>

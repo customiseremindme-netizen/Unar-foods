@@ -50,10 +50,10 @@ export type Database = {
         ]
       }
       "auth_users": {
-        Row: { "created_at": string; "email": string; "email_confirmed_at": string | null; "id": string; "last_sign_in_at": string | null; "totp_enabled_at": string | null; "updated_at": string }
+        Row: { "created_at": string; "email": string; "email_confirmed_at": string | null; "id": string; "last_sign_in_at": string | null; "phone_verified_at": string | null; "totp_enabled_at": string | null; "updated_at": string }
         ComputedFields: never
-        Insert: { "created_at"?: string; "email": string; "email_confirmed_at"?: string | null; "id"?: string; "last_sign_in_at"?: string | null; "totp_enabled_at"?: string | null; "updated_at"?: string }
-        Update: { "created_at"?: string; "email"?: string; "email_confirmed_at"?: string | null; "id"?: string; "last_sign_in_at"?: string | null; "totp_enabled_at"?: string | null; "updated_at"?: string }
+        Insert: { "created_at"?: string; "email": string; "email_confirmed_at"?: string | null; "id"?: string; "last_sign_in_at"?: string | null; "phone_verified_at"?: string | null; "totp_enabled_at"?: string | null; "updated_at"?: string }
+        Update: { "created_at"?: string; "email"?: string; "email_confirmed_at"?: string | null; "id"?: string; "last_sign_in_at"?: string | null; "phone_verified_at"?: string | null; "totp_enabled_at"?: string | null; "updated_at"?: string }
         Relationships: []
       }
       "banners": {
@@ -222,6 +222,15 @@ export type Database = {
         Update: { "amount_paise"?: number; "created_at"?: string; "error_code"?: string | null; "error_description"?: string | null; "id"?: string; "method"?: string | null; "order_id"?: string; "provider"?: string; "provider_order_id"?: string | null; "provider_payment_id"?: string | null; "raw"?: Json | null; "status"?: string; "updated_at"?: string }
         Relationships: [
           { foreignKeyName: "payments_order_id_fkey"; columns: ["order_id"]; isOneToOne: false; referencedRelation: "orders"; referencedColumns: ["id"] },
+        ]
+      }
+      "phone_codes": {
+        Row: { "attempts": number; "created_at": string; "expires_at": string; "id": string; "phone": string; "purpose": string; "used_at": string | null; "user_id": string | null }
+        ComputedFields: never
+        Insert: { "attempts"?: number; "created_at"?: string; "expires_at": string; "id": string; "phone": string; "purpose": string; "used_at"?: string | null; "user_id"?: string | null }
+        Update: { "attempts"?: number; "created_at"?: string; "expires_at"?: string; "id"?: string; "phone"?: string; "purpose"?: string; "used_at"?: string | null; "user_id"?: string | null }
+        Relationships: [
+          { foreignKeyName: "phone_codes_user_id_fkey"; columns: ["user_id"]; isOneToOne: false; referencedRelation: "auth_users"; referencedColumns: ["id"] },
         ]
       }
       "product_categories": {

@@ -240,6 +240,13 @@ export default async function SettingsPage() {
           { name: "whatsapp_tpl_order_delivered", label: "WhatsApp template: order delivered", type: "text", max: 60 },
           { name: "whatsapp_tpl_order_cancelled", label: "WhatsApp template: order cancelled", type: "text", max: 60 },
           {
+            name: "whatsapp_tpl_login_code",
+            label: "WhatsApp template: sign-in code (turns on “Sign in with mobile number”)",
+            type: "text",
+            max: 60,
+            help: "An “Authentication” template approved by WhatsApp, with a copy-code button. Leave empty to keep mobile sign-in off.",
+          },
+          {
             name: "whatsapp_admin_numbers",
             label: "WhatsApp me about every new order — your mobile number(s), one per line",
             type: "lines",

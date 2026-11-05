@@ -17,7 +17,7 @@ export function NewsletterForm({ consentText, source }: { consentText: string; s
       <input type="hidden" name="source" value={source} />
       <div aria-hidden="true" className="absolute -left-[9999px] h-0 overflow-hidden">
         <label htmlFor={`website-${source}`}>Leave this field empty</label>
-        <input id={`website-${source}`} name="website" tabIndex={-1} autoComplete="off" />
+        <input id={`website-${source}`} name="hp_check" tabIndex={-1} autoComplete="off" />
       </div>
       <div className="flex flex-col gap-3 sm:flex-row">
         <div className="flex-1">

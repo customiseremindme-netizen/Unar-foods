@@ -96,7 +96,7 @@ export async function replaceUnconfirmedSignup(input: { userId: string; password
   const hash = await hashPassword(input.password);
   return withTransaction(pool, async (conn) => {
     const [result] = await conn.query<ResultSetHeader>(
-      "UPDATE auth_users SET password_hash = ?, email_confirmed_at = ? WHERE id = ? AND email_confirmed_at IS NULL",
+      "UPDATE auth_users SET password_hash = ?, email_confirmed_at = ?, phone = NULL, phone_verified_at = NULL WHERE id = ? AND email_confirmed_at IS NULL",
       [hash, input.confirm ? now() : null, input.userId],
     );
     if (result.affectedRows !== 1) return false;
@@ -135,7 +135,7 @@ export async function findOrCreateGoogleUser(input: { subject: string; email: st
       if (existing[0]) {
         userId = String(existing[0].id);
         if (!existing[0].email_confirmed_at) {
-          await conn.query("UPDATE auth_users SET email_confirmed_at = ?, password_hash = ? WHERE id = ?", [now(), await hashPassword(randomToken(32)), userId]);
+          await conn.query("UPDATE auth_users SET email_confirmed_at = ?, password_hash = ?, phone = NULL, phone_verified_at = NULL WHERE id = ?", [now(), await hashPassword(randomToken(32)), userId]);
           await conn.query("DELETE FROM auth_sessions WHERE user_id = ?", [userId]);
           await conn.query("UPDATE auth_tokens SET used_at = ? WHERE user_id = ? AND used_at IS NULL", [now(), userId]);
         }
@@ -257,6 +257,9 @@ export async function consumeToken(token: string, purpose: TokenPurpose): Promis
 
 export async function confirmEmail(userId: string): Promise<void> {
   const pool = await getReadyPool();
+  // First proof of the email address: a mobile number linked before then was
+  // added by whoever started the account, who may not own the address — remove it.
+  await pool.query("UPDATE auth_users SET phone = NULL, phone_verified_at = NULL WHERE id = ? AND email_confirmed_at IS NULL", [userId]);
   await pool.query("UPDATE auth_users SET email_confirmed_at = COALESCE(email_confirmed_at, ?) WHERE id = ?", [now(), userId]);
 }
 

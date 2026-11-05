@@ -38,7 +38,7 @@ export async function subscribeNewsletterAction(_prev: FormState, formData: Form
   const parsed = newsletterSchema.safeParse({
     email: formData.get("email"),
     consent: flag(formData.get("consent")),
-    website: formData.get("website") ?? "",
+    website: formData.get("hp_check") ?? "",
     source: formData.get("source") ?? "website",
   });
   if (!parsed.success) return { ok: false, message: null, errors: toFieldErrors(parsed.error), values };
@@ -119,7 +119,7 @@ export async function submitContactAction(_prev: FormState, formData: FormData):
     phone: formData.get("phone") ?? "",
     subject: formData.get("subject") ?? "",
     message: formData.get("message"),
-    website: formData.get("website") ?? "",
+    website: formData.get("hp_check") ?? "",
   });
   if (!parsed.success) return { ok: false, message: null, errors: toFieldErrors(parsed.error), values };
   if (parsed.data.website) return { ok: true, message: "Thank you! We've received your message." };
@@ -184,7 +184,7 @@ export async function submitReviewAction(_prev: FormState, formData: FormData): 
     title: formData.get("title") ?? "",
     body: formData.get("body"),
     author_name: formData.get("author_name"),
-    website: formData.get("website") ?? "",
+    website: formData.get("hp_check") ?? "",
   });
   if (!parsed.success) return { ok: false, message: null, errors: toFieldErrors(parsed.error), values };
   if (parsed.data.website) return { ok: true, message: "Thank you! Your review will appear once it has been checked." };
