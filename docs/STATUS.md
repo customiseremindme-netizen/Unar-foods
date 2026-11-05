@@ -50,6 +50,16 @@ site itself could not be opened or tested from the development session.
   job), moving orders to Shipped/Delivered and notifying the customer —
   tested only against a local stand-in for Shiprocket.
 
+## New pictures (5 November 2026)
+- Homepage **Our Story** now shows a banana grove and **Ingredients** shows
+  the ingredients laid out (bananas, almonds, cashews, black dry grapes,
+  sesame, sunflower, melon and pumpkin seeds). These two are **AI-generated
+  mood pictures** (Magnific), not photos of the product; product and pack
+  pictures everywhere else are still your real photos. The switch happens
+  once, only where you hadn't already chosen your own picture; change them
+  any time in Dashboard → Content → Homepage. A spare "tea moment" picture is
+  at `/images/site/tea-moment.webp`.
+
 ## New on 5 November 2026 (tested locally against a stand-in for WhatsApp)
 - **Sign in with mobile number** — 6-digit code on WhatsApp; new customers
   give name + email once; existing customers link their number in Account →

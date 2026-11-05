@@ -144,6 +144,33 @@ export const DATA_MIGRATIONS: DataMigration[] = [
       if (!present) await conn.query(`ALTER TABLE orders ADD CONSTRAINT \`${name}\` CHECK (${checks[index]})`);
     },
   },
+  {
+    id: "2026-11-05-home-section-images",
+    description: "New pictures for Our Story (banana grove) and Ingredients (the ingredients laid out), unless already changed",
+    async run(conn) {
+      const swaps = [
+        {
+          key: "story",
+          from: "/images/products/dry-fruits-seeds/05-lifestyle-support-image.webp",
+          to: "/images/site/banana-grove.webp",
+          alt: "Banana plants with green bunches in a grove at sunrise",
+        },
+        {
+          key: "ingredients",
+          from: "/images/products/dry-fruits-seeds/03-ingredients-benefits-display.webp",
+          to: "/images/site/ingredients-flatlay.webp",
+          alt: "Bananas with small bowls of almonds, cashews, black dry grapes, sesame, sunflower, melon and pumpkin seeds",
+        },
+      ];
+      for (const s of swaps) {
+        // Only sections still showing the starter picture; an owner's own choice is kept.
+        await conn.query(
+          "UPDATE cms_sections SET content = JSON_SET(content, '$.image_url', ?, '$.image_alt', ?) WHERE page = 'home' AND `key` = ? AND JSON_UNQUOTE(JSON_EXTRACT(content, '$.image_url')) = ?",
+          [s.to, s.alt, s.key, s.from],
+        );
+      }
+    },
+  },
 ];
 
 /** Runs every step that has not run yet, in order. Returns the ids that ran. */

@@ -96,11 +96,16 @@ describe.skipIf(!url)("automatic database setup", () => {
     await pool.query("UPDATE product_images SET sort_order = 9 WHERE id = '92b61a62-d7b3-4d51-816b-20e4ca02aaca'");
     await pool.query("DELETE FROM cms_sections WHERE `key` IN ('enjoy', 'benefits')");
     await pool.query("UPDATE cms_sections SET content = JSON_OBJECT('heading', 'Owner heading') WHERE `key` = 'ingredients'");
+    // Our Story still shows the old starter picture (published) / the owner's own picture (draft).
+    await pool.query("UPDATE cms_sections SET content = JSON_SET(content, '$.image_url', '/images/products/dry-fruits-seeds/05-lifestyle-support-image.webp') WHERE `key` = 'story' AND state = 'published'");
+    await pool.query("UPDATE cms_sections SET content = JSON_SET(content, '$.image_url', '/media/owner-photo.webp') WHERE `key` = 'story' AND state = 'draft'");
     await pool.query("DELETE FROM schema_meta WHERE `key` LIKE 'data_migration:%'");
     const [before] = await pool.query<RowDataPacket[]>("SELECT COUNT(*) AS n FROM products");
 
     const results = await Promise.all([installSchema(pool), installSchema(pool)]);
-    expect(results.flatMap((r) => r.dataFixes)).toEqual(["2026-11-01-starter-products", "2026-11-01-home-sections", "2026-11-03-payment-methods"]);
+    expect(results.flatMap((r) => r.dataFixes)).toEqual(["2026-11-01-starter-products", "2026-11-01-home-sections", "2026-11-03-payment-methods", "2026-11-05-home-section-images"]);
+    const [story] = await pool.query<RowDataPacket[]>("SELECT state, JSON_UNQUOTE(JSON_EXTRACT(content, '$.image_url')) AS url FROM cms_sections WHERE `key` = 'story' ORDER BY state");
+    expect(story.map((r) => `${r.state}:${r.url}`)).toEqual(["draft:/media/owner-photo.webp", "published:/images/site/banana-grove.webp"]);
 
     const [products] = await pool.query<RowDataPacket[]>("SELECT id, title, short_title, status, published_at FROM products ORDER BY sort_order");
     expect(products.length).toBe(Number(before[0].n));
